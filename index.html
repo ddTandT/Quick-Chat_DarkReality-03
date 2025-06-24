@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Messenger Chat</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .chat-container {
+      width: 400px;
+      height: 600px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      background-color: #0084ff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: #e5ddd5;
+    }
+    .chat-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background-color: #f9f9f9;
+    }
+    .chat-input input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      outline: none;
+    }
+    .chat-input button {
+      background-color: #0084ff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    .message {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .timestamp {
+      font-size: 0.7em;
+      opacity: 0.6;
+      margin-top: 2px;
+      align-self: flex-end;
+    }
+    .username {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+<div class="chat-container">
+  <div class="chat-header">🔵 Messenger Chat</div>
+  <div id="messages" class="chat-messages"></div>
+  <div class="chat-input">
+    <input id="name" placeholder="Your name (optional)" />
+    <button id="saveNameBtn">Save Name</button>
+  </div>
+  <div class="chat-input">
+    <input id="text" type="text" placeholder="Type a message..." />
+    <input id="fileInput" type="file" />
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDTixIh_aI5vszcxIT2unf31h9Iu92AdzI",
+    authDomain: "talk-and-talk-7e674.firebaseapp.com",
+    databaseURL: "https://talk-and-talk-7e674-default-rtdb.firebaseio.com",
+    projectId: "talk-and-talk-7e674",
+    storageBucket: "talk-and-talk-7e674.appspot.com",
+    messagingSenderId: "422714682356",
+    appId: "1:422714682356:web:5a6bf6ad1879a90cfa27a1"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const messagesRef = db.ref("messages");
+
+  function getUserName() {
+    return localStorage.getItem("chatUserName") || "";
+  }
+
+  function saveUserName(name) {
+    localStorage.setItem("chatUserName", name);
+  }
+
+  function formatTime(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function generateColor(name) {
+    const colors = ["#dcf8c6", "#fceeb5", "#e2f0cb", "#d2e3fc", "#ffd6d6"];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  function sendMessage() {
+    const name = getUserName() || "Guest_" + Math.floor(Math.random() * 10000);
+    saveUserName(name);
+    document.getElementById("name").value = name;
+    const text = document.getElementById("text").value.trim();
+    const fileInput = document.getElementById("fileInput");
+    const timestamp = new Date().toISOString();
+
+    if (!text && !fileInput.files.length) return;
+
+    const messageData = { name, timestamp };
+    if (text) messageData.text = text;
+    if (fileInput.files.length) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        messageData.file = e.target.result;
+        messageData.fileName = fileInput.files[0].name;
+        messagesRef.push(messageData);
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    } else {
+      messagesRef.push(messageData);
+    }
+    document.getElementById("text").value = "";
+    fileInput.value = "";
+  }
+
+  document.getElementById("saveNameBtn").addEventListener("click", () => {
+    const nameInput = document.getElementById("name").value.trim();
+    if (nameInput) {
+      saveUserName(nameInput);
+      alert("Name saved as: " + nameInput);
+    }
+  });
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+  document.getElementById("text").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+  window.addEventListener("load", () => {
+    const saved = getUserName();
+    if (saved) document.getElementById("name").value = saved;
+  });
+
+  messagesRef.on("child_added", (snapshot) => {
+    const msg = snapshot.val();
+    const currentName = getUserName();
+    const el = document.createElement("div");
+    el.className = "message";
+    el.style.backgroundColor = msg.name === currentName ? "#0084ff" : generateColor(msg.name);
+    el.style.color = msg.name === currentName ? "#fff" : "#000";
+    el.style.alignSelf = msg.name === currentName ? "flex-end" : "flex-start";
+    el.innerHTML = `
+      <div class="username">${msg.name}</div>
+      ${msg.text ? `<div>${msg.text}</div>` : ""}
+      ${msg.file ? `<div><a href="${msg.file}" target="_blank">📎 ${msg.fileName}</a></div>` : ""}
+      <div class="timestamp">${formatTime(msg.timestamp)}</div>
+    `;
+    document.getElementById("messages").appendChild(el);
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+  });
+</script>
+</body>
+</html>
