@@ -1,43 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Messenger Chat</title>
   <style>
-    body { margin:0; font-family:Segoe UI; background:#f0f2f5; display:flex; justify-content:center; align-items:center; height:100vh; transition:.3s; }
-    body.night { background:#1e1e1e; color:#ddd; }
-    .chat-container { width:400px; height:600px; background:#fff; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.1); display:flex; flex-direction:column; overflow:hidden; transition:.3s; }
-    body.night .chat-container { background:#2e2e2e; }
-    .chat-header { background:#0084ff; color:#fff; padding:15px; text-align:center; font-size:1.2em; position:relative; }
-    .chat-header button { position:absolute; top:10px; right:10px; background:none; border:none; color:#fff; font-size:1.2em; cursor:pointer; }
+    body {margin:0;font-family:'Segoe UI';background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;transition:.3s}
+    body.night {background:#1e1e1e;color:#ddd}
+    .chat-container {width:400px;height:600px;background:#fff;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.1);display:flex;flex-direction:column;overflow:hidden;transition:.3s}
+    body.night .chat-container {background:#2e2e2e}
+    .chat-header {background:#0084ff;color:#fff;padding:15px;text-align:center;font-size:1.2em;position:relative}
+    .chat-header button {position:absolute;top:10px;right:10px;background:none;border:none;color:#fff;font-size:1.2em;cursor:pointer}
 
-    .chat-messages { flex:1; padding:15px; overflow-y:auto; background:#e5ddd5; }
-    body.night .chat-messages { background:#3a3a3a; }
+    .chat-messages {flex:1;padding:15px;background:#e5ddd5;overflow-y:auto}
+    body.night .chat-messages {background:#3a3a3a}
 
-    .message { margin-bottom:10px; padding:10px; border-radius:12px; max-width:70%; position:relative; display:flex; flex-direction:column; }
-    .message.you { align-self:flex-end; background:#0084ff; color:#fff; border-radius:15px 15px 0 15px; text-align:right; }
-    .message.other { align-self:flex-start; background:#f1f0f0; color:#111; border-radius:15px 15px 15px 0; }
-    body.night .message.other { background:#444; color:#fff; }
+    .message {margin-bottom:10px;padding:10px;border-radius:12px;max-width:70%;position:relative;display:flex;flex-direction:column}
+    .message.you {align-self:flex-end;background:#0084ff;color:#fff;border-radius:15px 15px 0 15px;text-align:right}
+    .message.other {align-self:flex-start;background:#f1f0f0;color:#111;border-radius:15px 15px 15px 0}
+    body.night .message.other {background:#444;color:#fff}
 
-    .username { font-weight:bold; margin-bottom:4px; }
-    .timestamp { font-size:.7em; opacity:.6; margin-top:4px; align-self:flex-end; }
+    .username {font-weight:bold;margin-bottom:4px}
+    .timestamp {font-size:.7em;opacity:.6;margin-top:4px;align-self:flex-end}
 
-    .message-actions { display:none; position:absolute; top:6px; right:6px; gap:8px; font-size:.8em; }
-    .message:hover .message-actions { display:flex; }
-    .message-actions span { cursor:pointer; color:rgba(255,255,255,.8); }
+    .message-actions {display:none;position:absolute;top:6px;right:6px;gap:8px;font-size:.8em}
+    .message:hover .message-actions {display:flex}
+    .message-actions span {cursor:pointer;color:rgba(255,255,255,.8)}
 
-    .chat-input { display:flex; align-items:center; padding:8px 10px; border-top:1px solid #ccc; background:#f9f9f9; }
-    body.night .chat-input { background:#444; }
-    .chat-input input[type="text"] { flex:1; padding:8px 12px; border:1px solid #ccc; border-radius:20px; outline:none; }
-    input[type="file"] { display:none; }
-    .emoji-btn, button { background:#0084ff; color:#fff; border:none; border-radius:50%; width:38px; height:38px; margin-left:6px; font-size:18px; cursor:pointer; }
+    .chat-input {display:flex;align-items:center;padding:8px 10px;border-top:1px solid #ccc;background:#f9f9f9}
+    body.night .chat-input {background:#444}
+    .chat-input input[type=text] {flex:1;padding:8px 12px;border:1px solid #ccc;border-radius:20px;outline:none}
+    input[type=file] {display:none}
+    .emoji-btn, button {background:#0084ff;color:#fff;border:none;border-radius:50%;width:38px;height:38px;margin-left:6px;font-size:18px;cursor:pointer}
 
-    .emoji-picker { position:absolute; bottom:78px; right:60px; background:#fff; border:1px solid #ccc; border-radius:8px; padding:8px; display:none; flex-wrap:wrap; max-width:280px; max-height:140px; overflow-y:auto; z-index:1000; }
-    .emoji-picker span { cursor:pointer; font-size:20px; margin:4px; }
+    .emoji-picker {position:absolute;bottom:78px;right:60px;background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px;display:none;flex-wrap:wrap;max-width:280px;max-height:180px;overflow-y:auto;z-index:1000}
+    .emoji-picker span {cursor:pointer;font-size:20px;margin:4px}
 
-    .name-container { display:inline-flex; align-items:center; gap:6px; }
-    .name-container img { width:20px; height:20px; cursor:pointer; opacity:.7; }
+    .name-container {display:inline-flex;align-items:center;gap:6px}
+    .name-container img {width:20px;height:20px;cursor:pointer;opacity:.7}
   </style>
 </head>
 <body>
@@ -46,21 +45,21 @@
       🔵 Messenger Chat
       <button onclick="toggleNightMode()">🌙</button>
     </div>
-
     <div id="messages" class="chat-messages"></div>
 
     <div class="chat-input">
       <div class="name-container">
         <input id="name" placeholder="Your name" disabled />
-        <img src="https://img.icons8.com/ios-glyphs/30/ffffff/edit--v1.png" alt="Edit" onclick="enableNameEdit()" title="Edit name"/>
+        <img src="https://img.icons8.com/ios-glyphs/30/ffffff/edit--v1.png"
+             alt="Edit" onclick="enableNameEdit()" title="Edit name"/>
       </div>
       <button onclick="saveName()">✔️</button>
     </div>
 
-    <div class="chat-input" style="position:relative;">
+    <div class="chat-input" style="position:relative">
       <input id="text" type="text" placeholder="Type a message..." />
       <button class="emoji-btn" id="emojiBtn">😊</button>
-      <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt"/>
+      <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.doc,.docx"/>
       <button onclick="document.getElementById('fileInput').click()">📎</button>
       <button id="sendBtn">➤</button>
       <div id="emojiPicker" class="emoji-picker"></div>
@@ -129,23 +128,25 @@
     const me = getName();
     const d = document.createElement("div");
     d.className = "message " + (m.name===me ? "you":"other");
+    d.dataset.key = k;
     d.innerHTML = `
       <div class="username">${m.name}</div>
       ${m.text ? `<div>${m.text}</div>` : ""}
       ${m.file ? `<div><a href="${m.file}" download="${m.fileName}">${m.fileName}</a></div>` : ""}
       <div class="timestamp">${new Date(m.timestamp).toLocaleTimeString()}</div>
-      ${m.name===me ? `<div class="message-actions">
-        <span onclick="editMessage('${k}')">✏️</span>
-        <span onclick="deleteMessage('${k}')">🗑️</span>
-      </div>` : ""}
+      ${m.name===me
+        ? `<div class="message-actions">
+            <span onclick="editMessage('${k}')">✏️</span>
+            <span onclick="deleteMessage('${k}')">🗑️</span>
+          </div>`
+        : ""}
     `;
-    d.dataset.key = k;
     document.getElementById("messages").appendChild(d);
     d.scrollIntoView();
   });
 
   function editMessage(k) {
-    const newText = prompt("Edit your message:");
+    const newText = prompt("Edit the message:");
     if (newText!=null) ref.child(k).update({ text:newText });
   }
 
@@ -155,16 +156,16 @@
 
   function toggleNightMode() { document.body.classList.toggle("night"); }
 
-  const emojis = ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
+  const emojis = Array.from("😀😃😄😁😆😅😂🤣😊🙃😍😘😗😙😚😋😜🤪🤩🥳😎🤓🧐😉🕵️‍♂️🤔🤭🥰😇🤠");
   const picker = document.getElementById("emojiPicker");
   emojis.forEach(e => {
     const s = document.createElement("span");
     s.textContent = e;
-    s.onclick = () => { document.getElementById("text").value += e; picker.style.display="none"; };
+    s.onclick = () => { document.getElementById("text").value += e; picker.style.display = "none"; };
     picker.appendChild(s);
   });
   document.getElementById("emojiBtn").onclick = () => {
-    picker.style.display = picker.style.display==="flex"?"none":"flex";
+    picker.style.display = picker.style.display === "flex" ? "none" : "flex";
   };
 </script>
 </body>
