@@ -39,6 +39,17 @@
       text-align: center;
       font-size: 1.2em;
       font-weight: bold;
+      position: relative;
+    }
+    .chat-header button {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2em;
     }
     .chat-messages {
       flex: 1;
@@ -67,6 +78,9 @@
       border-radius: 20px;
       outline: none;
     }
+    .chat-input input[type="file"] {
+      flex: 1;
+    }
     .chat-input button {
       background-color: #0084ff;
       color: white;
@@ -74,6 +88,25 @@
       padding: 10px 15px;
       border-radius: 20px;
       cursor: pointer;
+    }
+    .emoji-picker {
+      position: absolute;
+      bottom: 70px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      display: none;
+      flex-wrap: wrap;
+      max-width: 300px;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 1;
+    }
+    .emoji-picker span {
+      cursor: pointer;
+      font-size: 1.2em;
+      margin: 5px;
     }
     .message {
       display: flex;
@@ -98,16 +131,21 @@
 </head>
 <body>
 <div class="chat-container">
-  <div class="chat-header">🔵 Messenger Chat <button onclick="toggleNightMode()" style="float:right;background:none;border:none;color:white;cursor:pointer">🌙</button></div>
+  <div class="chat-header">
+    🔵 Messenger Chat 
+    <button onclick="toggleNightMode()">🌙</button>
+  </div>
   <div id="messages" class="chat-messages"></div>
   <div class="chat-input">
     <input id="name" placeholder="Your name (optional)" />
     <button id="saveNameBtn">Save Name</button>
   </div>
-  <div class="chat-input">
+  <div class="chat-input" style="position: relative;">
     <input id="text" type="text" placeholder="Type a message..." />
-    <input id="fileInput" type="file" />
+    <input id="fileInput" type="file" accept="image/*,.pdf,.doc,.docx,.txt" />
+    <button id="emojiBtn">😊</button>
     <button id="sendBtn">Send</button>
+    <div id="emojiPicker" class="emoji-picker"></div>
   </div>
 </div>
 
@@ -154,20 +192,22 @@
     document.getElementById("name").value = name;
     const text = document.getElementById("text").value.trim();
     const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
     const timestamp = new Date().toISOString();
 
-    if (!text && !fileInput.files.length) return;
+    if (!text && !file) return;
 
     const messageData = { name, timestamp };
     if (text) messageData.text = text;
-    if (fileInput.files.length) {
+
+    if (file) {
       const reader = new FileReader();
       reader.onload = function (e) {
         messageData.file = e.target.result;
-        messageData.fileName = fileInput.files[0].name;
+        messageData.fileName = file.name;
         messagesRef.push(messageData);
       };
-      reader.readAsDataURL(fileInput.files[0]);
+      reader.readAsDataURL(file);
     } else {
       messagesRef.push(messageData);
     }
@@ -202,7 +242,7 @@
     el.innerHTML = `
       <div class="username">${msg.name}</div>
       ${msg.text ? `<div>${msg.text}</div>` : ""}
-      ${msg.file ? `<div><a href="${msg.file}" target="_blank">📎 ${msg.fileName}</a></div>` : ""}
+      ${msg.file ? `<div><a href="${msg.file}" download="${msg.fileName}" target="_blank">📎 ${msg.fileName}</a></div>` : ""}
       <div class="timestamp">${formatTime(msg.timestamp)}</div>
     `;
     document.getElementById("messages").appendChild(el);
@@ -212,6 +252,26 @@
   function toggleNightMode() {
     document.body.classList.toggle("night");
   }
+
+  // Emoji Picker
+  const emojiList = ['😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😍','😘','😗','😙','😚','😋','😜','🤪','🤩','🥳','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲','🥺','😢','😭','😤','😠','😡','🤬'];
+  const emojiPicker = document.getElementById("emojiPicker");
+  const emojiBtn = document.getElementById("emojiBtn");
+  const textInput = document.getElementById("text");
+
+  emojiList.forEach(emoji => {
+    const span = document.createElement("span");
+    span.textContent = emoji;
+    span.onclick = () => {
+      textInput.value += emoji;
+      emojiPicker.style.display = "none";
+    };
+    emojiPicker.appendChild(span);
+  });
+
+  emojiBtn.onclick = () => {
+    emojiPicker.style.display = emojiPicker.style.display === "none" ? "flex" : "none";
+  };
 </script>
 </body>
 </html>
