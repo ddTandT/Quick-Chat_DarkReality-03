@@ -13,6 +13,10 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      transition: background-color 0.3s;
+    }
+    body.night {
+      background-color: #1e1e1e;
     }
     .chat-container {
       width: 400px;
@@ -23,6 +27,10 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: background-color 0.3s;
+    }
+    body.night .chat-container {
+      background-color: #2e2e2e;
     }
     .chat-header {
       background-color: #0084ff;
@@ -38,6 +46,9 @@
       overflow-y: auto;
       background-color: #e5ddd5;
     }
+    body.night .chat-messages {
+      background-color: #3a3a3a;
+    }
     .chat-input {
       display: flex;
       flex-wrap: wrap;
@@ -45,6 +56,9 @@
       padding: 10px;
       border-top: 1px solid #ccc;
       background-color: #f9f9f9;
+    }
+    body.night .chat-input {
+      background-color: #444;
     }
     .chat-input input[type="text"] {
       flex: 1;
@@ -84,7 +98,7 @@
 </head>
 <body>
 <div class="chat-container">
-  <div class="chat-header">🔵 Messenger Chat</div>
+  <div class="chat-header">🔵 Messenger Chat <button onclick="toggleNightMode()" style="float:right;background:none;border:none;color:white;cursor:pointer">🌙</button></div>
   <div id="messages" class="chat-messages"></div>
   <div class="chat-input">
     <input id="name" placeholder="Your name (optional)" />
@@ -194,6 +208,10 @@
     document.getElementById("messages").appendChild(el);
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
   });
+
+  function toggleNightMode() {
+    document.body.classList.toggle("night");
+  }
 </script>
 </body>
 </html>
