@@ -3,148 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Messenger Chat</title>
-  <style>
-    /* CSS styles omitted here for brevity but will be included in the final version */
-  </style>
+  <title>Advanced Messenger Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">
-      🔵 Messenger Chat
-      <button onclick="toggleNightMode()">🌙</button>
-    </div>
 
-    <div id="messages" class="chat-messages"></div>
-
-    <div class="chat-input">
-      <div class="name-container">
-        <input id="name" placeholder="Your name (optional)" />
-        <img src="https://img.icons8.com/ios-glyphs/30/ffffff/edit--v1.png" alt="Edit" onclick="enableNameEdit()" title="Edit name"/>
-        <button onclick="saveName()">✔️</button>
-      </div>
-    </div>
-
-    <div class="chat-input" style="position: relative;">
-      <input id="text" type="text" placeholder="Type a message..." />
-      <button class="emoji-btn" id="emojiBtn">😊</button>
-      <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt"/>
-      <button onclick="document.getElementById('fileInput').click()">📎</button>
-      <button id="sendBtn">➤</button>
-      <div id="emojiPicker" class="emoji-picker"></div>
-    </div>
+<div class="chat-container">
+  <div class="chat-header">
+    🔵 Messenger Chat
+    <button class="toggle-mode" onclick="toggleDarkMode()">🌙</button>
   </div>
+  <div id="messages" class="chat-messages"></div>
+  <div class="chat-input">
+    <input id="name" placeholder="Your name (optional)" />
+    <input id="text" placeholder="Type a message..." />
+    <input type="file" id="fileInput" style="display:none;" />
+    <button onclick="document.getElementById('fileInput').click()">📎</button>
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <script>
-    const fbConfig = {
-      apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
-      authDomain: "live-chat-app-5ea98.firebaseapp.com",
-      databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
-      projectId: "live-chat-app-5ea98",
-      storageBucket: "live-chat-app-5ea98.appspot.com",
-      messagingSenderId: "58710835031",
-      appId: "1:58710835031:web:9248de0eba59c09c0fc812"
-    };
-    firebase.initializeApp(fbConfig);
-    const db = firebase.database();
-    const messagesRef = db.ref("messages");
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+<script src="script.js"></script>
 
-    function getUserName() {
-      return localStorage.getItem("chatUserName") || "";
-    }
-    function saveName() {
-      const name = document.getElementById("name").value.trim() || getUserName();
-      localStorage.setItem("chatUserName", name);
-      document.getElementById("name").value = name;
-    }
-    function enableNameEdit() {
-      document.getElementById("name").removeAttribute("disabled");
-      document.getElementById("name").focus();
-    }
-    window.addEventListener("load", () => {
-      const saved = getUserName();
-      if (saved) document.getElementById("name").value = saved;
-      document.getElementById("name").setAttribute("disabled", true);
-    });
-
-    document.getElementById("sendBtn").addEventListener("click", sendMessage);
-    document.getElementById("text").addEventListener("keydown", e => {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    function sendMessage() {
-      saveName();
-      const name = getUserName();
-      const text = document.getElementById("text").value.trim();
-      const file = document.getElementById("fileInput").files[0];
-      if (!text && !file) return;
-
-      const data = { name, timestamp: new Date().toISOString() };
-      if (text) data.text = text;
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          data.file = e.target.result;
-          data.fileName = file.name;
-          messagesRef.push(data);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        messagesRef.push(data);
-      }
-      document.getElementById("text").value = "";
-      document.getElementById("fileInput").value = "";
-    }
-
-    messagesRef.on("child_added", snap => {
-      const msg = snap.val(), key = snap.key;
-      const name = getUserName();
-      const div = document.createElement("div");
-      div.className = "message " + (msg.name === name ? "you" : "other");
-      div.innerHTML = `
-        <div class="username">${msg.name}</div>
-        ${msg.text ? `<div>${msg.text}</div>` : ""}
-        ${msg.file ? `<div><a href="${msg.file}" download="${msg.fileName}">${msg.fileName}</a></div>` : ""}
-        <div class="timestamp">${new Date(msg.timestamp).toLocaleTimeString()}</div>
-        ${msg.name === name ? `<div class="message-actions">
-          <span onclick="editMessage('${key}')">✏️</span>
-          <span onclick="deleteMessage('${key}')">🗑️</span>
-        </div>` : ""}
-      `;
-      document.getElementById("messages").append(div);
-      div.scrollIntoView();
-    });
-
-    function editMessage(k) {
-      const newText = prompt("Edit your message:");
-      if (!newText) return;
-      messagesRef.child(k).update({ text: newText });
-    }
-    function deleteMessage(k) {
-      if (confirm("Are you sure you want to delete this message?")) {
-        messagesRef.child(k).remove();
-      }
-    }
-
-    function toggleNightMode() {
-      document.body.classList.toggle("night");
-    }
-
-    const emojis = ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
-    const picker = document.getElementById("emojiPicker");
-    const textIn = document.getElementById("text");
-    emojis.forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.onclick = () => { textIn.value += e; picker.style.display = "none"; };
-      picker.appendChild(span);
-    });
-    document.getElementById("emojiBtn").onclick = () => {
-      picker.style.display = picker.style.display === "none" ? "flex" : "none";
-    };
-  </script>
 </body>
 </html>

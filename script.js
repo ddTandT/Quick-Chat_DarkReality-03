@@ -1,108 +1,92 @@
-const fbConfig = {
-  apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
-  authDomain: "live-chat-app-5ea98.firebaseapp.com",
-  databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
-  projectId: "live-chat-app-5ea98",
-  storageBucket: "live-chat-app-5ea98.appspot.com",
-  messagingSenderId: "58710835031",
-  appId: "1:58710835031:web:9248de0eba59c09c0fc812",
-  measurementId: "G-M7BMS3FS2L"
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  databaseURL: "YOUR_DATABASE_URL",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
-firebase.initializeApp(fbConfig);
+
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const storage = firebase.storage();
 const messagesRef = db.ref("messages");
 
+let userName = "";
+
 function getUserName() {
-  return localStorage.getItem("chatUserName") || "";
+  if (!userName) {
+    const inputName = document.getElementById("name").value.trim();
+    userName = inputName || "Guest_" + Math.floor(Math.random() * 10000);
+    document.getElementById("name").value = userName;
+  }
+  return userName;
 }
-function saveName() {
-  const name = document.getElementById("name").value.trim() || getUserName();
-  localStorage.setItem("chatUserName", name);
-  document.getElementById("name").value = name;
+
+function sendMessage() {
+  const name = getUserName();
+  const text = document.getElementById("text").value.trim();
+  if (!text) return;
+
+  const timestamp = new Date().toISOString();
+  messagesRef.push({ name, text, timestamp });
+  document.getElementById("text").value = "";
 }
-function enableNameEdit() {
-  document.getElementById("name").removeAttribute("disabled");
-  document.getElementById("name").focus();
-}
-window.addEventListener("load", () => {
-  const saved = getUserName();
-  if (saved) document.getElementById("name").value = saved;
-  document.getElementById("name").setAttribute("disabled", true);
-});
 
 document.getElementById("sendBtn").addEventListener("click", sendMessage);
-document.getElementById("text").addEventListener("keydown", e => {
+document.getElementById("text").addEventListener("keydown", function(e) {
   if (e.key === "Enter") sendMessage();
 });
 
-function sendMessage() {
-  saveName();
-  const name = getUserName();
-  const text = document.getElementById("text").value.trim();
-  const file = document.getElementById("fileInput").files[0];
-  if (!text && !file) return;
+messagesRef.on("child_added", (snapshot) => {
+  const msg = snapshot.val();
+  const key = snapshot.key;
+  const currentUser = getUserName();
+  const wrapper = document.createElement("div");
+  wrapper.className = "message " + (msg.name === currentUser ? "you" : "other");
 
-  const data = { name, timestamp: new Date().toISOString() };
-  if (text) data.text = text;
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      data.file = e.target.result;
-      data.fileName = file.name;
-      messagesRef.push(data);
+  const messageText = document.createElement("div");
+  messageText.innerHTML = msg.text.includes("https://") && msg.text.match(/(jpg|jpeg|png|gif)/i)
+    ? `<img src="${msg.text}" style="max-width: 100%;">`
+    : `${msg.name}: ${msg.text}`;
+
+  wrapper.appendChild(messageText);
+
+  if (msg.name === currentUser) {
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️";
+    editBtn.onclick = () => {
+      const newText = prompt("Edit your message:", msg.text);
+      if (newText) messagesRef.child(key).update({ text: newText });
     };
-    reader.readAsDataURL(file);
-  } else {
-    messagesRef.push(data);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "❌";
+    deleteBtn.onclick = () => messagesRef.child(key).remove();
+
+    wrapper.appendChild(editBtn);
+    wrapper.appendChild(deleteBtn);
   }
-  document.getElementById("text").value = "";
-  document.getElementById("fileInput").value = "";
-}
 
-messagesRef.on("child_added", snap => {
-  const msg = snap.val(), key = snap.key;
+  document.getElementById("messages").appendChild(wrapper);
+  document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+});
+
+document.getElementById("fileInput").addEventListener("change", function() {
+  const file = this.files[0];
+  if (!file) return;
   const name = getUserName();
-  const div = document.createElement("div");
-  div.className = "message " + (msg.name === name ? "you" : "other");
-  div.innerHTML = \`
-    <div class="username">\${msg.name}</div>
-    \${msg.text ? `<div>\${msg.text}</div>` : ""}
-    \${msg.file ? `<div><a href="\${msg.file}" download="\${msg.fileName}">\${msg.fileName}</a></div>` : ""}
-    <div class="timestamp">\${new Date(msg.timestamp).toLocaleTimeString()}</div>
-    \${msg.name === name ? `<div class="message-actions">
-      <span onclick="editMessage('\${key}')">✏️</span>
-      <span onclick="deleteMessage('\${key}')">🗑️</span>
-    </div>` : ""}
-  \`;
-  div.dataset.key = key;
-  document.getElementById("messages").append(div);
-  div.scrollIntoView();
+  const ref = storage.ref('uploads/' + Date.now() + "_" + file.name);
+  ref.put(file).then(snapshot => {
+    snapshot.ref.getDownloadURL().then(url => {
+      messagesRef.push({ name, text: url, timestamp: new Date().toISOString() });
+    });
+  });
 });
 
-function editMessage(k) {
-  const newText = prompt("Edit your message:");
-  if (!newText) return;
-  messagesRef.child(k).update({ text: newText });
-  location.reload();
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+  const icon = document.querySelector(".toggle-mode");
+  icon.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
 }
-function deleteMessage(k) {
-  messagesRef.child(k).remove();
-  location.reload();
-}
-
-function toggleNightMode() {
-  document.body.classList.toggle("night");
-}
-
-const emojis = ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
-const picker = document.getElementById("emojiPicker");
-const textIn = document.getElementById("text");
-emojis.forEach(e => {
-  const span = document.createElement("span");
-  span.textContent = e;
-  span.onclick = () => { textIn.value += e; picker.style.display = "none"; };
-  picker.appendChild(span);
-});
-document.getElementById("emojiBtn").onclick = () => {
-  picker.style.display = picker.style.display === "none" ? "flex" : "none";
-};
