@@ -1,0 +1,4 @@
+/* Minimal stub to allow night mode and structure */
+body { margin: 0; font-family: Arial, sans-serif; }
+.night { background: #111; color: #eee; }
+/* Additional styles can be reused from user's original */
