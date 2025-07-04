@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Messenger Chat</title>
   <style>
-    /* Same CSS as before with avatar styles */
+    /* Keep your existing styles — unchanged except avatar, user update UI */
     body {
       margin: 0;
       font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
@@ -32,19 +32,18 @@
     }
     body.night .chat-container {
       background: #242526;
-      box-shadow: 0 2px 12px rgba(255,255,255,0.1);
     }
     .chat-header {
       background: #0084ff;
       color: white;
       padding: 12px;
-      font-weight: 600;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .chat-header .title {
       font-size: 1rem;
+      font-weight: 600;
     }
     .chat-header button {
       background: transparent;
@@ -66,7 +65,6 @@
       display: flex;
       align-items: flex-start;
       margin-bottom: 14px;
-      max-width: 100%;
     }
     .message.you {
       flex-direction: row-reverse;
@@ -191,7 +189,10 @@
   <div class="chat-container">
     <div class="chat-header">
       <div class="title">Messenger Chat</div>
-      <button id="nightModeBtn">🌙</button>
+      <div>
+        <button id="editNameBtn" title="Change Name">✏️</button>
+        <button id="nightModeBtn" title="Toggle Night Mode">🌙</button>
+      </div>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
@@ -202,11 +203,10 @@
       <button id="sendBtn">➤</button>
     </div>
     <div class="emoji-picker" id="emojiPicker"></div>
-  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, remove, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, remove, update, set, get, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
@@ -221,15 +221,17 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, "messages");
+    const usersRef = ref(db, "users");
 
-    const messagesDiv = document.getElementById("messages");
     const textInput = document.getElementById("text");
     const sendBtn = document.getElementById("sendBtn");
     const fileInput = document.getElementById("fileInput");
     const fileBtn = document.getElementById("fileBtn");
     const emojiBtn = document.getElementById("emojiBtn");
     const emojiPicker = document.getElementById("emojiPicker");
+    const messagesDiv = document.getElementById("messages");
     const nightModeBtn = document.getElementById("nightModeBtn");
+    const editNameBtn = document.getElementById("editNameBtn");
 
     const avatars = [
       "https://i.pravatar.cc/150?img=1",
@@ -240,39 +242,42 @@
       "https://i.pravatar.cc/150?img=6",
       "https://i.pravatar.cc/150?img=7",
       "https://i.pravatar.cc/150?img=8",
-      "https://i.pravatar.cc/150?img=9",
-      "https://i.pravatar.cc/150?img=10"
     ];
 
-    function getUserInfo() {
+    function getRandomAvatar() {
+      return avatars[Math.floor(Math.random() * avatars.length)];
+    }
+
+    async function getUser() {
       let name = sessionStorage.getItem("username");
       let avatar = sessionStorage.getItem("avatar");
-
       if (!name) {
         name = prompt("Enter your name:") || "Anonymous";
+        avatar = getRandomAvatar();
         sessionStorage.setItem("username", name);
-      }
-
-      if (!avatar) {
-        avatar = avatars[Math.floor(Math.random() * avatars.length)];
         sessionStorage.setItem("avatar", avatar);
+        await set(child(usersRef, name), { avatar });
       }
-
       return { name, avatar };
     }
 
+    editNameBtn.onclick = async () => {
+      const newName = prompt("Enter new name:")?.trim();
+      if (!newName) return;
+      const avatar = sessionStorage.getItem("avatar") || getRandomAvatar();
+      sessionStorage.setItem("username", newName);
+      sessionStorage.setItem("avatar", avatar);
+      await set(child(usersRef, newName), { avatar });
+      alert("Name updated!");
+    };
+
     async function sendMessage() {
-      const { name, avatar } = getUserInfo();
+      const { name } = await getUser();
       const text = textInput.value.trim();
       const file = fileInput.files[0];
       if (!text && !file) return;
 
-      const data = {
-        name,
-        avatar,
-        timestamp: new Date().toISOString()
-      };
-
+      let data = { name, timestamp: new Date().toISOString() };
       if (text) data.text = text;
       if (file) {
         const reader = new FileReader();
@@ -297,16 +302,22 @@
       return div.innerHTML;
     }
 
-    onChildAdded(messagesRef, snap => {
-      const msg = snap.val();
-      const key = snap.key;
-      const me = sessionStorage.getItem("username");
-      const isMe = msg.name === me;
+    const avatarCache = {};
 
+    onChildAdded(messagesRef, async snap => {
+      const msg = snap.val(), key = snap.key;
+      const me = sessionStorage.getItem("username");
+      if (!avatarCache[msg.name]) {
+        const userSnap = await get(child(usersRef, msg.name));
+        avatarCache[msg.name] = userSnap.val()?.avatar || getRandomAvatar();
+      }
+
+      const avatar = avatarCache[msg.name];
       const div = document.createElement("div");
+      const isMe = msg.name === me;
       div.className = "message " + (isMe ? "you" : "other");
       div.innerHTML = `
-        <img src="${msg.avatar}" class="avatar" />
+        <img src="${avatar}" class="avatar">
         <div class="message-content">
           <div class="sender">${escapeHTML(msg.name)}</div>
           <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
@@ -337,23 +348,23 @@
 
     const emojis = ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
     emojis.forEach(e => {
-      const span = document.createElement('span');
+      const span = document.createElement("span");
       span.textContent = e;
-      span.onclick = () => { textInput.value += e; emojiPicker.style.display = 'none'; textInput.focus(); };
+      span.onclick = () => { textInput.value += e; emojiPicker.style.display = "none"; textInput.focus(); };
       emojiPicker.appendChild(span);
     });
 
-    emojiBtn.onclick = () => emojiPicker.style.display = (emojiPicker.style.display === 'flex' ? 'none' : 'flex');
-    document.addEventListener('click', e => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = 'none';
+    emojiBtn.onclick = () => emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
+    document.addEventListener("click", e => {
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = "none";
     });
 
     nightModeBtn.onclick = () => {
-      document.body.classList.toggle('night');
-      nightModeBtn.textContent = document.body.classList.contains('night') ? '☀️' : '🌙';
+      document.body.classList.toggle("night");
+      nightModeBtn.textContent = document.body.classList.contains("night") ? "☀️" : "🌙";
     };
 
-    getUserInfo(); // ensure user info is initialized
+    getUser(); // Ensure user is initialized
   </script>
 </body>
 </html>
