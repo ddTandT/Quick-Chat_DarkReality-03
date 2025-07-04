@@ -75,6 +75,14 @@
       align-self: flex-start;
       text-align: left;
     }
+    .message .sender {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 2px;
+    }
+    body.night .message .sender {
+      color: #aaa;
+    }
     .message .bubble {
       background: #0084ff;
       color: white;
@@ -270,10 +278,10 @@
 
       div.className = 'message ' + (isMe ? 'you' : 'other');
       div.innerHTML = `
-        <div class="bubble">${msg.text ? escapeHTML(msg.text) : msg.fileName || ''}</div>
+        <div class="sender">${escapeHTML(msg.name)}</div>
+        <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
         ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
         <div class="info">
-          <span>${msg.name}</span>
           <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
           ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ''}
         </div>
@@ -284,7 +292,7 @@
       if (isMe) {
         div.querySelector('.edit').onclick = () => {
           const text = prompt('Edit:', msg.text);
-          if (text) update(ref(db, 'messages/' + key), { text });
+          if (text !== null) update(ref(db, 'messages/' + key), { text });
         };
         div.querySelector('.del').onclick = () => {
           if (confirm('Delete?')) remove(ref(db, 'messages/' + key));
