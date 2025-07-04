@@ -28,6 +28,7 @@
       flex-direction: column;
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
       overflow: hidden;
+      position: relative;
     }
     body.night .chat-container {
       background: #242526;
@@ -42,8 +43,9 @@
       justify-content: space-between;
       align-items: center;
     }
-    .chat-header .title {
-      font-size: 1rem;
+    .chat-header .actions {
+      display: flex;
+      gap: 8px;
     }
     .chat-header button {
       background: transparent;
@@ -190,7 +192,10 @@
   <div class="chat-container">
     <div class="chat-header">
       <div class="title">Messenger Chat</div>
-      <button id="nightModeBtn">🌙</button>
+      <div class="actions">
+        <button id="changeAvatarBtn" title="Change Avatar">🧑‍🎨</button>
+        <button id="nightModeBtn">🌙</button>
+      </div>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
@@ -229,32 +234,43 @@
     const emojiPicker = document.getElementById("emojiPicker");
     const messagesDiv = document.getElementById("messages");
     const nightModeBtn = document.getElementById("nightModeBtn");
+    const changeAvatarBtn = document.getElementById("changeAvatarBtn");
 
-    async function getUserData() {
+    function getUserData() {
       let name = sessionStorage.getItem("username");
       let avatar = sessionStorage.getItem("avatar");
-      if (!name || !avatar) {
+      if (!name) {
         name = prompt("Enter your name:") || "Anonymous";
+        sessionStorage.setItem("username", name);
+      }
+      if (!avatar) {
+        return changeAvatar().then(() => ({
+          name: sessionStorage.getItem("username"),
+          avatar: sessionStorage.getItem("avatar")
+        }));
+      }
+      return Promise.resolve({ name, avatar });
+    }
+
+    function changeAvatar() {
+      return new Promise(resolve => {
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*";
         input.click();
-        await new Promise(resolve => {
-          input.onchange = async () => {
-            const file = input.files[0];
-            if (file) {
-              avatar = await toBase64(file);
-              sessionStorage.setItem("username", name);
-              sessionStorage.setItem("avatar", avatar);
-              resolve();
-            } else {
-              alert("Avatar is required!");
-              location.reload();
-            }
-          };
-        });
-      }
-      return { name, avatar };
+        input.onchange = async () => {
+          const file = input.files[0];
+          if (file) {
+            const base64 = await toBase64(file);
+            sessionStorage.setItem("avatar", base64);
+            alert("Avatar updated!");
+            resolve();
+          } else {
+            alert("No file selected.");
+            resolve();
+          }
+        };
+      });
     }
 
     async function sendMessage() {
@@ -288,6 +304,7 @@
     sendBtn.addEventListener("click", sendMessage);
     textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
     fileBtn.addEventListener("click", () => fileInput.click());
+    changeAvatarBtn.addEventListener("click", changeAvatar);
 
     function escapeHTML(text) {
       const d = document.createElement("div");
