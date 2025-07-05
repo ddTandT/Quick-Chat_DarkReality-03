@@ -28,7 +28,6 @@
       flex-direction: column;
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
       overflow: hidden;
-      position: relative;
     }
     body.night .chat-container {
       background: #242526;
@@ -42,10 +41,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative;
     }
     .chat-header .title {
       font-size: 1rem;
+    }
+    .chat-header .actions {
+      display: flex;
+      gap: 10px;
     }
     .chat-header button {
       background: transparent;
@@ -53,11 +55,6 @@
       font-size: 1.2rem;
       color: white;
       cursor: pointer;
-      margin-left: 8px;
-    }
-    .chat-header .settings {
-      display: flex;
-      align-items: center;
     }
     .chat-messages {
       flex: 1;
@@ -84,7 +81,6 @@
       border-radius: 50%;
       margin: 0 8px;
       object-fit: cover;
-      flex-shrink: 0;
     }
     .message-content {
       max-width: 70%;
@@ -105,7 +101,6 @@
       padding: 8px 12px;
       border-radius: 18px;
       word-wrap: break-word;
-      white-space: pre-wrap;
     }
     .message.you .bubble {
       background: #dcf8c6;
@@ -151,7 +146,6 @@
       border-radius: 18px;
       background: #f0f2f5;
       outline: none;
-      color: inherit;
     }
     body.night .chat-input input[type="text"] {
       background: #3a3b3c;
@@ -189,72 +183,10 @@
       cursor: pointer;
       padding: 4px;
       border-radius: 4px;
-      user-select: none;
     }
     .emoji-picker span:hover {
       background: #0084ff;
       color: white;
-    }
-
-    /* Modal for user info editing */
-    #userModal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      display: none;
-    }
-    #userModal.active {
-      display: flex;
-    }
-    #userModal .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 320px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-      color: #222;
-    }
-    body.night #userModal .modal-content {
-      background: #242526;
-      color: #e4e6eb;
-    }
-    #userModal label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-    #userModal input[type="text"], #userModal select {
-      width: 100%;
-      padding: 8px 10px;
-      margin-bottom: 15px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-      box-sizing: border-box;
-      color: inherit;
-      background: inherit;
-    }
-    body.night #userModal input[type="text"], 
-    body.night #userModal select {
-      border: 1px solid #555;
-    }
-    #userModal button {
-      padding: 10px 16px;
-      background: #0084ff;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-    }
-    #userModal button:hover {
-      background: #1877f2;
     }
   </style>
 </head>
@@ -262,39 +194,20 @@
   <div class="chat-container">
     <div class="chat-header">
       <div class="title">Quick Chat</div>
-      <div class="settings">
-        <button id="editUserBtn" title="Edit Username/Gender">⚙️</button>
-        <button id="nightModeBtn" title="Toggle Night Mode">🌙</button>
+      <div class="actions">
+        <button id="editUserBtn">✏️</button>
+        <button id="nightModeBtn">🌙</button>
       </div>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
       <input id="text" type="text" placeholder="Type a message…" autocomplete="off" />
-      <button id="emojiBtn" title="Emoji picker">😊</button>
+      <button id="emojiBtn">😊</button>
       <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" />
-      <button id="fileBtn" title="Attach file">📎</button>
-      <button id="sendBtn" title="Send message">➤</button>
+      <button id="fileBtn">📎</button>
+      <button id="sendBtn">➤</button>
     </div>
     <div class="emoji-picker" id="emojiPicker"></div>
-  </div>
-
-  <!-- User info modal -->
-  <div id="userModal">
-    <div class="modal-content">
-      <h3>Edit Your Info</h3>
-      <form id="userForm">
-        <label for="usernameInput">Username:</label>
-        <input type="text" id="usernameInput" name="username" required minlength="1" maxlength="30" autocomplete="off" />
-        <label for="genderSelect">Gender:</label>
-        <select id="genderSelect" name="gender" required>
-          <option value="" disabled>Select gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-        <button type="submit">Save</button>
-      </form>
-    </div>
   </div>
 
   <script type="module">
@@ -315,140 +228,59 @@
     const db = getDatabase(app);
     const messagesRef = ref(db, "messages");
 
+    const avatars = {
+      male: ["https://i.pravatar.cc/150?img=1","https://i.pravatar.cc/150?img=3","https://i.pravatar.cc/150?img=5"],
+      female: ["https://i.pravatar.cc/150?img=2","https://i.pravatar.cc/150?img=4","https://i.pravatar.cc/150?img=6"]
+    };
+
+    const emojiPicker = document.getElementById("emojiPicker");
+    const emojiBtn = document.getElementById("emojiBtn");
+    const nightModeBtn = document.getElementById("nightModeBtn");
+    const editUserBtn = document.getElementById("editUserBtn");
+    const messagesDiv = document.getElementById("messages");
     const textInput = document.getElementById("text");
     const sendBtn = document.getElementById("sendBtn");
     const fileInput = document.getElementById("fileInput");
     const fileBtn = document.getElementById("fileBtn");
-    const emojiBtn = document.getElementById("emojiBtn");
-    const emojiPicker = document.getElementById("emojiPicker");
-    const messagesDiv = document.getElementById("messages");
-    const nightModeBtn = document.getElementById("nightModeBtn");
-    const editUserBtn = document.getElementById("editUserBtn");
-
-    const userModal = document.getElementById("userModal");
-    const userForm = document.getElementById("userForm");
-    const usernameInput = document.getElementById("usernameInput");
-    const genderSelect = document.getElementById("genderSelect");
-
-    // Avatar sets by gender
-    const maleAvatars = [
-      "https://i.pravatar.cc/150?img=1",
-      "https://i.pravatar.cc/150?img=2",
-      "https://i.pravatar.cc/150?img=3",
-      "https://i.pravatar.cc/150?img=4",
-      "https://i.pravatar.cc/150?img=5"
-    ];
-    const femaleAvatars = [
-      "https://i.pravatar.cc/150?img=6",
-      "https://i.pravatar.cc/150?img=7",
-      "https://i.pravatar.cc/150?img=8",
-      "https://i.pravatar.cc/150?img=9",
-      "https://i.pravatar.cc/150?img=10"
-    ];
-    const otherAvatars = [
-      "https://i.pravatar.cc/150?img=11",
-      "https://i.pravatar.cc/150?img=12",
-      "https://i.pravatar.cc/150?img=13",
-      "https://i.pravatar.cc/150?img=14",
-      "https://i.pravatar.cc/150?img=15"
-    ];
 
     function hashString(str) {
       let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0; 
-      }
+      for (let i = 0; i < str.length; i++) hash = (hash << 5) - hash + str.charCodeAt(i);
       return Math.abs(hash);
     }
 
-    function getAvatarSet(gender) {
-      switch (gender) {
-        case "male": return maleAvatars;
-        case "female": return femaleAvatars;
-        default: return otherAvatars;
-      }
-    }
-
-    function getDailyAvatar(name, gender) {
-      const dateStr = new Date().toISOString().slice(0, 10); 
-      const seed = hashString(name + dateStr);
-      const set = getAvatarSet(gender);
-      return set[seed % set.length];
-    }
-
-    function getUserName() {
-      return sessionStorage.getItem("username") || "";
-    }
-    function getUserGender() {
-      return sessionStorage.getItem("gender") || "";
-    }
-
-    function getUserAvatar() {
-      const cachedDate = sessionStorage.getItem("avatarDate");
-      const today = new Date().toISOString().slice(0, 10);
-      if (cachedDate !== today) {
-        const avatar = getDailyAvatar(getUserName(), getUserGender());
-        sessionStorage.setItem("avatar", avatar);
-        sessionStorage.setItem("avatarDate", today);
-      }
-      return sessionStorage.getItem("avatar");
-    }
-
-    // Show modal for first time or if info missing
-    function checkUserInfo() {
-      const username = getUserName();
-      const gender = getUserGender();
-      if (!username || !gender) {
-        showUserModal();
-      }
-    }
-
-    function showUserModal() {
-      usernameInput.value = getUserName();
-      genderSelect.value = getUserGender();
-      userModal.classList.add("active");
-      usernameInput.focus();
-    }
-    function hideUserModal() {
-      userModal.classList.remove("active");
-    }
-
-    userForm.addEventListener("submit", e => {
-      e.preventDefault();
-      const username = usernameInput.value.trim();
-      const gender = genderSelect.value;
-
-      if (!username) {
-        alert("Please enter a valid username.");
-        return;
-      }
-      if (!gender) {
-        alert("Please select a gender.");
-        return;
-      }
-
-      sessionStorage.setItem("username", username);
-      sessionStorage.setItem("gender", gender);
-      // Clear avatarDate so avatar refreshes for new gender/username
-      sessionStorage.removeItem("avatarDate");
-      getUserAvatar(); // recalc avatar and cache
-
-      hideUserModal();
-    });
-
-    editUserBtn.addEventListener("click", showUserModal);
-
-    // Sending message logic
-    async function sendMessage() {
-      const name = getUserName();
-      const gender = getUserGender();
+    function getUser() {
+      let name = sessionStorage.getItem("username");
+      let gender = sessionStorage.getItem("gender");
       if (!name || !gender) {
-        alert("Please set your username and gender.");
-        showUserModal();
-        return;
+        name = prompt("Enter your name:") || "Anonymous";
+        gender = prompt("Enter your gender (male/female):").toLowerCase();
+        if (!['male','female'].includes(gender)) gender = "male";
+        sessionStorage.setItem("username", name);
+        sessionStorage.setItem("gender", gender);
       }
-      const avatar = getUserAvatar();
+      return { name, gender };
+    }
+
+    function getDailyAvatar(gender) {
+      const day = new Date().toISOString().slice(0,10);
+      const list = avatars[gender];
+      const index = hashString(day + gender) % list.length;
+      return list[index];
+    }
+
+    function toBase64(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.readAsDataURL(file);
+        r.onload = () => res(r.result);
+        r.onerror = e => rej(e);
+      });
+    }
+
+    async function sendMessage() {
+      const { name, gender } = getUser();
+      const avatar = getDailyAvatar(gender);
       const text = textInput.value.trim();
       const file = fileInput.files[0];
       if (!text && !file) return;
@@ -466,19 +298,6 @@
       emojiPicker.style.display = "none";
     }
 
-    function toBase64(file) {
-      return new Promise((res, rej) => {
-        const r = new FileReader();
-        r.readAsDataURL(file);
-        r.onload = () => res(r.result);
-        r.onerror = e => rej(e);
-      });
-    }
-
-    sendBtn.addEventListener("click", sendMessage);
-    textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
-    fileBtn.addEventListener("click", () => fileInput.click());
-
     function escapeHTML(text) {
       const d = document.createElement("div");
       d.textContent = text;
@@ -487,13 +306,13 @@
 
     onChildAdded(messagesRef, snap => {
       const msg = snap.val(), key = snap.key;
-      const me = getUserName();
+      const me = sessionStorage.getItem("username");
       const div = document.createElement("div");
       const isMe = msg.name === me;
 
       div.className = 'message ' + (isMe ? 'you' : 'other');
       div.innerHTML = `
-        <img src="${msg.avatar}" alt="avatar" class="avatar" />
+        <img src="${msg.avatar}" class="avatar">
         <div class="message-content">
           <div class="sender">${escapeHTML(msg.name)}</div>
           <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
@@ -509,11 +328,11 @@
 
       if (isMe) {
         div.querySelector('.edit')?.addEventListener("click", () => {
-          const text = prompt('Edit your message:', msg.text);
+          const text = prompt('Edit:', msg.text);
           if (text !== null) update(ref(db, 'messages/' + key), { text });
         });
         div.querySelector('.del')?.addEventListener("click", () => {
-          if (confirm('Delete this message?')) remove(ref(db, 'messages/' + key));
+          if (confirm('Delete?')) remove(ref(db, 'messages/' + key));
         });
       }
     });
@@ -536,9 +355,16 @@
       nightModeBtn.textContent = document.body.classList.contains('night') ? '☀️' : '🌙';
     };
 
-    // Initialization
-    checkUserInfo();
+    sendBtn.onclick = sendMessage;
+    textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+    fileBtn.onclick = () => fileInput.click();
 
+    editUserBtn.onclick = () => {
+      const name = prompt("Change your name:", sessionStorage.getItem("username"));
+      if (name) sessionStorage.setItem("username", name);
+      const gender = prompt("Change gender (male/female):", sessionStorage.getItem("gender"));
+      if (['male','female'].includes(gender)) sessionStorage.setItem("gender", gender);
+    };
   </script>
 </body>
 </html>
