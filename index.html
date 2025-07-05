@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Messenger Chat</title>
   <style>
+    /* Basic styling including .avatar and profile editing button */
     body {
       margin: 0;
       font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
@@ -16,9 +17,7 @@
       overflow: hidden;
       transition: background 0.3s;
     }
-    body.night {
-      background: #18191a;
-    }
+    body.night { background: #18191a; }
     .chat-container {
       width: 100%; max-width: 380px;
       height: 600px;
@@ -42,44 +41,28 @@
       justify-content: space-between;
       align-items: center;
     }
-    .chat-header .title {
-      font-size: 1rem;
-    }
-    .chat-header button {
-      background: transparent;
-      border: none;
-      font-size: 1.2rem;
-      color: white;
-      cursor: pointer;
-      margin-left: 8px;
-    }
+    .chat-header .title { font-size: 1rem; }
+    .chat-header button { background: transparent; border: none; font-size: 1.2rem; color: white; cursor: pointer; }
+    .profile-button { font-size: 0.9rem; margin-right: 8px; }
     .chat-messages {
       flex: 1;
       padding: 12px;
       overflow-y: auto;
       background: #f0f2f5;
     }
-    body.night .chat-messages {
-      background: #3a3b3c;
-    }
+    body.night .chat-messages { background: #3a3b3c; }
     .message {
       display: flex;
       align-items: flex-start;
       margin-bottom: 14px;
-      max-width: 100%;
     }
-    .message.you {
-      flex-direction: row-reverse;
-      text-align: right;
-    }
+    .message.you { flex-direction: row-reverse; text-align: right; }
     .avatar {
       width: 32px;
       height: 32px;
       border-radius: 50%;
       margin: 0 8px;
       object-fit: cover;
-      border: 1px solid #ccc;
-      background: white;
     }
     .message-content {
       max-width: 70%;
@@ -90,28 +73,17 @@
       font-size: 0.75rem;
       color: #666;
       margin-bottom: 2px;
-      font-weight: 600;
-      user-select: none;
     }
-    body.night .sender {
-      color: #aaa;
-    }
+    body.night .sender { color: #aaa; }
     .bubble {
       background: #0084ff;
       color: white;
       padding: 8px 12px;
       border-radius: 18px;
       word-wrap: break-word;
-      white-space: pre-wrap;
     }
-    .message.you .bubble {
-      background: #dcf8c6;
-      color: #050505;
-    }
-    body.night .bubble {
-      background: #4b4b4b;
-      color: #e4e6eb;
-    }
+    .message.you .bubble { background: #dcf8c6; color: #050505; }
+    body.night .bubble { background: #4b4b4b; color: #e4e6eb; }
     .info {
       font-size: 0.7rem;
       color: #555;
@@ -120,17 +92,13 @@
       justify-content: space-between;
       align-items: center;
     }
-    body.night .info {
-      color: #aaa;
-    }
+    body.night .info { color: #aaa; }
     .info .actions {
       display: none;
       gap: 8px;
       cursor: pointer;
     }
-    .message-content:hover .actions {
-      display: inline-flex;
-    }
+    .message-content:hover .actions { display: inline-flex; }
     .chat-input {
       padding: 10px;
       background: #fff;
@@ -138,9 +106,7 @@
       align-items: center;
       gap: 8px;
     }
-    body.night .chat-input {
-      background: #242526;
-    }
+    body.night .chat-input { background: #242526; }
     .chat-input input[type="text"] {
       flex: 1;
       border: none;
@@ -149,10 +115,7 @@
       background: #f0f2f5;
       outline: none;
     }
-    body.night .chat-input input[type="text"] {
-      background: #3a3b3c;
-      color: #e4e6eb;
-    }
+    body.night .chat-input input[type="text"] { background: #3a3b3c; color: #e4e6eb; }
     .chat-input button {
       background: #0084ff;
       border: none;
@@ -160,15 +123,8 @@
       padding: 8px;
       border-radius: 50%;
       cursor: pointer;
-      font-size: 1.2rem;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
-    body.night .chat-input button {
-      background: #1877f2;
-    }
+    body.night .chat-input button { background: #1877f2; }
     .emoji-picker {
       position: absolute;
       bottom: 60px;
@@ -182,20 +138,14 @@
       gap: 6px;
       z-index: 10;
     }
-    body.night .emoji-picker {
-      background: #3a3b3c;
-    }
+    body.night .emoji-picker { background: #3a3b3c; }
     .emoji-picker span {
       font-size: 1.2rem;
       cursor: pointer;
       padding: 4px;
       border-radius: 4px;
-      user-select: none;
     }
-    .emoji-picker span:hover {
-      background: #0084ff;
-      color: white;
-    }
+    .emoji-picker span:hover { background: #0084ff; color: white; }
   </style>
 </head>
 <body>
@@ -203,26 +153,25 @@
     <div class="chat-header">
       <div class="title">Messenger Chat</div>
       <div>
-        <button id="editNameBtn" title="Edit your username">✏️ Edit Name</button>
-        <button id="nightModeBtn" title="Toggle night mode">🌙</button>
+        <button id="editNameBtn" class="profile-button">✏️ Change Name</button>
+        <button id="nightModeBtn">🌙</button>
       </div>
     </div>
-    <div class="chat-messages" id="messages"></div>
+    <div id="messages" class="chat-messages"></div>
     <div class="chat-input">
       <input id="text" type="text" placeholder="Type a message…" autocomplete="off" />
-      <button id="emojiBtn" title="Emoji picker">😊</button>
-      <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" />
-      <button id="fileBtn" title="Attach file">📎</button>
-      <button id="sendBtn" title="Send message">➤</button>
+      <button id="emojiBtn">😊</button>
+      <input id="fileInput" type="file" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" />
+      <button id="fileBtn">📎</button>
+      <button id="sendBtn">➤</button>
     </div>
-    <div class="emoji-picker" id="emojiPicker"></div>
+    <div id="emojiPicker" class="emoji-picker"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded, remove, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    // Your Firebase config here
     const firebaseConfig = {
       apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
       authDomain: "live-chat-app-5ea98.firebaseapp.com",
@@ -232,7 +181,6 @@
       messagingSenderId: "58710835031",
       appId: "1:58710835031:web:9248de0eba59c09c0fc812"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, "messages");
@@ -247,57 +195,8 @@
     const nightModeBtn = document.getElementById("nightModeBtn");
     const editNameBtn = document.getElementById("editNameBtn");
 
-    // Random avatar URL generator using DiceBear Avataaars API
-    // Uses username as seed for consistency
-    function getAvatarUrl(username) {
-      // encode URI component to avoid issues with spaces etc.
-      return `https://avatars.dicebear.com/api/avataaars/${encodeURIComponent(username)}.svg?background=%23ffffff`;
-    }
+    const AVATAR_EXPIRY_HOURS = 24;
 
-    // Check if username & avatar exist in sessionStorage and avatar not expired (>1 day)
-    function getUserInfo() {
-      const stored = localStorage.getItem('chatUserInfo');
-      if (stored) {
-        try {
-          const obj = JSON.parse(stored);
-          const oneDayMs = 24 * 60 * 60 * 1000;
-          if (Date.now() - obj.timestamp < oneDayMs) {
-            return obj;
-          }
-        } catch(e) { /* ignore parse error */ }
-      }
-      return null;
-    }
-
-    // Save user info with timestamp
-    function saveUserInfo(username) {
-      const avatar = getAvatarUrl(username);
-      const obj = {
-        username,
-        avatar,
-        timestamp: Date.now()
-      };
-      localStorage.setItem('chatUserInfo', JSON.stringify(obj));
-      return obj;
-    }
-
-    // Prompt for username on first visit or if none saved
-    function promptForUsername(currentName) {
-      let name = prompt("Enter your username:", currentName || "");
-      if (!name || !name.trim()) {
-        name = currentName || "Anonymous";
-      }
-      return name.trim();
-    }
-
-    // Escape HTML helper
-    function escapeHTML(text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    // Convert file to base64 string
     function toBase64(file) {
       return new Promise((res, rej) => {
         const reader = new FileReader();
@@ -307,56 +206,100 @@
       });
     }
 
-    // Send message to Firebase
+    function getUsername() {
+      return sessionStorage.getItem("username") || prompt("Enter your name:") || "Anonymous";
+    }
+    function setUsername(name) {
+      sessionStorage.setItem("username", name);
+    }
+
+    function getAvatarData() {
+      const data = JSON.parse(sessionStorage.getItem("avatar_data") || "{}");
+      return data;
+    }
+    function setAvatarData(data) {
+      sessionStorage.setItem("avatar_data", JSON.stringify(data));
+    }
+    function ensureAvatar() {
+      let { url, ts } = getAvatarData() || {};
+      const now = Date.now();
+      if (!url || !ts || now - ts > AVATAR_EXPIRY_HOURS * 3600 * 1000) {
+        const seed = Math.random().toString(36).substring(2,10);
+        url = `https://avatars.dicebear.com/api/identicon/${encodeURIComponent(seed)}.svg`;
+        ts = now;
+        setAvatarData({ url, ts });
+      }
+      return url;
+    }
+
+    editNameBtn.onclick = () => {
+      const newName = prompt("Enter new display name:", getUsername());
+      if (newName) setUsername(newName);
+    };
+
     async function sendMessage() {
-      if (!userInfo) return;
       const text = textInput.value.trim();
       const file = fileInput.files[0];
       if (!text && !file) return;
 
-      const data = {
-        name: userInfo.username,
-        timestamp: new Date().toISOString(),
-      };
+      const name = getUsername();
+      const avatar = ensureAvatar();
+      const data = { name, avatar, timestamp: new Date().toISOString() };
       if (text) data.text = text;
       if (file) {
         data.file = await toBase64(file);
         data.fileName = file.name;
       }
-
       push(messagesRef, data);
-
       textInput.value = "";
       fileInput.value = "";
       emojiPicker.style.display = "none";
     }
 
-    // Store current user info globally
-    let userInfo = getUserInfo();
-    if (!userInfo) {
-      const username = promptForUsername();
-      userInfo = saveUserInfo(username);
+    function escapeHTML(text) {
+      const d = document.createElement("div");
+      d.textContent = text;
+      return d.innerHTML;
     }
 
-    // Edit username on button click
-    editNameBtn.onclick = () => {
-      const newName = promptForUsername(userInfo.username);
-      if (newName && newName !== userInfo.username) {
-        userInfo = saveUserInfo(newName);
-        alert("Username updated! Your avatar will update after 1 day.");
+    onChildAdded(messagesRef, snap => {
+      const msg = snap.val(), key = snap.key;
+      const me = getUsername();
+      const div = document.createElement("div");
+      const isMe = msg.name === me;
+      div.className = 'message ' + (isMe ? 'you' : 'other');
+      div.innerHTML = `
+        <img src="${msg.avatar}" class="avatar" />
+        <div class="message-content">
+          <div class="sender">${escapeHTML(msg.name)}</div>
+          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
+          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
+          <div class="info">
+            <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
+            ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ''}
+          </div>
+        </div>
+      `;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      if (isMe) {
+        div.querySelector('.edit').onclick = () => {
+          const newText = prompt("Edit:", msg.text);
+          if (newText !== null) update(ref(db, "messages/" + key), { text: newText });
+        };
+        div.querySelector('.del').onclick = () => {
+          if (confirm("Delete?")) remove(ref(db, "messages/" + key));
+        };
       }
-    };
-
-    sendBtn.addEventListener("click", sendMessage);
-    textInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") sendMessage();
     });
-    fileBtn.addEventListener("click", () => fileInput.click());
 
-    // Emoji picker setup
-    const emojis = ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
-    emojis.forEach(e => {
-      const span = document.createElement('span');
+    sendBtn.onclick = sendMessage;
+    textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+    fileBtn.onclick = () => fileInput.click();
+
+    ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"].forEach(e => {
+      const span = document.createElement("span");
       span.textContent = e;
       span.onclick = () => {
         textInput.value += e;
@@ -366,10 +309,8 @@
       emojiPicker.appendChild(span);
     });
 
-    emojiBtn.onclick = () => {
-      emojiPicker.style.display = (emojiPicker.style.display === 'flex' ? 'none' : 'flex');
-    };
-
+    emojiBtn.onclick = () => emojiPicker.style.display =
+      (emojiPicker.style.display === 'flex' ? 'none' : 'flex');
     document.addEventListener('click', e => {
       if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
         emojiPicker.style.display = 'none';
@@ -380,63 +321,6 @@
       document.body.classList.toggle('night');
       nightModeBtn.textContent = document.body.classList.contains('night') ? '☀️' : '🌙';
     };
-
-    // Store avatars of other users here for reuse
-    const avatarsCache = {};
-
-    // Render new incoming messages
-    onChildAdded(messagesRef, async (snapshot) => {
-      const msg = snapshot.val();
-      const key = snapshot.key;
-      if (!msg.name) return;
-
-      // Get avatar for sender: If sender is current user, use local avatar
-      // Else, if cached avatar exists use it, else generate avatar url based on sender name
-      let avatar;
-      if (msg.name === userInfo.username) {
-        avatar = userInfo.avatar;
-      } else if (avatarsCache[msg.name]) {
-        avatar = avatarsCache[msg.name];
-      } else {
-        avatar = getAvatarUrl(msg.name);
-        avatarsCache[msg.name] = avatar;
-      }
-
-      const me = userInfo.username;
-      const isMe = msg.name === me;
-
-      const div = document.createElement("div");
-      div.className = "message " + (isMe ? "you" : "other");
-      div.innerHTML = `
-        <img src="${avatar}" alt="avatar" class="avatar" />
-        <div class="message-content">
-          <div class="sender">${escapeHTML(msg.name)}</div>
-          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
-          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
-          <div class="info">
-            <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
-            ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ""}
-          </div>
-        </div>
-      `;
-
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-      if (isMe) {
-        div.querySelector(".edit").onclick = () => {
-          const newText = prompt("Edit:", msg.text);
-          if (newText !== null) {
-            update(ref(db, "messages/" + key), { text: newText });
-          }
-        };
-        div.querySelector(".del").onclick = () => {
-          if (confirm("Delete?")) {
-            remove(ref(db, "messages/" + key));
-          }
-        };
-      }
-    });
   </script>
 </body>
 </html>
