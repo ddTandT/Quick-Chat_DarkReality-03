@@ -16,11 +16,13 @@
       overflow: hidden;
       transition: background 0.3s;
     }
-    body.night { background: #18191a; }
+    body.night {
+      background: #18191a;
+    }
     .chat-container {
       width: 100%; max-width: 380px;
       height: 600px;
-      background: #fff;
+      background: #ffffff;
       border-radius: 8px;
       display: flex;
       flex-direction: column;
@@ -39,8 +41,12 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
     }
-    .chat-header .title { font-size: 1rem; }
+    .chat-header .title {
+      font-size: 1rem;
+      flex-grow: 1;
+    }
     .chat-header button {
       background: transparent;
       border: none;
@@ -54,14 +60,19 @@
       overflow-y: auto;
       background: #f0f2f5;
     }
-    body.night .chat-messages { background: #3a3b3c; }
+    body.night .chat-messages {
+      background: #3a3b3c;
+    }
     .message {
       display: flex;
       align-items: flex-start;
       margin-bottom: 14px;
       max-width: 100%;
     }
-    .message.you { flex-direction: row-reverse; text-align: right; }
+    .message.you {
+      flex-direction: row-reverse;
+      text-align: right;
+    }
     .avatar {
       width: 32px;
       height: 32px;
@@ -78,17 +89,27 @@
       font-size: 0.75rem;
       color: #666;
       margin-bottom: 2px;
+      user-select: none;
     }
-    body.night .sender { color: #aaa; }
+    body.night .sender {
+      color: #aaa;
+    }
     .bubble {
       background: #0084ff;
       color: white;
       padding: 8px 12px;
       border-radius: 18px;
       word-wrap: break-word;
+      white-space: pre-wrap;
     }
-    .message.you .bubble { background: #dcf8c6; color: #050505; }
-    body.night .bubble { background: #4b4b4b; color: #e4e6eb; }
+    .message.you .bubble {
+      background: #dcf8c6;
+      color: #050505;
+    }
+    body.night .bubble {
+      background: #4b4b4b;
+      color: #e4e6eb;
+    }
     .info {
       font-size: 0.7rem;
       color: #555;
@@ -97,9 +118,17 @@
       justify-content: space-between;
       align-items: center;
     }
-    body.night .info { color: #aaa; }
-    .info .actions { display: none; gap: 8px; cursor: pointer; }
-    .message-content:hover .actions { display: inline-flex; }
+    body.night .info {
+      color: #aaa;
+    }
+    .info .actions {
+      display: none;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .message-content:hover .actions {
+      display: inline-flex;
+    }
     .chat-input {
       padding: 10px;
       background: #fff;
@@ -107,7 +136,9 @@
       align-items: center;
       gap: 8px;
     }
-    body.night .chat-input { background: #242526; }
+    body.night .chat-input {
+      background: #242526;
+    }
     .chat-input input[type="text"] {
       flex: 1;
       border: none;
@@ -115,6 +146,7 @@
       border-radius: 18px;
       background: #f0f2f5;
       outline: none;
+      color: #000;
     }
     body.night .chat-input input[type="text"] {
       background: #3a3b3c;
@@ -127,13 +159,16 @@
       padding: 8px;
       border-radius: 50%;
       cursor: pointer;
+      user-select: none;
     }
-    body.night .chat-input button { background: #1877f2; }
+    body.night .chat-input button {
+      background: #1877f2;
+    }
     .emoji-picker {
       position: absolute;
       bottom: 60px;
       right: 60px;
-      background: #fff;
+      background: #ffffff;
       border-radius: 8px;
       padding: 8px;
       display: none;
@@ -142,12 +177,15 @@
       gap: 6px;
       z-index: 10;
     }
-    body.night .emoji-picker { background: #3a3b3c; }
+    body.night .emoji-picker {
+      background: #3a3b3c;
+    }
     .emoji-picker span {
       font-size: 1.2rem;
       cursor: pointer;
       padding: 4px;
       border-radius: 4px;
+      user-select: none;
     }
     .emoji-picker span:hover {
       background: #0084ff;
@@ -159,18 +197,16 @@
   <div class="chat-container">
     <div class="chat-header">
       <div class="title">Quick Chat</div>
-      <div>
-        <button id="editNameBtn">✏️</button>
-        <button id="nightModeBtn">🌙</button>
-      </div>
+      <button id="changeNameBtn" title="Change Username">✏️</button>
+      <button id="nightModeBtn" title="Toggle Night Mode">🌙</button>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
       <input id="text" type="text" placeholder="Type a message…" autocomplete="off" />
-      <button id="emojiBtn">😊</button>
+      <button id="emojiBtn" title="Emoji picker">😊</button>
       <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" />
-      <button id="fileBtn">📎</button>
-      <button id="sendBtn">➤</button>
+      <button id="fileBtn" title="Attach file">📎</button>
+      <button id="sendBtn" title="Send message">➤</button>
     </div>
     <div class="emoji-picker" id="emojiPicker"></div>
   </div>
@@ -188,6 +224,7 @@
       messagingSenderId: "58710835031",
       appId: "1:58710835031:web:9248de0eba59c09c0fc812"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, "messages");
@@ -200,20 +237,35 @@
     const emojiPicker = document.getElementById("emojiPicker");
     const messagesDiv = document.getElementById("messages");
     const nightModeBtn = document.getElementById("nightModeBtn");
-    const editNameBtn = document.getElementById("editNameBtn");
+    const changeNameBtn = document.getElementById("changeNameBtn");
 
-    const avatars = [...Array(20).keys()].map(i => `https://randomuser.me/api/portraits/men/${i + 10}.jpg`);
+    // List of handsome male avatars (pravatar.cc male images only)
+    // Using IDs from 1 to 70, males are odd IDs (pravatar docs say odd are men)
+    // Let's pick a subset of odd numbers between 1 and 69:
+    const maleAvatarIds = [
+      1,3,5,7,9,11,13,15,17,19,
+      21,23,25,27,29,31,33,35,37,39,
+      41,43,45,47,49,51,53,55,57,59,
+      61,63,65,67,69
+    ];
 
     function hashString(str) {
+      // Simple hash for string -> integer
       let hash = 0;
-      for (const ch of str) hash = (hash << 5) - hash + ch.charCodeAt(0), hash |= 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
       return Math.abs(hash);
     }
 
     function getDailyAvatar(name) {
-      const date = new Date().toISOString().slice(0,10);
-      const idx = hashString(name + date) % avatars.length;
-      return avatars[idx];
+      // Calculate a daily avatar from username + date, always male avatar
+      const dateStr = new Date().toISOString().slice(0,10); // yyyy-mm-dd
+      const seed = hashString(name + dateStr);
+      const avatarId = maleAvatarIds[seed % maleAvatarIds.length];
+      // pravatar URL for male image:
+      return `https://i.pravatar.cc/150?img=${avatarId}`;
     }
 
     function getUserName() {
@@ -225,16 +277,28 @@
       return name;
     }
 
-    editNameBtn.onclick = () => {
-      const newName = prompt("Change your name:", getUserName());
-      if (newName) sessionStorage.setItem("username", newName);
-    };
+    function setUserName(newName) {
+      if (newName && newName.trim()) {
+        sessionStorage.setItem("username", newName.trim());
+        // Also update avatar date cache for new name:
+        sessionStorage.removeItem("avatarDate");
+        sessionStorage.removeItem("avatar");
+        alert("Username updated to: " + newName.trim());
+        // Optionally clear messagesDiv for reload or just keep going
+      }
+    }
 
     function getUserAvatar() {
+      // Cache avatar per day, recalc if day changed or username changed
       const today = new Date().toISOString().slice(0,10);
-      if (sessionStorage.getItem("avatarDate") !== today || !sessionStorage.getItem("avatar")) {
-        sessionStorage.setItem("avatar", getDailyAvatar(getUserName()));
+      const cachedDate = sessionStorage.getItem("avatarDate");
+      const cachedName = sessionStorage.getItem("avatarName");
+      const username = getUserName();
+      if (cachedDate !== today || cachedName !== username) {
+        const avatar = getDailyAvatar(username);
+        sessionStorage.setItem("avatar", avatar);
         sessionStorage.setItem("avatarDate", today);
+        sessionStorage.setItem("avatarName", username);
       }
       return sessionStorage.getItem("avatar");
     }
@@ -245,62 +309,68 @@
       const text = textInput.value.trim();
       const file = fileInput.files[0];
       if (!text && !file) return;
-      const data = { name, avatar, timestamp: new Date().toISOString() };
+
+      let data = { name, avatar, timestamp: new Date().toISOString() };
       if (text) data.text = text;
       if (file) {
         data.file = await toBase64(file);
         data.fileName = file.name;
       }
+
       push(messagesRef, data);
       textInput.value = "";
       fileInput.value = "";
       emojiPicker.style.display = "none";
     }
 
+    function toBase64(file) {
+      return new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => res(reader.result);
+        reader.onerror = e => rej(e);
+      });
+    }
+
     sendBtn.addEventListener("click", sendMessage);
     textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
     fileBtn.addEventListener("click", () => fileInput.click());
 
-    function toBase64(f) {
-      return new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result);
-        r.onerror = err => rej(err);
-        r.readAsDataURL(f);
-      });
-    }
-
-    function escapeHTML(txt) {
+    function escapeHTML(text) {
       const d = document.createElement("div");
-      d.textContent = txt;
+      d.textContent = text;
       return d.innerHTML;
     }
 
     onChildAdded(messagesRef, snap => {
       const msg = snap.val(), key = snap.key;
-      const isMe = msg.name === getUserName();
+      const me = getUserName();
       const div = document.createElement("div");
-      div.className = 'message ' + (isMe ? 'you' : 'other');
+      const isMe = msg.name === me;
+
+      div.className = "message " + (isMe ? "you" : "other");
       div.innerHTML = `
-        <img src="${msg.avatar}" class="avatar" alt="avatar" />
+        <img src="${msg.avatar}" alt="avatar" class="avatar" />
         <div class="message-content">
           <div class="sender">${escapeHTML(msg.name)}</div>
-          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
-          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
+          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || "")}</div>
+          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ""}
           <div class="info">
             <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
-            ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ''}
+            ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ""}
           </div>
-        </div>`;
+        </div>
+      `;
       messagesDiv.appendChild(div);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
       if (isMe) {
-        div.querySelector('.edit')?.addEventListener("click", () => {
-          const newText = prompt("Edit:", msg.text);
-          if (newText !== null) update(ref(db, 'messages/' + key), { text: newText });
+        div.querySelector(".edit")?.addEventListener("click", () => {
+          const text = prompt("Edit:", msg.text);
+          if (text !== null) update(ref(db, "messages/" + key), { text });
         });
-        div.querySelector('.del')?.addEventListener("click", () => {
-          if (confirm("Delete?")) remove(ref(db, 'messages/' + key));
+        div.querySelector(".del")?.addEventListener("click", () => {
+          if (confirm("Delete?")) remove(ref(db, "messages/" + key));
         });
       }
     });
@@ -309,14 +379,20 @@
     emojis.forEach(e => {
       const span = document.createElement("span");
       span.textContent = e;
-      span.onclick = () => { textInput.value += e; emojiPicker.style.display = "none"; textInput.focus(); };
+      span.onclick = () => { 
+        textInput.value += e; 
+        emojiPicker.style.display = "none"; 
+        textInput.focus(); 
+      };
       emojiPicker.appendChild(span);
     });
 
-    emojiBtn.onclick = () => emojiPicker.style.display = (emojiPicker.style.display === "flex" ? "none" : "flex");
+    emojiBtn.onclick = () => {
+      emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
+    };
+
     document.addEventListener("click", e => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn)
-        emojiPicker.style.display = "none";
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = "none";
     });
 
     nightModeBtn.onclick = () => {
@@ -324,9 +400,12 @@
       nightModeBtn.textContent = document.body.classList.contains("night") ? "☀️" : "🌙";
     };
 
-    // Initialize user
-    getUserName();
-    getUserAvatar();
+    changeNameBtn.onclick = () => {
+      const newName = prompt("Enter new username:", getUserName());
+      if (newName && newName.trim() && newName.trim() !== getUserName()) {
+        setUserName(newName.trim());
+      }
+    };
   </script>
 </body>
 </html>
