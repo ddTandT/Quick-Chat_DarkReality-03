@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Messenger Chat</title>
+  <title>Quick Chat</title>
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
       background: #eceef0;
       display: flex;
       justify-content: center;
@@ -20,8 +20,7 @@
       background: #18191a;
     }
     .chat-container {
-      width: 100%;
-      max-width: 400px;
+      width: 100%; max-width: 380px;
       height: 600px;
       background: #ffffff;
       border-radius: 8px;
@@ -32,6 +31,7 @@
     }
     body.night .chat-container {
       background: #242526;
+      box-shadow: 0 2px 12px rgba(255,255,255,0.1);
     }
     .chat-header {
       background: #0084ff;
@@ -42,11 +42,14 @@
       justify-content: space-between;
       align-items: center;
     }
-    .profile-button, .chat-header button {
+    .chat-header .title {
+      font-size: 1rem;
+    }
+    .chat-header button {
       background: transparent;
       border: none;
+      font-size: 1.2rem;
       color: white;
-      font-size: 1rem;
       cursor: pointer;
     }
     .chat-messages {
@@ -61,7 +64,8 @@
     .message {
       display: flex;
       align-items: flex-start;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      max-width: 100%;
     }
     .message.you {
       flex-direction: row-reverse;
@@ -72,13 +76,20 @@
       height: 32px;
       border-radius: 50%;
       margin: 0 8px;
+      object-fit: cover;
     }
     .message-content {
       max-width: 70%;
+      display: flex;
+      flex-direction: column;
     }
     .sender {
       font-size: 0.75rem;
       color: #666;
+      margin-bottom: 2px;
+    }
+    body.night .sender {
+      color: #aaa;
     }
     .bubble {
       background: #0084ff;
@@ -90,6 +101,29 @@
     .message.you .bubble {
       background: #dcf8c6;
       color: #050505;
+    }
+    body.night .bubble {
+      background: #4b4b4b;
+      color: #e4e6eb;
+    }
+    .info {
+      font-size: 0.7rem;
+      color: #555;
+      margin-top: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    body.night .info {
+      color: #aaa;
+    }
+    .info .actions {
+      display: none;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .message-content:hover .actions {
+      display: inline-flex;
     }
     .chat-input {
       padding: 10px;
@@ -108,7 +142,10 @@
       border-radius: 18px;
       background: #f0f2f5;
       outline: none;
-      color: inherit;
+    }
+    body.night .chat-input input[type="text"] {
+      background: #3a3b3c;
+      color: #e4e6eb;
     }
     .chat-input button {
       background: #0084ff;
@@ -117,6 +154,9 @@
       padding: 8px;
       border-radius: 50%;
       cursor: pointer;
+    }
+    body.night .chat-input button {
+      background: #1877f2;
     }
     .emoji-picker {
       position: absolute;
@@ -140,16 +180,17 @@
       padding: 4px;
       border-radius: 4px;
     }
+    .emoji-picker span:hover {
+      background: #0084ff;
+      color: white;
+    }
   </style>
 </head>
 <body>
   <div class="chat-container">
     <div class="chat-header">
-      <div class="title">Messenger Chat</div>
-      <div>
-        <button class="profile-button" id="editProfileBtn">🧑</button>
-        <button id="nightModeBtn">🌙</button>
-      </div>
+      <div class="title">Quick Chat</div>
+      <button id="nightModeBtn">🌙</button>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
@@ -167,13 +208,13 @@
     import { getDatabase, ref, push, onChildAdded, remove, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      databaseURL: "YOUR_DATABASE_URL",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
+      authDomain: "live-chat-app-5ea98.firebaseapp.com",
+      databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
+      projectId: "live-chat-app-5ea98",
+      storageBucket: "live-chat-app-5ea98.appspot.com",
+      messagingSenderId: "58710835031",
+      appId: "1:58710835031:web:9248de0eba59c09c0fc812"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -188,40 +229,68 @@
     const emojiPicker = document.getElementById("emojiPicker");
     const messagesDiv = document.getElementById("messages");
     const nightModeBtn = document.getElementById("nightModeBtn");
-    const editProfileBtn = document.getElementById("editProfileBtn");
 
-    function getUsername() {
+    // Predefined avatar URLs (can be cartoon images hosted somewhere)
+    // Replace URLs with your own avatar images or free avatar links
+    const avatars = [
+      "https://i.pravatar.cc/150?img=1",
+      "https://i.pravatar.cc/150?img=2",
+      "https://i.pravatar.cc/150?img=3",
+      "https://i.pravatar.cc/150?img=4",
+      "https://i.pravatar.cc/150?img=5",
+      "https://i.pravatar.cc/150?img=6",
+      "https://i.pravatar.cc/150?img=7",
+      "https://i.pravatar.cc/150?img=8",
+      "https://i.pravatar.cc/150?img=9",
+      "https://i.pravatar.cc/150?img=10"
+    ];
+
+    function hashString(str) {
+      // Simple hash function for a string
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0; // Convert to 32bit integer
+      }
+      return Math.abs(hash);
+    }
+
+    function getDailyAvatar(name) {
+      // Use username + current date as seed
+      const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const seed = hashString(name + dateStr);
+      return avatars[seed % avatars.length];
+    }
+
+    function getUserName() {
       let name = sessionStorage.getItem("username");
       if (!name) {
-        name = prompt("Enter your name:")?.trim() || "Anonymous";
+        name = prompt("Enter your name:") || "Anonymous";
         sessionStorage.setItem("username", name);
       }
       return name;
     }
 
-    // <-- This function assigns a unique cartoon avatar from DiceBear, changing daily -->
-    function getAvatarURL(name) {
-      const day = new Date().toISOString().slice(0, 10);
-      // Use 'avataaars' style for a nice cartoon avatar with transparent bg
-      return `https://avatars.dicebear.com/api/avataaars/${encodeURIComponent(name + day)}.svg?background=transparent`;
+    function getUserAvatar() {
+      // Returns avatar URL for current user for today, cached in sessionStorage for performance
+      const cachedDate = sessionStorage.getItem("avatarDate");
+      const today = new Date().toISOString().slice(0, 10);
+      if (cachedDate !== today) {
+        const avatar = getDailyAvatar(getUserName());
+        sessionStorage.setItem("avatar", avatar);
+        sessionStorage.setItem("avatarDate", today);
+      }
+      return sessionStorage.getItem("avatar");
     }
 
-    editProfileBtn.onclick = () => {
-      const current = getUsername();
-      const updated = prompt("Change your name:", current)?.trim();
-      if (updated) {
-        sessionStorage.setItem("username", updated);
-        location.reload();
-      }
-    };
-
     async function sendMessage() {
-      const name = getUsername();
+      const name = getUserName();
+      const avatar = getUserAvatar();
       const text = textInput.value.trim();
       const file = fileInput.files[0];
       if (!text && !file) return;
 
-      let data = { name, timestamp: new Date().toISOString() };
+      let data = { name, avatar, timestamp: new Date().toISOString() };
       if (text) data.text = text;
       if (file) {
         data.file = await toBase64(file);
@@ -235,11 +304,11 @@
     }
 
     function toBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.readAsDataURL(file);
+        r.onload = () => res(r.result);
+        r.onerror = e => rej(e);
       });
     }
 
@@ -247,26 +316,43 @@
     textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
     fileBtn.addEventListener("click", () => fileInput.click());
 
+    function escapeHTML(text) {
+      const d = document.createElement("div");
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
     onChildAdded(messagesRef, snap => {
-      const msg = snap.val();
-      const me = getUsername();
+      const msg = snap.val(), key = snap.key;
+      const me = getUserName();
+      const div = document.createElement("div");
       const isMe = msg.name === me;
 
-      const div = document.createElement("div");
       div.className = 'message ' + (isMe ? 'you' : 'other');
-      const avatar = getAvatarURL(msg.name);
-
       div.innerHTML = `
-        <img src="${avatar}" class="avatar" alt="avatar">
+        <img src="${msg.avatar}" alt="avatar" class="avatar" />
         <div class="message-content">
-          <div class="sender">${msg.name}</div>
-          <div class="bubble">${msg.text || msg.fileName || ''}</div>
-          ${msg.file ? `<a href="${msg.file}" download="${msg.fileName}" style="font-size:12px; margin-top:4px; display:block;">📎 ${msg.fileName}</a>` : ''}
+          <div class="sender">${escapeHTML(msg.name)}</div>
+          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
+          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
+          <div class="info">
+            <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
+            ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ''}
+          </div>
         </div>
       `;
-
       messagesDiv.appendChild(div);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      if (isMe) {
+        div.querySelector('.edit')?.addEventListener("click", () => {
+          const text = prompt('Edit:', msg.text);
+          if (text !== null) update(ref(db, 'messages/' + key), { text });
+        });
+        div.querySelector('.del')?.addEventListener("click", () => {
+          if (confirm('Delete?')) remove(ref(db, 'messages/' + key));
+        });
+      }
     });
 
     const emojis = ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
@@ -286,8 +372,6 @@
       document.body.classList.toggle('night');
       nightModeBtn.textContent = document.body.classList.contains('night') ? '☀️' : '🌙';
     };
-
-    getUsername();
   </script>
 </body>
 </html>
