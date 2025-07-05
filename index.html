@@ -5,61 +5,154 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Chat</title>
   <style>
-    body { margin: 0; font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
-      background: #eceef0; display: flex; justify-content: center; align-items: center;
-      height: 100vh; overflow: hidden; transition: background 0.3s;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
+      background: #eceef0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      transition: background 0.3s;
     }
     body.night { background: #18191a; }
-    .chat-container { width: 100%; max-width: 380px; height: 600px; background: #ffffff;
-      border-radius: 8px; display: flex; flex-direction: column;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1); overflow: hidden;
+    .chat-container {
+      width: 100%; max-width: 380px;
+      height: 600px;
+      background: #fff;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
     }
-    body.night .chat-container { background: #242526; box-shadow: 0 2px 12px rgba(255,255,255,0.1); }
-    .chat-header { background: #0084ff; color: white; padding: 12px;
-      font-weight: 600; display: flex; justify-content: space-between; align-items: center;
+    body.night .chat-container {
+      background: #242526;
+      box-shadow: 0 2px 12px rgba(255,255,255,0.1);
+    }
+    .chat-header {
+      background: #0084ff;
+      color: white;
+      padding: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .chat-header .title { font-size: 1rem; }
-    .chat-header button { background: transparent; border: none;
-      font-size: 1.2rem; color: white; cursor: pointer;
+    .chat-header button {
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      color: white;
+      cursor: pointer;
     }
-    .chat-messages { flex: 1; padding: 12px; overflow-y: auto; background: #f0f2f5; }
+    .chat-messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: #f0f2f5;
+    }
     body.night .chat-messages { background: #3a3b3c; }
-    .message { display: flex; align-items: flex-start; margin-bottom: 14px; max-width: 100%; }
+    .message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      max-width: 100%;
+    }
     .message.you { flex-direction: row-reverse; text-align: right; }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; margin: 0 8px; object-fit: cover; }
-    .message-content { max-width: 70%; display: flex; flex-direction: column; }
-    .sender { font-size: 0.75rem; color: #666; margin-bottom: 2px; }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin: 0 8px;
+      object-fit: cover;
+    }
+    .message-content {
+      max-width: 70%;
+      display: flex;
+      flex-direction: column;
+    }
+    .sender {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 2px;
+    }
     body.night .sender { color: #aaa; }
-    .bubble { background: #0084ff; color: white; padding: 8px 12px;
-      border-radius: 18px; word-wrap: break-word;
+    .bubble {
+      background: #0084ff;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 18px;
+      word-wrap: break-word;
     }
     .message.you .bubble { background: #dcf8c6; color: #050505; }
     body.night .bubble { background: #4b4b4b; color: #e4e6eb; }
-    .info { font-size: 0.7rem; color: #555; margin-top: 2px;
-      display: flex; justify-content: space-between; align-items: center;
+    .info {
+      font-size: 0.7rem;
+      color: #555;
+      margin-top: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     body.night .info { color: #aaa; }
     .info .actions { display: none; gap: 8px; cursor: pointer; }
     .message-content:hover .actions { display: inline-flex; }
-    .chat-input { padding: 10px; background: #fff; display: flex;
-      align-items: center; gap: 8px;
+    .chat-input {
+      padding: 10px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     body.night .chat-input { background: #242526; }
-    .chat-input input[type="text"] { flex: 1; border: none;
-      padding: 8px 12px; border-radius: 18px; background: #f0f2f5; outline: none;
+    .chat-input input[type="text"] {
+      flex: 1;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 18px;
+      background: #f0f2f5;
+      outline: none;
     }
-    body.night .chat-input input[type="text"] { background: #3a3b3c; color: #e4e6eb; }
-    .chat-input button { background: #0084ff; border: none; color: white;
-      padding: 8px; border-radius: 50%; cursor: pointer;
+    body.night .chat-input input[type="text"] {
+      background: #3a3b3c;
+      color: #e4e6eb;
+    }
+    .chat-input button {
+      background: #0084ff;
+      border: none;
+      color: white;
+      padding: 8px;
+      border-radius: 50%;
+      cursor: pointer;
     }
     body.night .chat-input button { background: #1877f2; }
-    .emoji-picker { position: absolute; bottom: 60px; right: 60px;
-      background: #ffffff; border-radius: 8px; padding: 8px; display: none;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 6px; z-index: 10;
+    .emoji-picker {
+      position: absolute;
+      bottom: 60px;
+      right: 60px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px;
+      display: none;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+      gap: 6px;
+      z-index: 10;
     }
     body.night .emoji-picker { background: #3a3b3c; }
-    .emoji-picker span { font-size: 1.2rem; cursor: pointer; padding: 4px; border-radius:4px; }
-    .emoji-picker span:hover { background: #0084ff; color: white; }
+    .emoji-picker span {
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .emoji-picker span:hover {
+      background: #0084ff;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -67,7 +160,7 @@
     <div class="chat-header">
       <div class="title">Quick Chat</div>
       <div>
-        <button id="changeNameBtn" title="Change Name">✏️</button>
+        <button id="editNameBtn">✏️</button>
         <button id="nightModeBtn">🌙</button>
       </div>
     </div>
@@ -87,8 +180,13 @@
     import { getDatabase, ref, push, onChildAdded, remove, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "...", authDomain: "...", databaseURL: "...",
-      projectId: "...", storageBucket: "...", messagingSenderId: "...", appId: "..."
+      apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
+      authDomain: "live-chat-app-5ea98.firebaseapp.com",
+      databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
+      projectId: "live-chat-app-5ea98",
+      storageBucket: "live-chat-app-5ea98.appspot.com",
+      messagingSenderId: "58710835031",
+      appId: "1:58710835031:web:9248de0eba59c09c0fc812"
     };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
@@ -102,29 +200,20 @@
     const emojiPicker = document.getElementById("emojiPicker");
     const messagesDiv = document.getElementById("messages");
     const nightModeBtn = document.getElementById("nightModeBtn");
-    const changeNameBtn = document.getElementById("changeNameBtn");
+    const editNameBtn = document.getElementById("editNameBtn");
 
-    const avatars = [
-      "https://i.pravatar.cc/150?img=11","https://i.pravatar.cc/150?img=12",
-      "https://i.pravatar.cc/150?img=13","https://i.pravatar.cc/150?img=14",
-      "https://i.pravatar.cc/150?img=15","https://i.pravatar.cc/150?img=16",
-      "https://i.pravatar.cc/150?img=17","https://i.pravatar.cc/150?img=18",
-      "https://i.pravatar.cc/150?img=19","https://i.pravatar.cc/150?img=20"
-    ];
+    const avatars = [...Array(20).keys()].map(i => `https://randomuser.me/api/portraits/men/${i + 10}.jpg`);
 
     function hashString(str) {
-      let h = 0;
-      for (let i = 0; i < str.length; i++) {
-        h = (h<<5) - h + str.charCodeAt(i);
-        h |= 0;
-      }
-      return Math.abs(h);
+      let hash = 0;
+      for (const ch of str) hash = (hash << 5) - hash + ch.charCodeAt(0), hash |= 0;
+      return Math.abs(hash);
     }
 
     function getDailyAvatar(name) {
       const date = new Date().toISOString().slice(0,10);
-      const seed = hashString(name + date);
-      return avatars[ seed % avatars.length ];
+      const idx = hashString(name + date) % avatars.length;
+      return avatars[idx];
     }
 
     function getUserName() {
@@ -136,19 +225,15 @@
       return name;
     }
 
-    changeNameBtn.onclick = () => {
+    editNameBtn.onclick = () => {
       const newName = prompt("Change your name:", getUserName());
-      if (newName && newName.trim()) {
-        sessionStorage.setItem("username", newName.trim());
-        sessionStorage.removeItem("avatarDate"); // reset avatar to reflect new name
-      }
+      if (newName) sessionStorage.setItem("username", newName);
     };
 
     function getUserAvatar() {
       const today = new Date().toISOString().slice(0,10);
-      if (sessionStorage.getItem("avatarDate") !== today) {
-        const avatar = getDailyAvatar(getUserName());
-        sessionStorage.setItem("avatar", avatar);
+      if (sessionStorage.getItem("avatarDate") !== today || !sessionStorage.getItem("avatar")) {
+        sessionStorage.setItem("avatar", getDailyAvatar(getUserName()));
         sessionStorage.setItem("avatarDate", today);
       }
       return sessionStorage.getItem("avatar");
@@ -167,53 +252,55 @@
         data.fileName = file.name;
       }
       push(messagesRef, data);
-      textInput.value = ""; fileInput.value = ""; emojiPicker.style.display = "none";
-    }
-
-    function toBase64(file) {
-      return new Promise((res, rej) => {
-        const r = new FileReader();
-        r.readAsDataURL(file);
-        r.onload = () => res(r.result);
-        r.onerror = e => rej(e);
-      });
+      textInput.value = "";
+      fileInput.value = "";
+      emojiPicker.style.display = "none";
     }
 
     sendBtn.addEventListener("click", sendMessage);
     textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
     fileBtn.addEventListener("click", () => fileInput.click());
 
-    function escapeHTML(text) {
-      const d = document.createElement("div"); d.textContent = text;
+    function toBase64(f) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = err => rej(err);
+        r.readAsDataURL(f);
+      });
+    }
+
+    function escapeHTML(txt) {
+      const d = document.createElement("div");
+      d.textContent = txt;
       return d.innerHTML;
     }
 
     onChildAdded(messagesRef, snap => {
       const msg = snap.val(), key = snap.key;
-      const me = getUserName(), isMe = (msg.name === me);
+      const isMe = msg.name === getUserName();
       const div = document.createElement("div");
       div.className = 'message ' + (isMe ? 'you' : 'other');
       div.innerHTML = `
-        <img src="${msg.avatar}" class="avatar" />
+        <img src="${msg.avatar}" class="avatar" alt="avatar" />
         <div class="message-content">
           <div class="sender">${escapeHTML(msg.name)}</div>
-          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName||'')}</div>
-          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
+          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
+          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
           <div class="info">
             <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
             ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ''}
           </div>
-        </div>
-      `;
+        </div>`;
       messagesDiv.appendChild(div);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
       if (isMe) {
-        div.querySelector('.edit')?.addEventListener("click",async () => {
-          const newText = prompt('Edit message:', msg.text);
-          if (newText !== null) update(ref(db,'messages/'+key),{ text: newText });
+        div.querySelector('.edit')?.addEventListener("click", () => {
+          const newText = prompt("Edit:", msg.text);
+          if (newText !== null) update(ref(db, 'messages/' + key), { text: newText });
         });
         div.querySelector('.del')?.addEventListener("click", () => {
-          if (confirm('Delete?')) remove(ref(db,'messages/'+key));
+          if (confirm("Delete?")) remove(ref(db, 'messages/' + key));
         });
       }
     });
@@ -222,19 +309,24 @@
     emojis.forEach(e => {
       const span = document.createElement("span");
       span.textContent = e;
-      span.onclick = () => { textInput.value += e; emojiPicker.style.display = 'none'; textInput.focus(); };
+      span.onclick = () => { textInput.value += e; emojiPicker.style.display = "none"; textInput.focus(); };
       emojiPicker.appendChild(span);
     });
 
-    emojiBtn.onclick = () => emojiPicker.style.display = (emojiPicker.style.display === 'flex' ? 'none' : 'flex');
-    document.addEventListener('click', e => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = 'none';
+    emojiBtn.onclick = () => emojiPicker.style.display = (emojiPicker.style.display === "flex" ? "none" : "flex");
+    document.addEventListener("click", e => {
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn)
+        emojiPicker.style.display = "none";
     });
 
     nightModeBtn.onclick = () => {
-      document.body.classList.toggle('night');
-      nightModeBtn.textContent = document.body.classList.contains('night') ? '☀️' : '🌙';
+      document.body.classList.toggle("night");
+      nightModeBtn.textContent = document.body.classList.contains("night") ? "☀️" : "🌙";
     };
+
+    // Initialize user
+    getUserName();
+    getUserAvatar();
   </script>
 </body>
 </html>
