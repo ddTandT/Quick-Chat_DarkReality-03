@@ -31,7 +31,6 @@
     }
     body.night .chat-container {
       background: #242526;
-      box-shadow: 0 2px 12px rgba(255,255,255,0.1);
     }
     .chat-header {
       background: #0084ff;
@@ -44,6 +43,18 @@
     }
     .chat-header .title {
       font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-header .edit-name {
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
     }
     .chat-header button {
       background: transparent;
@@ -189,7 +200,10 @@
 <body>
   <div class="chat-container">
     <div class="chat-header">
-      <div class="title">Quick Chat</div>
+      <div class="title">
+        Quick Chat
+        <button class="edit-name" id="editNameBtn">✏️ Name</button>
+      </div>
       <button id="nightModeBtn">🌙</button>
     </div>
     <div class="chat-messages" id="messages"></div>
@@ -229,35 +243,27 @@
     const emojiPicker = document.getElementById("emojiPicker");
     const messagesDiv = document.getElementById("messages");
     const nightModeBtn = document.getElementById("nightModeBtn");
+    const editNameBtn = document.getElementById("editNameBtn");
 
-    // Predefined avatar URLs (can be cartoon images hosted somewhere)
-    // Replace URLs with your own avatar images or free avatar links
     const avatars = [
-      "https://i.pravatar.cc/150?img=1",
-      "https://i.pravatar.cc/150?img=2",
-      "https://i.pravatar.cc/150?img=3",
-      "https://i.pravatar.cc/150?img=4",
-      "https://i.pravatar.cc/150?img=5",
-      "https://i.pravatar.cc/150?img=6",
-      "https://i.pravatar.cc/150?img=7",
-      "https://i.pravatar.cc/150?img=8",
-      "https://i.pravatar.cc/150?img=9",
-      "https://i.pravatar.cc/150?img=10"
+      "https://i.pravatar.cc/150?img=1", "https://i.pravatar.cc/150?img=2",
+      "https://i.pravatar.cc/150?img=3", "https://i.pravatar.cc/150?img=4",
+      "https://i.pravatar.cc/150?img=5", "https://i.pravatar.cc/150?img=6",
+      "https://i.pravatar.cc/150?img=7", "https://i.pravatar.cc/150?img=8",
+      "https://i.pravatar.cc/150?img=9", "https://i.pravatar.cc/150?img=10"
     ];
 
     function hashString(str) {
-      // Simple hash function for a string
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0; // Convert to 32bit integer
+        hash |= 0;
       }
       return Math.abs(hash);
     }
 
     function getDailyAvatar(name) {
-      // Use username + current date as seed
-      const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const dateStr = new Date().toISOString().slice(0, 10);
       const seed = hashString(name + dateStr);
       return avatars[seed % avatars.length];
     }
@@ -272,16 +278,25 @@
     }
 
     function getUserAvatar() {
-      // Returns avatar URL for current user for today, cached in sessionStorage for performance
-      const cachedDate = sessionStorage.getItem("avatarDate");
+      const name = getUserName();
       const today = new Date().toISOString().slice(0, 10);
+      const cachedDate = sessionStorage.getItem("avatarDate");
       if (cachedDate !== today) {
-        const avatar = getDailyAvatar(getUserName());
+        const avatar = getDailyAvatar(name);
         sessionStorage.setItem("avatar", avatar);
         sessionStorage.setItem("avatarDate", today);
       }
       return sessionStorage.getItem("avatar");
     }
+
+    editNameBtn.onclick = () => {
+      const newName = prompt("Enter your new name:");
+      if (newName) {
+        sessionStorage.setItem("username", newName);
+        sessionStorage.removeItem("avatarDate"); // force re-generation of avatar
+        alert("Name changed! Your new avatar has also been updated for today.");
+      }
+    };
 
     async function sendMessage() {
       const name = getUserName();
