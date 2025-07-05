@@ -28,6 +28,7 @@
       flex-direction: column;
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
       overflow: hidden;
+      position: relative;
     }
     body.night .chat-container {
       background: #242526;
@@ -41,11 +42,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      position: relative;
     }
     .chat-header .title {
       font-size: 1rem;
-      flex-grow: 1;
     }
     .chat-header button {
       background: transparent;
@@ -53,6 +53,11 @@
       font-size: 1.2rem;
       color: white;
       cursor: pointer;
+      margin-left: 8px;
+    }
+    .chat-header .settings {
+      display: flex;
+      align-items: center;
     }
     .chat-messages {
       flex: 1;
@@ -79,6 +84,7 @@
       border-radius: 50%;
       margin: 0 8px;
       object-fit: cover;
+      flex-shrink: 0;
     }
     .message-content {
       max-width: 70%;
@@ -89,7 +95,6 @@
       font-size: 0.75rem;
       color: #666;
       margin-bottom: 2px;
-      user-select: none;
     }
     body.night .sender {
       color: #aaa;
@@ -146,7 +151,7 @@
       border-radius: 18px;
       background: #f0f2f5;
       outline: none;
-      color: #000;
+      color: inherit;
     }
     body.night .chat-input input[type="text"] {
       background: #3a3b3c;
@@ -159,7 +164,6 @@
       padding: 8px;
       border-radius: 50%;
       cursor: pointer;
-      user-select: none;
     }
     body.night .chat-input button {
       background: #1877f2;
@@ -191,14 +195,77 @@
       background: #0084ff;
       color: white;
     }
+
+    /* Modal for user info editing */
+    #userModal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none;
+    }
+    #userModal.active {
+      display: flex;
+    }
+    #userModal .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 320px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+      color: #222;
+    }
+    body.night #userModal .modal-content {
+      background: #242526;
+      color: #e4e6eb;
+    }
+    #userModal label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    #userModal input[type="text"], #userModal select {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box;
+      color: inherit;
+      background: inherit;
+    }
+    body.night #userModal input[type="text"], 
+    body.night #userModal select {
+      border: 1px solid #555;
+    }
+    #userModal button {
+      padding: 10px 16px;
+      background: #0084ff;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    #userModal button:hover {
+      background: #1877f2;
+    }
   </style>
 </head>
 <body>
   <div class="chat-container">
     <div class="chat-header">
       <div class="title">Quick Chat</div>
-      <button id="changeNameBtn" title="Change Username">✏️</button>
-      <button id="nightModeBtn" title="Toggle Night Mode">🌙</button>
+      <div class="settings">
+        <button id="editUserBtn" title="Edit Username/Gender">⚙️</button>
+        <button id="nightModeBtn" title="Toggle Night Mode">🌙</button>
+      </div>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
@@ -209,6 +276,25 @@
       <button id="sendBtn" title="Send message">➤</button>
     </div>
     <div class="emoji-picker" id="emojiPicker"></div>
+  </div>
+
+  <!-- User info modal -->
+  <div id="userModal">
+    <div class="modal-content">
+      <h3>Edit Your Info</h3>
+      <form id="userForm">
+        <label for="usernameInput">Username:</label>
+        <input type="text" id="usernameInput" name="username" required minlength="1" maxlength="30" autocomplete="off" />
+        <label for="genderSelect">Gender:</label>
+        <select id="genderSelect" name="gender" required>
+          <option value="" disabled>Select gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+        <button type="submit">Save</button>
+      </form>
+    </div>
   </div>
 
   <script type="module">
@@ -237,74 +323,131 @@
     const emojiPicker = document.getElementById("emojiPicker");
     const messagesDiv = document.getElementById("messages");
     const nightModeBtn = document.getElementById("nightModeBtn");
-    const changeNameBtn = document.getElementById("changeNameBtn");
+    const editUserBtn = document.getElementById("editUserBtn");
 
-    // List of handsome male avatars (pravatar.cc male images only)
-    // Using IDs from 1 to 70, males are odd IDs (pravatar docs say odd are men)
-    // Let's pick a subset of odd numbers between 1 and 69:
-    const maleAvatarIds = [
-      1,3,5,7,9,11,13,15,17,19,
-      21,23,25,27,29,31,33,35,37,39,
-      41,43,45,47,49,51,53,55,57,59,
-      61,63,65,67,69
+    const userModal = document.getElementById("userModal");
+    const userForm = document.getElementById("userForm");
+    const usernameInput = document.getElementById("usernameInput");
+    const genderSelect = document.getElementById("genderSelect");
+
+    // Avatar sets by gender
+    const maleAvatars = [
+      "https://i.pravatar.cc/150?img=1",
+      "https://i.pravatar.cc/150?img=2",
+      "https://i.pravatar.cc/150?img=3",
+      "https://i.pravatar.cc/150?img=4",
+      "https://i.pravatar.cc/150?img=5"
+    ];
+    const femaleAvatars = [
+      "https://i.pravatar.cc/150?img=6",
+      "https://i.pravatar.cc/150?img=7",
+      "https://i.pravatar.cc/150?img=8",
+      "https://i.pravatar.cc/150?img=9",
+      "https://i.pravatar.cc/150?img=10"
+    ];
+    const otherAvatars = [
+      "https://i.pravatar.cc/150?img=11",
+      "https://i.pravatar.cc/150?img=12",
+      "https://i.pravatar.cc/150?img=13",
+      "https://i.pravatar.cc/150?img=14",
+      "https://i.pravatar.cc/150?img=15"
     ];
 
     function hashString(str) {
-      // Simple hash for string -> integer
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0;
+        hash |= 0; 
       }
       return Math.abs(hash);
     }
 
-    function getDailyAvatar(name) {
-      // Calculate a daily avatar from username + date, always male avatar
-      const dateStr = new Date().toISOString().slice(0,10); // yyyy-mm-dd
+    function getAvatarSet(gender) {
+      switch (gender) {
+        case "male": return maleAvatars;
+        case "female": return femaleAvatars;
+        default: return otherAvatars;
+      }
+    }
+
+    function getDailyAvatar(name, gender) {
+      const dateStr = new Date().toISOString().slice(0, 10); 
       const seed = hashString(name + dateStr);
-      const avatarId = maleAvatarIds[seed % maleAvatarIds.length];
-      // pravatar URL for male image:
-      return `https://i.pravatar.cc/150?img=${avatarId}`;
+      const set = getAvatarSet(gender);
+      return set[seed % set.length];
     }
 
     function getUserName() {
-      let name = sessionStorage.getItem("username");
-      if (!name) {
-        name = prompt("Enter your name:") || "Anonymous";
-        sessionStorage.setItem("username", name);
-      }
-      return name;
+      return sessionStorage.getItem("username") || "";
     }
-
-    function setUserName(newName) {
-      if (newName && newName.trim()) {
-        sessionStorage.setItem("username", newName.trim());
-        // Also update avatar date cache for new name:
-        sessionStorage.removeItem("avatarDate");
-        sessionStorage.removeItem("avatar");
-        alert("Username updated to: " + newName.trim());
-        // Optionally clear messagesDiv for reload or just keep going
-      }
+    function getUserGender() {
+      return sessionStorage.getItem("gender") || "";
     }
 
     function getUserAvatar() {
-      // Cache avatar per day, recalc if day changed or username changed
-      const today = new Date().toISOString().slice(0,10);
       const cachedDate = sessionStorage.getItem("avatarDate");
-      const cachedName = sessionStorage.getItem("avatarName");
-      const username = getUserName();
-      if (cachedDate !== today || cachedName !== username) {
-        const avatar = getDailyAvatar(username);
+      const today = new Date().toISOString().slice(0, 10);
+      if (cachedDate !== today) {
+        const avatar = getDailyAvatar(getUserName(), getUserGender());
         sessionStorage.setItem("avatar", avatar);
         sessionStorage.setItem("avatarDate", today);
-        sessionStorage.setItem("avatarName", username);
       }
       return sessionStorage.getItem("avatar");
     }
 
+    // Show modal for first time or if info missing
+    function checkUserInfo() {
+      const username = getUserName();
+      const gender = getUserGender();
+      if (!username || !gender) {
+        showUserModal();
+      }
+    }
+
+    function showUserModal() {
+      usernameInput.value = getUserName();
+      genderSelect.value = getUserGender();
+      userModal.classList.add("active");
+      usernameInput.focus();
+    }
+    function hideUserModal() {
+      userModal.classList.remove("active");
+    }
+
+    userForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const gender = genderSelect.value;
+
+      if (!username) {
+        alert("Please enter a valid username.");
+        return;
+      }
+      if (!gender) {
+        alert("Please select a gender.");
+        return;
+      }
+
+      sessionStorage.setItem("username", username);
+      sessionStorage.setItem("gender", gender);
+      // Clear avatarDate so avatar refreshes for new gender/username
+      sessionStorage.removeItem("avatarDate");
+      getUserAvatar(); // recalc avatar and cache
+
+      hideUserModal();
+    });
+
+    editUserBtn.addEventListener("click", showUserModal);
+
+    // Sending message logic
     async function sendMessage() {
       const name = getUserName();
+      const gender = getUserGender();
+      if (!name || !gender) {
+        alert("Please set your username and gender.");
+        showUserModal();
+        return;
+      }
       const avatar = getUserAvatar();
       const text = textInput.value.trim();
       const file = fileInput.files[0];
@@ -325,10 +468,10 @@
 
     function toBase64(file) {
       return new Promise((res, rej) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => res(reader.result);
-        reader.onerror = e => rej(e);
+        const r = new FileReader();
+        r.readAsDataURL(file);
+        r.onload = () => res(r.result);
+        r.onerror = e => rej(e);
       });
     }
 
@@ -348,16 +491,16 @@
       const div = document.createElement("div");
       const isMe = msg.name === me;
 
-      div.className = "message " + (isMe ? "you" : "other");
+      div.className = 'message ' + (isMe ? 'you' : 'other');
       div.innerHTML = `
         <img src="${msg.avatar}" alt="avatar" class="avatar" />
         <div class="message-content">
           <div class="sender">${escapeHTML(msg.name)}</div>
-          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || "")}</div>
-          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ""}
+          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
+          ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
           <div class="info">
             <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
-            ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ""}
+            ${isMe ? `<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>` : ''}
           </div>
         </div>
       `;
@@ -365,47 +508,37 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
       if (isMe) {
-        div.querySelector(".edit")?.addEventListener("click", () => {
-          const text = prompt("Edit:", msg.text);
-          if (text !== null) update(ref(db, "messages/" + key), { text });
+        div.querySelector('.edit')?.addEventListener("click", () => {
+          const text = prompt('Edit your message:', msg.text);
+          if (text !== null) update(ref(db, 'messages/' + key), { text });
         });
-        div.querySelector(".del")?.addEventListener("click", () => {
-          if (confirm("Delete?")) remove(ref(db, "messages/" + key));
+        div.querySelector('.del')?.addEventListener("click", () => {
+          if (confirm('Delete this message?')) remove(ref(db, 'messages/' + key));
         });
       }
     });
 
     const emojis = ["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
     emojis.forEach(e => {
-      const span = document.createElement("span");
+      const span = document.createElement('span');
       span.textContent = e;
-      span.onclick = () => { 
-        textInput.value += e; 
-        emojiPicker.style.display = "none"; 
-        textInput.focus(); 
-      };
+      span.onclick = () => { textInput.value += e; emojiPicker.style.display = 'none'; textInput.focus(); };
       emojiPicker.appendChild(span);
     });
 
-    emojiBtn.onclick = () => {
-      emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
-    };
-
-    document.addEventListener("click", e => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = "none";
+    emojiBtn.onclick = () => emojiPicker.style.display = (emojiPicker.style.display === 'flex' ? 'none' : 'flex');
+    document.addEventListener('click', e => {
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = 'none';
     });
 
     nightModeBtn.onclick = () => {
-      document.body.classList.toggle("night");
-      nightModeBtn.textContent = document.body.classList.contains("night") ? "☀️" : "🌙";
+      document.body.classList.toggle('night');
+      nightModeBtn.textContent = document.body.classList.contains('night') ? '☀️' : '🌙';
     };
 
-    changeNameBtn.onclick = () => {
-      const newName = prompt("Enter new username:", getUserName());
-      if (newName && newName.trim() && newName.trim() !== getUserName()) {
-        setUserName(newName.trim());
-      }
-    };
+    // Initialization
+    checkUserInfo();
+
   </script>
 </body>
 </html>
