@@ -44,9 +44,6 @@
     }
     .chat-header .title {
       font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
     .chat-header button {
       background: transparent;
@@ -54,6 +51,7 @@
       font-size: 1.2rem;
       color: white;
       cursor: pointer;
+      margin-left: 8px;
     }
     .chat-messages {
       flex: 1;
@@ -192,11 +190,11 @@
 <body>
   <div class="chat-container">
     <div class="chat-header">
-      <div class="title">
-        Quick Chat
-        <button id="editNameBtn" title="Edit your name">✏️</button>
+      <div class="title">Quick Chat</div>
+      <div>
+        <button id="editNameBtn">✏️ Edit Name</button>
+        <button id="nightModeBtn">🌙</button>
       </div>
-      <button id="nightModeBtn">🌙</button>
     </div>
     <div class="chat-messages" id="messages"></div>
     <div class="chat-input">
@@ -213,31 +211,24 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded, remove, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
-      authDomain: "live-chat-app-5ea98.firebaseapp.com",
-      databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
-      projectId: "live-chat-app-5ea98",
-      storageBucket: "live-chat-app-5ea98.appspot.com",
-      messagingSenderId: "58710835031",
-      appId: "1:58710835031:web:9248de0eba59c09c0fc812"
-    };
-
+    const firebaseConfig = { /* your config */ };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const messagesRef = ref(db, "messages");
 
-    const textInput = document.getElementById("text");
-    const sendBtn = document.getElementById("sendBtn");
-    const fileInput = document.getElementById("fileInput");
-    const fileBtn = document.getElementById("fileBtn");
-    const emojiBtn = document.getElementById("emojiBtn");
-    const emojiPicker = document.getElementById("emojiPicker");
-    const messagesDiv = document.getElementById("messages");
-    const nightModeBtn = document.getElementById("nightModeBtn");
-    const editNameBtn = document.getElementById("editNameBtn");
-
-    const maleAvatarURLs = Array.from({ length: 20 }, (_, i) => `https://i.pravatar.cc/150?img=${i + 1}`);
+    const avatars = [
+      // Handsome male avatars — replace URLs with your own
+      "https://i.pravatar.cc/150?img=10",
+      "https://i.pravatar.cc/150?img=12",
+      "https://i.pravatar.cc/150?img=14",
+      "https://i.pravatar.cc/150?img=18",
+      "https://i.pravatar.cc/150?img=20",
+      "https://i.pravatar.cc/150?img=22",
+      "https://i.pravatar.cc/150?img=24",
+      "https://i.pravatar.cc/150?img=26",
+      "https://i.pravatar.cc/150?img=28",
+      "https://i.pravatar.cc/150?img=30"
+    ];
 
     function hashString(str) {
       let hash = 0;
@@ -249,9 +240,9 @@
     }
 
     function getDailyAvatar(name) {
-      const dateStr = new Date().toISOString().slice(0, 10);
+      const dateStr = new Date().toISOString().slice(0,10);
       const seed = hashString(name + dateStr);
-      return maleAvatarURLs[seed % maleAvatarURLs.length];
+      return avatars[seed % avatars.length];
     }
 
     function getUserName() {
@@ -263,27 +254,24 @@
       return name;
     }
 
+    function editUserName() {
+      const newName = prompt("New name:", getUserName());
+      if (newName && newName.trim()) {
+        sessionStorage.setItem("username", newName);
+        sessionStorage.removeItem("avatarDate");
+        alert("Name updated!");
+      }
+    }
+
     function getUserAvatar() {
-      const name = getUserName();
-      const today = new Date().toISOString().slice(0, 10);
-      const cachedDate = sessionStorage.getItem("avatarDate");
-      if (cachedDate !== today) {
-        const avatar = getDailyAvatar(name);
+      const today = new Date().toISOString().slice(0,10);
+      if (sessionStorage.getItem("avatarDate") !== today) {
+        const avatar = getDailyAvatar(getUserName());
         sessionStorage.setItem("avatar", avatar);
         sessionStorage.setItem("avatarDate", today);
       }
       return sessionStorage.getItem("avatar");
     }
-
-    editNameBtn.onclick = () => {
-      const current = sessionStorage.getItem("username") || "Anonymous";
-      const name = prompt("Change your name:", current);
-      if (name) {
-        sessionStorage.setItem("username", name);
-        sessionStorage.removeItem("avatarDate"); // force avatar to refresh
-        location.reload();
-      }
-    };
 
     async function sendMessage() {
       const name = getUserName();
@@ -314,14 +302,25 @@
       });
     }
 
+    // DOM references
+    const textInput = document.getElementById("text");
+    const sendBtn = document.getElementById("sendBtn");
+    const fileInput = document.getElementById("fileInput");
+    const fileBtn = document.getElementById("fileBtn");
+    const emojiBtn = document.getElementById("emojiBtn");
+    const emojiPicker = document.getElementById("emojiPicker");
+    const messagesDiv = document.getElementById("messages");
+    const nightModeBtn = document.getElementById("nightModeBtn");
+    const editNameBtn = document.getElementById("editNameBtn");
+
     sendBtn.addEventListener("click", sendMessage);
     textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
     fileBtn.addEventListener("click", () => fileInput.click());
+    editNameBtn.addEventListener("click", editUserName);
 
-    function escapeHTML(text) {
+    function escapeHTML(t) {
       const d = document.createElement("div");
-      d.textContent = text;
-      return d.innerHTML;
+      d.textContent = t; return d.innerHTML;
     }
 
     onChildAdded(messagesRef, snap => {
@@ -332,10 +331,10 @@
 
       div.className = 'message ' + (isMe ? 'you' : 'other');
       div.innerHTML = `
-        <img src="${msg.avatar}" alt="avatar" class="avatar" />
+        <img src="${msg.avatar}" class="avatar" />
         <div class="message-content">
           <div class="sender">${escapeHTML(msg.name)}</div>
-          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName || '')}</div>
+          <div class="bubble">${msg.text ? escapeHTML(msg.text) : escapeHTML(msg.fileName||'')}</div>
           ${msg.file ? `<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 ${escapeHTML(msg.fileName)}</a>` : ''}
           <div class="info">
             <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
@@ -348,8 +347,8 @@
 
       if (isMe) {
         div.querySelector('.edit')?.addEventListener("click", () => {
-          const text = prompt('Edit:', msg.text);
-          if (text !== null) update(ref(db, 'messages/' + key), { text });
+          const newText = prompt('Edit:', msg.text);
+          if (newText !== null) update(ref(db, 'messages/' + key), { text: newText });
         });
         div.querySelector('.del')?.addEventListener("click", () => {
           if (confirm('Delete?')) remove(ref(db, 'messages/' + key));
