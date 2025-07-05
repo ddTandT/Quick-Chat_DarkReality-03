@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Messenger Chat</title>
   <style>
-    /* Basic styling (same as before) */
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -28,7 +27,7 @@
       border-radius: 8px;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
       overflow: hidden;
     }
     body.night .chat-container {
@@ -42,9 +41,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    .chat-header .title {
-      font-size: 1rem;
     }
     .profile-button, .chat-header button {
       background: transparent;
@@ -112,6 +108,7 @@
       border-radius: 18px;
       background: #f0f2f5;
       outline: none;
+      color: inherit;
     }
     .chat-input button {
       background: #0084ff;
@@ -129,10 +126,13 @@
       border-radius: 8px;
       padding: 8px;
       display: none;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
       flex-wrap: wrap;
       gap: 6px;
       z-index: 10;
+    }
+    body.night .emoji-picker {
+      background: #3a3b3c;
     }
     .emoji-picker span {
       font-size: 1.2rem;
@@ -199,9 +199,11 @@
       return name;
     }
 
+    // <-- This function assigns a unique cartoon avatar from DiceBear, changing daily -->
     function getAvatarURL(name) {
       const day = new Date().toISOString().slice(0, 10);
-      return `https://avatars.dicebear.com/api/identicon/${encodeURIComponent(name + day)}.svg`;
+      // Use 'avataaars' style for a nice cartoon avatar with transparent bg
+      return `https://avatars.dicebear.com/api/avataaars/${encodeURIComponent(name + day)}.svg?background=transparent`;
     }
 
     editProfileBtn.onclick = () => {
@@ -259,7 +261,7 @@
         <div class="message-content">
           <div class="sender">${msg.name}</div>
           <div class="bubble">${msg.text || msg.fileName || ''}</div>
-          ${msg.file ? `<a href="${msg.file}" download="${msg.fileName}" style="font-size:12px;">📎 ${msg.fileName}</a>` : ''}
+          ${msg.file ? `<a href="${msg.file}" download="${msg.fileName}" style="font-size:12px; margin-top:4px; display:block;">📎 ${msg.fileName}</a>` : ''}
         </div>
       `;
 
