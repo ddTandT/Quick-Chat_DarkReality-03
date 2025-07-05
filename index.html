@@ -20,7 +20,8 @@
       background: #18191a;
     }
     .chat-container {
-      width: 100%; max-width: 380px;
+      width: 100%;
+      max-width: 380px;
       height: 600px;
       background: #ffffff;
       border-radius: 8px;
@@ -44,17 +45,8 @@
     .chat-header .title {
       font-size: 1rem;
       display: flex;
-      align-items: center;
       gap: 10px;
-    }
-    .chat-header .edit-name {
-      font-size: 0.9rem;
-      background: rgba(255,255,255,0.2);
-      border: none;
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
+      align-items: center;
     }
     .chat-header button {
       background: transparent;
@@ -202,7 +194,7 @@
     <div class="chat-header">
       <div class="title">
         Quick Chat
-        <button class="edit-name" id="editNameBtn">✏️ Name</button>
+        <button id="editNameBtn" title="Edit Name">✏️</button>
       </div>
       <button id="nightModeBtn">🌙</button>
     </div>
@@ -245,13 +237,8 @@
     const nightModeBtn = document.getElementById("nightModeBtn");
     const editNameBtn = document.getElementById("editNameBtn");
 
-    const avatars = [
-      "https://i.pravatar.cc/150?img=1", "https://i.pravatar.cc/150?img=2",
-      "https://i.pravatar.cc/150?img=3", "https://i.pravatar.cc/150?img=4",
-      "https://i.pravatar.cc/150?img=5", "https://i.pravatar.cc/150?img=6",
-      "https://i.pravatar.cc/150?img=7", "https://i.pravatar.cc/150?img=8",
-      "https://i.pravatar.cc/150?img=9", "https://i.pravatar.cc/150?img=10"
-    ];
+    // Male-only avatars from pravatar (1–70, even numbers are usually male-looking)
+    const avatars = Array.from({ length: 35 }, (_, i) => `https://i.pravatar.cc/150?img=${i * 2 + 1}`);
 
     function hashString(str) {
       let hash = 0;
@@ -273,28 +260,33 @@
       if (!name) {
         name = prompt("Enter your name:") || "Anonymous";
         sessionStorage.setItem("username", name);
+        updateAvatar(name);
       }
       return name;
     }
 
+    function updateAvatar(name) {
+      const today = new Date().toISOString().slice(0, 10);
+      const avatar = getDailyAvatar(name);
+      sessionStorage.setItem("avatar", avatar);
+      sessionStorage.setItem("avatarDate", today);
+    }
+
     function getUserAvatar() {
-      const name = getUserName();
       const today = new Date().toISOString().slice(0, 10);
       const cachedDate = sessionStorage.getItem("avatarDate");
-      if (cachedDate !== today) {
-        const avatar = getDailyAvatar(name);
-        sessionStorage.setItem("avatar", avatar);
-        sessionStorage.setItem("avatarDate", today);
-      }
+      const name = getUserName();
+      if (cachedDate !== today) updateAvatar(name);
       return sessionStorage.getItem("avatar");
     }
 
     editNameBtn.onclick = () => {
-      const newName = prompt("Enter your new name:");
-      if (newName) {
-        sessionStorage.setItem("username", newName);
-        sessionStorage.removeItem("avatarDate"); // force re-generation of avatar
-        alert("Name changed! Your new avatar has also been updated for today.");
+      const current = sessionStorage.getItem("username") || "";
+      const name = prompt("Change your name:", current);
+      if (name && name !== current) {
+        sessionStorage.setItem("username", name);
+        updateAvatar(name);
+        alert("Name updated!");
       }
     };
 
