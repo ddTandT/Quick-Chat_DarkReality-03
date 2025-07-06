@@ -5,101 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Chat</title>
   <style>
-    body{
-      margin:0;font-family:'Segoe UI',sans-serif;
-      background:#eceef0;display:flex;justify-content:center;
-      align-items:center;height:100vh;overflow:hidden;
-      transition:background .3s
-    }
-    body.night{background:#18191a}
-    .chat-container{
-      width:100%;max-width:380px;height:600px;
-      background:#fff;border-radius:8px;display:flex;
-      flex-direction:column;box-shadow:0 2px 12px rgba(0,0,0,.1);
-      overflow:hidden
-    }
-    body.night .chat-container{
-      background:#242526;box-shadow:0 2px 12px rgba(255,255,255,.1)
-    }
-    .chat-header{
-      background:#0084ff;color:#fff;
-      padding:12px;font-weight:600;
-      display:flex;justify-content:space-between;align-items:center
-    }
-    .chat-header .title{font-size:1rem}
-    .chat-header button{
-      background:transparent;border:none;
-      font-size:1.2rem;color:#fff;cursor:pointer
-    }
-    .chat-messages{
-      flex:1;padding:12px;
-      overflow-y:auto;background:#f0f2f5
-    }
-    body.night .chat-messages{background:#3a3b3c}
-    .message{
-      display:flex;align-items:flex-start;
-      margin-bottom:14px;max-width:100%
-    }
-    .message.you{flex-direction:row-reverse;text-align:right}
-    .avatar{
-      width:32px;height:32px;border-radius:50%;
-      margin:0 8px;object-fit:cover
-    }
-    .message-content{
-      max-width:70%;display:flex;flex-direction:column
-    }
-    .sender{
-      font-size:.75rem;color:#666;margin-bottom:2px
-    }
-    body.night .sender{color:#aaa}
-    .bubble{
-      background:#0084ff;color:#fff;
-      padding:8px 12px;border-radius:18px;
-      word-wrap:break-word
-    }
-    .message.you .bubble{background:#dcf8c6;color:#050505}
-    body.night .bubble{background:#4b4b4b;color:#e4e6eb}
-    .info{
-      font-size:.7rem;color:#555;
-      margin-top:2px;display:flex;
-      justify-content:space-between;
-      align-items:center
-    }
-    body.night .info{color:#aaa}
-    .info .actions{display:none;gap:8px;cursor:pointer}
-    .message-content:hover .actions{display:inline-flex}
-    .chat-input{
-      padding:10px;background:#fff;
-      display:flex;align-items:center;gap:8px
-    }
-    body.night .chat-input{background:#242526}
-    .chat-input input[type="text"]{
-      flex:1;border:none;padding:8px 12px;
-      border-radius:18px;background:#f0f2f5;outline:none
-    }
-    body.night .chat-input input[type="text"]{
-      background:#3a3b3c;color:#e4e6eb
-    }
-    .chat-input button{
-      background:#0084ff;border:none;color:#fff;
-      padding:8px;border-radius:50%;cursor:pointer
-    }
-    body.night .chat-input button{background:#1877f2}
-    .emoji-picker{
-      position:absolute;bottom:60px;right:60px;
-      background:#fff;border-radius:8px;padding:8px;
-      display:none;box-shadow:0 2px 12px rgba(0,0,0,.1);
-      flex-wrap:wrap;gap:6px;z-index:10
-    }
-    body.night .emoji-picker{background:#3a3b3c}
-    .emoji-picker span{
-      font-size:1.2rem;cursor:pointer;
-      padding:4px;border-radius:4px
-    }
-    .emoji-picker span:hover{
-      background:#0084ff;color:#fff
-    }
-    .settings-btn{background:transparent;border:none;color:#fff;cursor:pointer;font-size:1rem}
+    body { margin:0; font-family:'Segoe UI',Arial,sans-serif; background:#eceef0; display:flex; justify-content:center; align-items:center; height:100vh; overflow:hidden; transition:0.3s; }
+    body.night { background:#18191a; }
+    .chat-container { width:100%; max-width:380px; height:600px; background:#fff; border-radius:8px; display:flex; flex-direction:column; box-shadow:0 2px 12px rgba(0,0,0,0.1); overflow:hidden; }
+    body.night .chat-container { background:#242526; box-shadow:0 2px 12px rgba(255,255,255,0.1); }
+    .chat-header { background:#0084ff; color:#fff; padding:12px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+    .chat-header .title { font-size:1rem; }
+    .chat-header button { background:transparent; border:none; font-size:1.2rem; color:#fff; cursor:pointer; }
+    .chat-messages { flex:1; padding:12px; overflow-y:auto; background:#f0f2f5; }
+    body.night .chat-messages { background:#3a3b3c; }
+    .message { display:flex; align-items:flex-start; margin-bottom:14px; max-width:100%; }
+    .message.you { flex-direction:row-reverse; text-align:right; }
+    .avatar { width:32px; height:32px; border-radius:50%; margin:0 8px; object-fit:cover; }
+    .message-content { max-width:70%; display:flex; flex-direction:column; }
+    .sender { font-size:0.75rem; color:#666; margin-bottom:2px; }
+    body.night .sender { color:#aaa; }
+    .bubble { background:#0084ff; color:#fff; padding:8px 12px; border-radius:18px; word-wrap:break-word; }
+    .message.you .bubble { background:#dcf8c6; color:#050505; }
+    body.night .bubble { background:#4b4b4b; color:#e4e6eb; }
+    .info { font-size:0.7rem; color:#555; margin-top:2px; display:flex; justify-content:space-between; align-items:center; }
+    body.night .info { color:#aaa; }
+    .info .actions { display:none; gap:8px; cursor:pointer; }
+    .message-content:hover .actions { display:inline-flex; }
+    .chat-input { padding:10px; background:#fff; display:flex; align-items:center; gap:8px; }
+    body.night .chat-input { background:#242526; }
+    .chat-input input[type="text"], .chat-input input[type="file"] { flex:1; border:none; padding:8px 12px; border-radius:18px; background:#f0f2f5; outline:none; }
+    body.night .chat-input input[type="text"] { background:#3a3b3c; color:#e4e6eb; }
+    .chat-input button { background:#0084ff; border:none; color:#fff; padding:8px; border-radius:50%; cursor:pointer; }
+    body.night .chat-input button { background:#1877f2; }
+    .emoji-picker { position:absolute; bottom:60px; right:60px; background:#fff; border-radius:8px; padding:8px; display:none; box-shadow:0 2px 12px rgba(0,0,0,0.1); flex-wrap:wrap; gap:6px; z-index:10; }
+    body.night .emoji-picker { background:#3a3b3c; }
+    .emoji-picker span { font-size:1.2rem; cursor:pointer; padding:4px; border-radius:4px; }
+    .emoji-picker span:hover { background:#0084ff; color:#fff; }
   </style>
 </head>
 <body>
@@ -107,7 +44,7 @@
     <div class="chat-header">
       <div class="title">Quick Chat</div>
       <div>
-        <button id="settingsBtn" class="settings-btn">⚙️</button>
+        <button id="changeNameBtn">✏️</button>
         <button id="nightModeBtn">🌙</button>
       </div>
     </div>
@@ -129,144 +66,91 @@
     const firebaseConfig = { /* your config */ };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const messagesRef = ref(db, "messages");
+    const messagesRef = ref(db,"messages");
+    const textInput=document.getElementById("text"), sendBtn=document.getElementById("sendBtn"), fileInput=document.getElementById("fileInput"), fileBtn=document.getElementById("fileBtn"), emojiBtn=document.getElementById("emojiBtn"), emojiPicker=document.getElementById("emojiPicker"), messagesDiv=document.getElementById("messages"), nightModeBtn=document.getElementById("nightModeBtn"), changeNameBtn=document.getElementById("changeNameBtn");
 
-    const avatars = {
-      male:["https://i.pravatar.cc/150?img=5","https://i.pravatar.cc/150?img=6","https://i.pravatar.cc/150?img=7"],
-      female:["https://i.pravatar.cc/150?img=8","https://i.pravatar.cc/150?img=9","https://i.pravatar.cc/150?img=10"]
-    };
-
-    function hashString(s){
-      let h=0;for(let i=0;i<s.length;i++)h=(h<<5)-h+s.charCodeAt(i),h|=0;
-      return Math.abs(h);
-    }
-
+    const maleAvatars=[/*10 male urls*/];
+    const femaleAvatars=[/*10 female urls*/];
+    function hashString(s){let h=0; for(let c of s){h=(h<<5)-h+c.charCodeAt(0);h|=0;} return Math.abs(h);}
+    function pickAvatarList(g){return g==='female'?femaleAvatars:maleAvatars;}
     function getDailyAvatar(name,gender){
+      const avatarsList=pickAvatarList(gender);
+      const idx=hashString(name+new Date().toISOString().slice(0,10))%avatarsList.length;
+      return avatarsList[idx];
+    }
+
+    function promptUser(init=false){
+      let name=prompt(init?"Enter name:":"Change name:",sessionStorage.getItem("username")||"")||"Anonymous";
+      let gender=sessionStorage.getItem("gender");
+      if(!gender){gender=prompt("Your gender (male/female):").toLowerCase(); if(gender!=="male"&&gender!=="female")gender="male";}
+      sessionStorage.setItem("username",name);
+      sessionStorage.setItem("gender",gender);
+      return {name,gender};
+    }
+
+    function getUser(){
+      let name=sessionStorage.getItem("username"), gender=sessionStorage.getItem("gender");
+      if(!name||!gender){ return promptUser(true); }
+      return {name,gender};
+    }
+
+    function getAvatar(){
+      const {name,gender}=getUser();
       const today=new Date().toISOString().slice(0,10);
-      const seed=hashString(name+gender+today);
-      const arr=avatars[gender]||avatars.male;
-      return arr[seed%arr.length];
-    }
-
-    function getLocal(key, askFn){
-      let v=sessionStorage.getItem(key);
-      if(!v) {
-        v=askFn();
-        sessionStorage.setItem(key,v);
+      const last=date=sessionStorage.getItem("avatarDate");
+      if(last!==today || !sessionStorage.getItem("avatar")){
+        const avatar=getDailyAvatar(name,gender);
+        sessionStorage.setItem("avatar",avatar);
+        sessionStorage.setItem("avatarDate",today);
       }
-      return v;
-    }
-
-    function askName(){
-      return prompt("Enter your display name:")?.trim()||"Anonymous";
-    }
-    function askGender(){
-      let g=prompt("Enter your gender (male/female):")?.toLowerCase().trim();
-      if(g!=="male"&&g!=="female") return askGender();
-      return g;
-    }
-
-    function getUserName(){ return getLocal("qc_name",askName); }
-    function getUserGender(){ return getLocal("qc_gender",askGender); }
-    function getUserAvatar(){
-      const name=getUserName(), gender=getUserGender();
-      const today=new Date().toISOString().slice(0,10);
-      if(sessionStorage.getItem("qc_avatar_date")!==today){
-        sessionStorage.setItem("qc_avatar",getDailyAvatar(name,gender));
-        sessionStorage.setItem("qc_avatar_date",today);
-      }
-      return sessionStorage.getItem("qc_avatar");
-    }
-
-    function openSettings(){
-      const newName=prompt("Change name:",getUserName());
-      if(newName) sessionStorage.setItem("qc_name",newName.trim());
-      const newGender=prompt("Change gender (male/female):",getUserGender());
-      if(newGender&&["male","female"].includes(newGender.toLowerCase())){
-        sessionStorage.setItem("qc_gender",newGender.toLowerCase());
-        sessionStorage.removeItem("qc_avatar_date");
-      }
-      location.reload();
-    }
-
-    const ui = {
-      textInput:document.getElementById("text"),
-      sendBtn:document.getElementById("sendBtn"),
-      fileInput:document.getElementById("fileInput"),
-      fileBtn:document.getElementById("fileBtn"),
-      emojiBtn:document.getElementById("emojiBtn"),
-      emojiPicker:document.getElementById("emojiPicker"),
-      messagesDiv:document.getElementById("messages"),
-      settingsBtn:document.getElementById("settingsBtn"),
-      nightModeBtn:document.getElementById("nightModeBtn")
-    };
-
-    function toBase64(file){
-      return new Promise((r,j)=>{const f=new FileReader();f.readAsDataURL(file);f.onload=()=>r(f.result);f.onerror=e=>j(e);});
+      return sessionStorage.getItem("avatar");
     }
 
     async function sendMessage(){
-      const name=getUserName(), avatar=getUserAvatar();
-      const text=ui.textInput.value.trim(), file=ui.fileInput.files[0];
-      if(!text&&!file) return;
-      const data={name,avatar,gender:getUserGender(),timestamp:new Date().toISOString()};
-      if(text) data.text=text;
-      if(file){
-        data.file=await toBase64(file);
-        data.fileName=file.name;
-      }
+      const {name,gender}=getUser(); const avatar=getAvatar();
+      const text=textInput.value.trim(), file=fileInput.files[0];
+      if(!text&&!file)return;
+      let data={name,gender,avatar,timestamp:new Date().toISOString()};
+      if(text)data.text=text;
+      if(file){data.file=await toBase64(file); data.fileName=file.name;}
       push(messagesRef,data);
-      ui.textInput.value="";
-      ui.fileInput.value="";
-      ui.emojiPicker.style.display="none";
+      textInput.value=""; fileInput.value=""; emojiPicker.style.display="none";
     }
 
-    function escapeHTML(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML;}
+    function toBase64(f){return new Promise(r=>{const R=new FileReader();R.readAsDataURL(f);R.onload=()=>r(R.result);});}
 
-    ui.sendBtn.addEventListener("click",sendMessage);
-    ui.textInput.addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage();});
-    ui.fileBtn.addEventListener("click",()=>ui.fileInput.click());
-    ui.settingsBtn.addEventListener("click",openSettings);
+    sendBtn.onclick=sendMessage;
+    fileBtn.onclick=()=>fileInput.click();
+    textInput.addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage();});
+    changeNameBtn.onclick=()=>promptUser();
 
-    ui.emojiBtn.addEventListener("click",()=> ui.emojiPicker.style.display = ui.emojiPicker.style.display==="flex"?"none":"flex");
-    document.addEventListener("click",e=>{if(!ui.emojiPicker.contains(e.target)&&e.target!==ui.emojiBtn) ui.emojiPicker.style.display="none";});
+    function escapeHTML(t){let d=document.createElement("div");d.textContent=t;return d.innerHTML;}
 
-    ui.nightModeBtn.addEventListener("click",()=>{
-      document.body.classList.toggle("night");
-      ui.nightModeBtn.textContent=document.body.classList.contains("night")?"☀️":"🌙";
+    onChildAdded(messagesRef, snap=>{
+      const m=snap.val(), isMe=m.name===sessionStorage.getItem("username");
+      const div=document.createElement("div");
+      div.className="message "+(isMe?"you":"other");
+      div.innerHTML=\`
+        <img src="\${m.avatar}" class="avatar"/>
+        <div class="message-content">
+          <div class="sender">\${escapeHTML(m.name)}</div>
+          <div class="bubble">\${m.text?escapeHTML(m.text):escapeHTML(m.fileName||"")}</div>
+          \${m.file?`<a href="\${m.file}" download="\${escapeHTML(m.fileName)}" style="font-size:12px;margin-top:4px;color:#555;">📎 \${escapeHTML(m.fileName)}</a>`:""}
+          <div class="info"><span>\${new Date(m.timestamp).toLocaleTimeString()}</span>\${isMe?`<span class="actions"><span data-key="\${snap.key}" class="edit">✏️</span><span data-key="\${snap.key}" class="del">🗑️</span></span>`:""}</div>
+        </div>\`;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop=messagesDiv.scrollHeight;
+      if(isMe){
+        div.querySelector('.edit').onclick=()=>{const t=prompt("Edit:",m.text);if(t!==null)update(ref(db,"messages/"+snap.key),{text:t});};
+        div.querySelector('.del').onclick=()=>{if(confirm("Delete?"))remove(ref(db,"messages/"+snap.key));};
+      }
     });
 
     const emojis=["😀","😂","😍","😎","😉","👍","🥳","😢","🤔","❤️"];
-    emojis.forEach(e=>{const sp=document.createElement("span");sp.textContent=e;sp.onclick=()=>{ui.textInput.value+=e;ui.emojiPicker.style.display="none";ui.textInput.focus();};ui.emojiPicker.appendChild(sp);});
-
-    onChildAdded(messagesRef,snap=>{
-      const msg=snap.val(),key=snap.key,name=getUserName();
-      const div=document.createElement("div"), isMe=msg.name===name;
-      div.className="message "+(isMe?"you":"other");
-      div.innerHTML=`
-        <img src="${msg.avatar}" class="avatar"/>
-        <div class="message-content">
-          <div class="sender">${escapeHTML(msg.name)}</div>
-          <div class="bubble">${msg.text?escapeHTML(msg.text):escapeHTML(msg.fileName||"")}</div>
-          ${msg.file?`<a href="${msg.file}" download="${escapeHTML(msg.fileName)}" style="font-size:12px;margin-top:4px;color:#555">📎 ${escapeHTML(msg.fileName)}</a>`:""}
-          <div class="info">
-            <span>${new Date(msg.timestamp).toLocaleTimeString()}</span>
-            ${isMe?`<span class="actions"><span data-key="${key}" class="edit">✏️</span><span data-key="${key}" class="del">🗑️</span></span>`:""}
-          </div>
-        </div>`;
-      ui.messagesDiv.appendChild(div);
-      ui.messagesDiv.scrollTop=ui.messagesDiv.scrollHeight;
-
-      if(isMe){
-        div.querySelector(".edit")?.addEventListener("click",()=>{
-          const t=prompt("Edit:",msg.text);
-          if(t!==null) update(ref(db,"messages/"+key),{text:t});
-        });
-        div.querySelector(".del")?.addEventListener("click",()=>{
-          if(confirm("Delete?")) remove(ref(db,"messages/"+key));
-        });
-      }
-    });
+    emojis.forEach(e=>{const s=document.createElement("span");s.textContent=e;s.onclick=()=>{textInput.value+=e;emojiPicker.style.display="none";textInput.focus();};emojiPicker.appendChild(s);});
+    emojiBtn.onclick=()=>emojiPicker.style.display=emojiPicker.style.display==="flex"?"none":"flex";
+    document.addEventListener("click",e=>{if(!emojiPicker.contains(e.target)&&e.target!==emojiBtn)emojiPicker.style.display="none";});
+    nightModeBtn.onclick=()=>{document.body.classList.toggle("night");nightModeBtn.textContent=document.body.classList.contains("night")?"☀️":"🌙";};
   </script>
 </body>
 </html>
