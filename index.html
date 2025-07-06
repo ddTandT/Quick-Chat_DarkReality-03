@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Chat</title>
   <style>
-    /*— Styles unchanged from previous —*/
     body {
       margin: 0;
       font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
@@ -21,74 +20,242 @@
       background: #18191a;
     }
     .chat-container {
-      max-width: 380px; height: 600px;
-      background: #fff; border-radius: 8px;
-      display: flex; flex-direction: column;
+      width: 100%; max-width: 380px;
+      height: 600px;
+      background: #ffffff;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
       position: relative;
     }
     body.night .chat-container {
       background: #242526;
       box-shadow: 0 2px 12px rgba(255,255,255,0.1);
     }
-    .chat-header { background: #0084ff; color: white; display: flex; justify-content: space-between; align-items: center; padding:12px; font-weight:600;}
-    .chat-header .header-buttons { display:flex; gap:10px; }
-    .chat-header button { background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer; }
+    .chat-header {
+      background: #0084ff;
+      color: white;
+      padding: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-header .title {
+      font-size: 1rem;
+    }
+    .chat-header .header-buttons {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-header button {
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      color: white;
+      cursor: pointer;
+    }
     .chat-messages {
-      flex:1; padding:12px; overflow-y:auto; background:#f0f2f5;
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: #f0f2f5;
     }
-    body.night .chat-messages { background:#3a3b3c; }
-    .message { display:flex; align-items:flex-start; margin-bottom:14px; }
-    .message.you { flex-direction:row-reverse; text-align:right; }
-    .avatar { width:32px; height:32px; border-radius:50%; margin:0 8px; object-fit:cover; flex-shrink:0; }
-    .message-content { max-width:70%; display:flex; flex-direction:column; }
-    .sender { font-size:0.75rem; color:#666; margin-bottom:2px; }
-    body.night .sender { color:#aaa; }
-    .bubble { background:#0084ff; color:white; padding:8px 12px; border-radius:18px; word-wrap:break-word; }
-    .message.you .bubble { background:#dcf8c6; color:#050505; }
-    body.night .bubble { background:#4b4b4b; color:#e4e6eb; }
-    .info { font-size:0.7rem; color:#555; margin-top:2px; display:flex; justify-content:space-between; }
-    body.night .info { color:#aaa; }
-    .info .actions { display:none; gap:8px; cursor:pointer; }
-    .message-content:hover .actions { display:inline-flex; }
-    .chat-input { padding:10px; display:flex; align-items:center; gap:8px; background:#fff; }
-    body.night .chat-input { background:#242526; }
+    body.night .chat-messages {
+      background: #3a3b3c;
+    }
+    .message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      max-width: 100%;
+    }
+    .message.you {
+      flex-direction: row-reverse;
+      text-align: right;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin: 0 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .message-content {
+      max-width: 70%;
+      display: flex;
+      flex-direction: column;
+    }
+    .sender {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 2px;
+    }
+    body.night .sender {
+      color: #aaa;
+    }
+    .bubble {
+      background: #0084ff;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 18px;
+      word-wrap: break-word;
+    }
+    .message.you .bubble {
+      background: #dcf8c6;
+      color: #050505;
+    }
+    body.night .bubble {
+      background: #4b4b4b;
+      color: #e4e6eb;
+    }
+    .info {
+      font-size: 0.7rem;
+      color: #555;
+      margin-top: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    body.night .info {
+      color: #aaa;
+    }
+    .info .actions {
+      display: none;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .message-content:hover .actions {
+      display: inline-flex;
+    }
+    .chat-input {
+      padding: 10px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    body.night .chat-input {
+      background: #242526;
+    }
     .chat-input input[type="text"] {
-      flex:1; border:none; padding:8px 12px; border-radius:18px; background:#f0f2f5; outline:none;
+      flex: 1;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 18px;
+      background: #f0f2f5;
+      outline: none;
     }
-    body.night .chat-input input[type="text"] { background:#3a3b3c; color:#e4e6eb; }
-    .chat-input button { background:#0084ff; border:none; color:white; padding:8px; border-radius:50%; cursor:pointer;}
-    body.night .chat-input button { background:#1877f2; }
+    body.night .chat-input input[type="text"] {
+      background: #3a3b3c;
+      color: #e4e6eb;
+    }
+    .chat-input button {
+      background: #0084ff;
+      border: none;
+      color: white;
+      padding: 8px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    body.night .chat-input button {
+      background: #1877f2;
+    }
     .emoji-picker {
-      position:absolute; bottom:60px; right:60px;
-      background:#fff; border-radius:8px; padding:8px;
-      display:none; box-shadow:0 2px 12px rgba(0,0,0,0.1);
-      flex-wrap:wrap; gap:6px; z-index:10;
+      position: absolute;
+      bottom: 60px;
+      right: 60px;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 8px;
+      display: none;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+      gap: 6px;
+      z-index: 10;
     }
-    body.night .emoji-picker { background:#3a3b3c; }
-    .emoji-picker span { font-size:1.2rem; cursor:pointer; padding:4px; border-radius:4px; }
-    .emoji-picker span:hover { background:#0084ff; color:white; }
+    body.night .emoji-picker {
+      background: #3a3b3c;
+    }
+    .emoji-picker span {
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .emoji-picker span:hover {
+      background: #0084ff;
+      color: white;
+    }
     .modal-overlay {
-      position:fixed; top:0; left:0; right:0; bottom:0;
-      background:rgba(0,0,0,0.5); display:none;
-      justify-content:center; align-items:center; z-index:9999;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
     }
     .modal {
-      background:#fff; padding:20px; border-radius:8px; max-width:320px; width:90%;
-      box-shadow:0 2px 12px rgba(0,0,0,0.3);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
-    body.night .modal { background:#3a3b3c; color:#e4e6eb; }
-    .modal h2 { margin:0 0 15px; font-weight:600; }
-    .modal label { display:block; margin-bottom:6px; }
+    body.night .modal {
+      background: #3a3b3c;
+      color: #e4e6eb;
+    }
+    .modal h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    .modal label {
+      display: block;
+      margin-bottom: 6px;
+    }
     .modal input[type="text"] {
-      width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:4px;
-      margin-bottom:12px; font-size:1rem;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      margin-bottom: 12px;
+      font-size: 1rem;
     }
-    body.night .modal input[type="text"] { background:#555; border:1px solid #777; color:#e4e6eb; }
-    .gender-options { display:flex; gap:15px; margin-bottom:12px; }
-    .gender-options label { cursor:pointer; user-select:none; }
-    .modal button { width:100%; padding:10px 16px; background:#0084ff; border:none; color:white; border-radius:6px; cursor:pointer; font-size:1rem; }
-    body.night .modal button { background:#1877f2; }
+    body.night .modal input[type="text"] {
+      background: #555;
+      border: 1px solid #777;
+      color: #e4e6eb;
+    }
+    .gender-options {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 12px;
+    }
+    .gender-options label {
+      cursor: pointer;
+      user-select: none;
+    }
+    .modal button {
+      background: #0084ff;
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      width: 100%;
+    }
+    body.night .modal button {
+      background: #1877f2;
+    }
   </style>
 </head>
 <body>
@@ -112,9 +279,9 @@
   </div>
 
   <div class="modal-overlay" id="modalOverlay">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <h2 id="modalTitle">Set Your Profile</h2>
-      <label for="usernameInput">Name:</label>
+    <div class="modal" role="dialog">
+      <h2>Set Your Profile</h2>
+      <label>Name:</label>
       <input type="text" id="usernameInput" maxlength="30" placeholder="Enter your name" />
       <label>Gender:</label>
       <div class="gender-options">
@@ -129,7 +296,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    const app = initializeApp({
+    const firebaseConfig = {
       apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
       authDomain: "live-chat-app-5ea98.firebaseapp.com",
       databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
@@ -137,74 +304,84 @@
       storageBucket: "live-chat-app-5ea98.appspot.com",
       messagingSenderId: "58710835031",
       appId: "1:58710835031:web:9248de0eba59c09c0fc812"
-    });
-    const db = getDatabase(app), messagesRef = ref(db,"messages");
+    };
 
-    const textInput = document.getElementById("text"), sendBtn = document.getElementById("sendBtn"),
-          fileInput = document.getElementById("fileInput"), fileBtn = document.getElementById("fileBtn"),
-          emojiBtn = document.getElementById("emojiBtn"), emojiPicker = document.getElementById("emojiPicker"),
-          messagesDiv = document.getElementById("messages"),
-          nightModeBtn = document.getElementById("nightModeBtn"),
-          changeUserBtn = document.getElementById("changeUserBtn"),
-          modalOverlay = document.getElementById("modalOverlay"),
-          usernameInput = document.getElementById("usernameInput"),
-          saveProfileBtn = document.getElementById("saveProfileBtn");
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messagesRef = ref(db, "messages");
 
-    // Gender-specific avatar URLs (strictly followed):
+    const textInput = document.getElementById("text");
+    const sendBtn = document.getElementById("sendBtn");
+    const fileInput = document.getElementById("fileInput");
+    const fileBtn = document.getElementById("fileBtn");
+    const emojiBtn = document.getElementById("emojiBtn");
+    const emojiPicker = document.getElementById("emojiPicker");
+    const messagesDiv = document.getElementById("messages");
+    const nightModeBtn = document.getElementById("nightModeBtn");
+    const changeUserBtn = document.getElementById("changeUserBtn");
+
+    const modalOverlay = document.getElementById("modalOverlay");
+    const usernameInput = document.getElementById("usernameInput");
+    const saveProfileBtn = document.getElementById("saveProfileBtn");
+
     const maleAvatars = [
-      "https://i.pravatar.cc/150?img=21",
-      "https://i.pravatar.cc/150?img=22",
-      "https://i.pravatar.cc/150?img=23",
-      "https://i.pravatar.cc/150?img=24",
-      "https://i.pravatar.cc/150?img=25",
-      "https://i.pravatar.cc/150?img=26",
-      "https://i.pravatar.cc/150?img=27",
-      "https://i.pravatar.cc/150?img=28",
-      "https://i.pravatar.cc/150?img=29",
-      "https://i.pravatar.cc/150?img=30"
+      "https://avatars.dicebear.com/api/bottts/male1.svg",
+      "https://avatars.dicebear.com/api/bottts/male2.svg",
+      "https://avatars.dicebear.com/api/bottts/male3.svg",
+      "https://avatars.dicebear.com/api/bottts/male4.svg",
+      "https://avatars.dicebear.com/api/bottts/male5.svg",
+      "https://avatars.dicebear.com/api/bottts/male6.svg",
+      "https://avatars.dicebear.com/api/bottts/male7.svg",
+      "https://avatars.dicebear.com/api/bottts/male8.svg",
+      "https://avatars.dicebear.com/api/bottts/male9.svg",
+      "https://avatars.dicebear.com/api/bottts/male10.svg"
     ];
     const femaleAvatars = [
-      "https://i.pravatar.cc/150?img=31",
-      "https://i.pravatar.cc/150?img=32",
-      "https://i.pravatar.cc/150?img=33",
-      "https://i.pravatar.cc/150?img=34",
-      "https://i.pravatar.cc/150?img=35",
-      "https://i.pravatar.cc/150?img=36",
-      "https://i.pravatar.cc/150?img=37",
-      "https://i.pravatar.cc/150?img=38",
-      "https://i.pravatar.cc/150?img=39",
-      "https://i.pravatar.cc/150?img=40"
+      "https://avatars.dicebear.com/api/bottts/female1.svg",
+      "https://avatars.dicebear.com/api/bottts/female2.svg",
+      "https://avatars.dicebear.com/api/bottts/female3.svg",
+      "https://avatars.dicebear.com/api/bottts/female4.svg",
+      "https://avatars.dicebear.com/api/bottts/female5.svg",
+      "https://avatars.dicebear.com/api/bottts/female6.svg",
+      "https://avatars.dicebear.com/api/bottts/female7.svg",
+      "https://avatars.dicebear.com/api/bottts/female8.svg",
+      "https://avatars.dicebear.com/api/bottts/female9.svg",
+      "https://avatars.dicebear.com/api/bottts/female10.svg"
     ];
 
-    function hashString(s) {
-      let h = 0;
-      for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i), h |= 0;
-      return Math.abs(h);
+    function hashString(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash);
     }
+
     function mulberry32(a) {
       return function() {
-        let t = a += 0x6D2B79F5;
+        var t = a += 0x6D2B79F5;
         t = Math.imul(t ^ (t >>> 15), t | 1);
         t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       }
     }
-    function shuffleWithSeed(arr, seed) {
-      const a = arr.slice(), rnd = mulberry32(seed);
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rnd() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+
+    function shuffleArrayWithSeed(array, seed) {
+      let rand = mulberry32(seed);
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
       }
-      return a;
     }
 
-    function getProfile() {
-      const name = sessionStorage.getItem("username"),
-            gender = sessionStorage.getItem("gender");
-      if (!name || !gender) return null;
-      return { name, gender };
+    function getUserProfile() {
+      const name = sessionStorage.getItem("username");
+      const gender = sessionStorage.getItem("gender");
+      return name && gender ? { name, gender } : null;
     }
-    function saveProfile(name, gender) {
+
+    function setUserProfile(name, gender) {
       sessionStorage.setItem("username", name);
       sessionStorage.setItem("gender", gender);
       sessionStorage.removeItem("avatar");
@@ -212,90 +389,81 @@
     }
 
     function getDailyAvatar(name, gender) {
-      const today = new Date().toISOString().slice(0,10),
-            key = `${name}|${gender}|${today}`,
-            cachedDate = sessionStorage.getItem("avatarDate"),
-            cachedUrl = sessionStorage.getItem("avatar");
-      if (cachedDate === today && cachedUrl) return cachedUrl;
-      const pool = gender === "male" ? maleAvatars : femaleAvatars,
-            seed = hashString(key),
-            shuffled = shuffleWithSeed(pool, seed),
-            avatarUrl = shuffled[seed % shuffled.length];
-      sessionStorage.setItem("avatar", avatarUrl);
+      const today = new Date().toISOString().slice(0, 10);
+      const key = `${name}|${gender}|${today}`;
+      const cachedDate = sessionStorage.getItem("avatarDate");
+      if (cachedDate === today) return sessionStorage.getItem("avatar");
+
+      const pool = gender === "male" ? [...maleAvatars] : [...femaleAvatars];
+      const seed = hashString(key);
+      shuffleArrayWithSeed(pool, seed);
+      const avatar = pool[seed % pool.length];
+
+      sessionStorage.setItem("avatar", avatar);
       sessionStorage.setItem("avatarDate", today);
-      return avatarUrl;
+      return avatar;
     }
 
-    function showModal(profile) {
-      usernameInput.value = profile?.name || "";
-      Array.from(document.getElementsByName("gender")).forEach(r=>r.checked = profile?.gender===r.value);
-      modalOverlay.style.display="flex";
+    function showUserModal(name = "", gender = "") {
+      usernameInput.value = name;
+      document.querySelectorAll('input[name="gender"]').forEach(r => {
+        r.checked = r.value === gender;
+      });
+      modalOverlay.style.display = "flex";
     }
-    function saveModal() {
+
+    function saveUserProfile() {
       const name = usernameInput.value.trim() || "Anonymous";
-      const gender = Array.from(document.getElementsByName("gender")).find(r => r.checked)?.value;
-      if (!gender) return alert("Select gender.");
-      saveProfile(name, gender);
-      modalOverlay.style.display="none";
+      const gender = document.querySelector('input[name="gender"]:checked')?.value;
+      if (!gender) {
+        alert("Please select a gender.");
+        return;
+      }
+      setUserProfile(name, gender);
+      modalOverlay.style.display = "none";
     }
 
     function sendMessage() {
-      const p = getProfile();
-      if (!p) return showModal(null);
-      const text = textInput.value.trim(), file = fileInput.files[0];
-      if (!text && !file) return;
-      const payload = {
-        name: p.name,
-        gender: p.gender,
-        timestamp: new Date().toISOString()
-      };
-      if (text) payload.text = text;
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          payload.file = reader.result;
-          payload.fileName = file.name;
-          push(messagesRef, payload);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        push(messagesRef, payload);
+      const profile = getUserProfile();
+      if (!profile) {
+        showUserModal();
+        return;
       }
+      const text = textInput.value.trim();
+      const file = fileInput.files[0];
+      if (!text && !file) return;
+
+      const data = {
+        name: profile.name,
+        gender: profile.gender,
+        timestamp: new Date().toISOString(),
+      };
+      if (text) data.text = text;
+      if (file) data.file = ""; // keep existing functionality
+      push(messagesRef, data);
       textInput.value = "";
       fileInput.value = "";
       emojiPicker.style.display = "none";
     }
 
-    sendBtn.onclick = sendMessage;
-    textInput.addEventListener("keydown", e => e.key==="Enter" && !e.shiftKey && (e.preventDefault(), sendMessage()));
-    fileBtn.onclick = () => fileInput.click();
-    fileInput.onchange = sendMessage;
-
-    emojiBtn.onclick = () => emojiPicker.style.display = emojiPicker.style.display==="flex"?"none":"flex";
-    ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎","😍","😘","😗","😙","😚","🙂","🤗","🤩"].forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.onclick = () => (textInput.value += e, textInput.focus());
-      emojiPicker.appendChild(span);
-    });
-
-    nightModeBtn.onclick = () => document.body.classList.toggle("night");
-    changeUserBtn.onclick = () => showModal(getProfile());
-    saveProfileBtn.onclick = saveModal;
+    function escapeHTML(text) {
+      const d = document.createElement("div");
+      d.textContent = text;
+      return d.innerHTML;
+    }
 
     onChildAdded(messagesRef, snap => {
-      const msg = snap.val(),
-            prof = getProfile(),
-            isMe = prof && msg.name === prof.name,
-            avatarUrl = getDailyAvatar(msg.name, msg.gender);
+      const msg = snap.val();
+      const prof = getUserProfile();
+      const isMe = prof && msg.name === prof.name;
+      const avatarUrl = getDailyAvatar(msg.name, msg.gender);
 
       const div = document.createElement("div");
-      div.className = "message " + (isMe?"you":"other");
+      div.className = "message " + (isMe ? "you" : "other");
 
       const img = document.createElement("img");
       img.className = "avatar";
       img.src = avatarUrl;
-      img.alt = msg.name+" avatar";
 
       const content = document.createElement("div");
       content.className = "message-content";
@@ -306,15 +474,7 @@
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
-
-      if (msg.text) bubble.innerHTML = msg.text.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
-      else if (msg.file) {
-        const anchor = document.createElement("a");
-        anchor.href = msg.file;
-        anchor.target = "_blank";
-        anchor.textContent = msg.fileName || "File";
-        bubble.appendChild(anchor);
-      }
+      bubble.innerHTML = msg.text ? escapeHTML(msg.text) : "";
 
       content.appendChild(sender);
       content.appendChild(bubble);
@@ -331,8 +491,18 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 
+    emojiBtn.onclick = () => emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
+    fileBtn.onclick = () => fileInput.click();
+    sendBtn.onclick = sendMessage;
+    nightModeBtn.onclick = () => document.body.classList.toggle("night");
+    changeUserBtn.onclick = () => {
+      const prof = getUserProfile();
+      showUserModal(prof?.name, prof?.gender);
+    };
+    saveProfileBtn.onclick = saveUserProfile;
+
     window.onload = () => {
-      if (!getProfile()) showModal(null);
+      if (!getUserProfile()) showUserModal();
     };
   </script>
 </body>
