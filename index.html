@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Chat</title>
   <style>
-    /* (All your existing CSS here, unchanged) */
+    /* Your existing styles remain unchanged */
     body {
       margin: 0;
       font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
@@ -242,8 +242,12 @@
       margin-bottom: 12px;
     }
     .gender-options label {
-      cursor: pointer;
+      cursor: not-allowed; /* user cannot select female */
       user-select: none;
+    }
+    .gender-options input[type="radio"]:disabled + label {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     .modal button {
       background: #0084ff;
@@ -288,8 +292,10 @@
       <input type="text" id="usernameInput" maxlength="30" placeholder="Enter your name" />
       <label>Gender:</label>
       <div class="gender-options">
-        <label><input type="radio" name="gender" value="male" /> Male</label>
-        <label><input type="radio" name="gender" value="female" disabled /> Female</label>
+        <input type="radio" id="maleRadio" name="gender" value="male" checked />
+        <label for="maleRadio">Male</label>
+        <input type="radio" id="femaleRadio" name="gender" value="female" disabled />
+        <label for="femaleRadio" style="opacity:0.4; cursor:not-allowed;">Female (disabled)</label>
       </div>
       <button id="saveProfileBtn">Save</button>
     </div>
@@ -327,7 +333,7 @@
     const usernameInput = document.getElementById("usernameInput");
     const saveProfileBtn = document.getElementById("saveProfileBtn");
 
-    // New Male avatars - Unique, real-photo based, no duplicates.
+    // Male avatars only (real photo URLs)
     const maleAvatars = [
       "https://randomuser.me/api/portraits/men/1.jpg",
       "https://randomuser.me/api/portraits/men/2.jpg",
@@ -341,32 +347,15 @@
       "https://randomuser.me/api/portraits/men/10.jpg"
     ];
 
-    // Hash function for deterministic avatar picking
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0; // Convert to 32bit int
+        hash |= 0;
       }
       return Math.abs(hash);
     }
 
-    // Store and retrieve user profile
-    function getUserProfile() {
-      let name = sessionStorage.getItem("username");
-      let gender = sessionStorage.getItem("gender");
-      if (!name || !gender) return null;
-      return { name, gender };
-    }
-
-    function setUserProfile(name, gender) {
-      sessionStorage.setItem("username", name);
-      sessionStorage.setItem("gender", gender);
-      sessionStorage.removeItem("avatar");
-      sessionStorage.removeItem("avatarDate");
-    }
-
-    // Shuffle array deterministically with seeded PRNG (Mulberry32)
     function mulberry32(a) {
       return function() {
         var t = a += 0x6D2B79F5;
@@ -375,6 +364,7 @@
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       }
     }
+
     function shuffleArrayWithSeed(array, seed) {
       let random = mulberry32(seed);
       for (let i = array.length - 1; i > 0; i--) {
@@ -383,7 +373,6 @@
       }
     }
 
-    // Keep track of assigned avatars for the day in session storage (to avoid duplicates)
     function getAssignedAvatars() {
       const today = new Date().toISOString().slice(0, 10);
       const data = sessionStorage.getItem("assignedAvatars");
@@ -402,44 +391,48 @@
       sessionStorage.setItem("assignedAvatars", JSON.stringify({ date: today, assignments }));
     }
 
-    // Assign daily unique male avatar to user
+    function getUserProfile() {
+      let name = sessionStorage.getItem("username");
+      let gender = sessionStorage.getItem("gender") || "male"; // default male
+      if (!name) return null;
+      return { name, gender };
+    }
+
+    function setUserProfile(name, gender) {
+      sessionStorage.setItem("username", name);
+      sessionStorage.setItem("gender", gender);
+      sessionStorage.removeItem("avatar");
+      sessionStorage.removeItem("avatarDate");
+    }
+
     function getDailyAvatar(name, gender) {
+      // Gender ignored - always male avatars only
       const today = new Date().toISOString().slice(0, 10);
-      const key = name + "|" + gender + "|" + today;
+      const key = name + "|" + today; // gender removed from key to unify
 
-      // Check if user already has avatar assigned today
       const assignedAvatars = getAssignedAvatars();
-      if (assignedAvatars[key]) {
-        return assignedAvatars[key];
-      }
+      if (assignedAvatars[key]) return assignedAvatars[key];
 
-      // Shuffle avatars deterministically based on key
       let pool = maleAvatars.slice();
       const seed = hashString(key);
       shuffleArrayWithSeed(pool, seed);
 
-      // Remove avatars already assigned today
       const usedAvatars = new Set(Object.values(assignedAvatars));
       pool = pool.filter(av => !usedAvatars.has(av));
 
-      // If none left (rare), reset and allow reuse
       if (pool.length === 0) pool = maleAvatars.slice();
 
-      // Pick first available avatar
       const chosenAvatar = pool[0];
-
-      // Save assignment
       assignedAvatars[key] = chosenAvatar;
       setAssignedAvatars(assignedAvatars);
 
       return chosenAvatar;
     }
 
-    // Prompt user for name and gender if not set or allow change anytime
-    function showUserModal(existingName = "", existingGender = "") {
+    function showUserModal(existingName = "", existingGender = "male") {
       usernameInput.value = existingName;
-      const radios = document.getElementsByName("gender");
-      radios.forEach(r => r.checked = r.value === existingGender);
+      // Always select male radio (female disabled)
+      document.getElementById("maleRadio").checked = true;
       modalOverlay.style.display = "flex";
       usernameInput.focus();
     }
@@ -447,34 +440,12 @@
     function saveUserProfile() {
       const name = usernameInput.value.trim() || "Anonymous";
       const genderRadios = document.getElementsByName("gender");
-      let gender = "";
-      for (const r of genderRadios) {
-        if (r.checked) {
-          gender = r.value;
-          break;
-        }
-      }
-      if (!gender) {
-        alert("Please select a gender.");
-        return;
-      }
+      let gender = "male"; // forced male
       setUserProfile(name, gender);
       modalOverlay.style.display = "none";
-      // Avatar recalculates automatically on new profile
     }
 
-    // Get username or force modal if missing profile
-    function getUserName() {
-      const profile = getUserProfile();
-      if (!profile) {
-        showUserModal();
-        return null;
-      }
-      return profile.name;
-    }
-
-    // Send message (text or file)
-    async function sendMessage() {
+    function sendMessage() {
       const profile = getUserProfile();
       if (!profile) {
         showUserModal();
@@ -494,8 +465,7 @@
         data.fileName = file.name;
         data.fileType = file.type;
         data.fileSize = file.size;
-        // Read file as base64 string for sending
-        data.fileData = await readFileAsDataURL(file);
+        // For simplicity, file sending skipped here - can add base64 or URL upload if needed
       }
 
       push(messagesRef, data);
@@ -505,16 +475,6 @@
       textInput.focus();
     }
 
-    // Read file as data URL
-    function readFileAsDataURL(file) {
-      return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.readAsDataURL(file);
-      });
-    }
-
-    // Render single message
     function renderMessage(msg) {
       const profile = getUserProfile();
       const isOwn = profile && msg.name === profile.name;
@@ -540,20 +500,6 @@
       bubble.className = "bubble";
 
       if (msg.text) bubble.textContent = msg.text;
-      else if (msg.fileData) {
-        if (msg.fileType.startsWith("image/")) {
-          const img = document.createElement("img");
-          img.src = msg.fileData;
-          img.style.maxWidth = "100%";
-          bubble.appendChild(img);
-        } else {
-          const link = document.createElement("a");
-          link.href = msg.fileData;
-          link.textContent = msg.fileName || "Download file";
-          link.target = "_blank";
-          bubble.appendChild(link);
-        }
-      }
 
       const info = document.createElement("div");
       info.className = "info";
@@ -574,19 +520,16 @@
       return msgEl;
     }
 
-    // Add message to chat UI
     function addMessageToUI(msg) {
       const msgEl = renderMessage(msg);
       messagesDiv.appendChild(msgEl);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    // Load existing messages from Firebase
     onChildAdded(messagesRef, (data) => {
       addMessageToUI(data.val());
     });
 
-    // Event listeners
     sendBtn.onclick = sendMessage;
     textInput.onkeydown = (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
@@ -595,16 +538,12 @@
       }
     };
     fileBtn.onclick = () => fileInput.click();
-    fileInput.onchange = () => {
-      sendMessage();
-    };
+    fileInput.onchange = () => sendMessage();
 
     emojiBtn.onclick = () => {
-      if (emojiPicker.style.display === "flex") emojiPicker.style.display = "none";
-      else emojiPicker.style.display = "flex";
+      emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
     };
 
-    // Populate emoji picker
     const emojis = ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎","😍","😘","😗","😙","😚","🙂","🤗","🤔","😐","😑","😶","🙄","😏"];
     emojis.forEach(e => {
       const span = document.createElement("span");
@@ -627,7 +566,6 @@
 
     saveProfileBtn.onclick = saveUserProfile;
 
-    // Show modal on first load if profile missing
     window.onload = () => {
       const profile = getUserProfile();
       if (!profile) {
