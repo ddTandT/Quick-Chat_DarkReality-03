@@ -191,6 +191,7 @@
       background: #0084ff;
       color: white;
     }
+    /* Modal for changing username/gender */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -278,6 +279,7 @@
     <div class="emoji-picker" id="emojiPicker"></div>
   </div>
 
+  <!-- Modal for username + gender -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <h2 id="modalTitle">Set Your Profile</h2>
@@ -285,8 +287,8 @@
       <input type="text" id="usernameInput" maxlength="30" placeholder="Enter your name" />
       <label>Gender:</label>
       <div class="gender-options">
-        <label><input type="radio" name="gender" value="male" /> Male</label>
-        <label><input type="radio" name="gender" value="female" /> Female</label>
+        <!-- Since only male avatars, gender still selectable but only male avatars assigned -->
+        <label><input type="radio" name="gender" value="male" checked disabled /> Male</label>
       </div>
       <button id="saveProfileBtn">Save</button>
     </div>
@@ -324,7 +326,7 @@
     const usernameInput = document.getElementById("usernameInput");
     const saveProfileBtn = document.getElementById("saveProfileBtn");
 
-    // New avatar source using randomuser.me
+    // New male avatar pool from randomuser.me (20 distinct male avatars)
     const maleAvatars = [
       "https://randomuser.me/api/portraits/men/1.jpg",
       "https://randomuser.me/api/portraits/men/2.jpg",
@@ -335,30 +337,30 @@
       "https://randomuser.me/api/portraits/men/7.jpg",
       "https://randomuser.me/api/portraits/men/8.jpg",
       "https://randomuser.me/api/portraits/men/9.jpg",
-      "https://randomuser.me/api/portraits/men/10.jpg"
-    ];
-    const femaleAvatars = [
-      "https://randomuser.me/api/portraits/women/1.jpg",
-      "https://randomuser.me/api/portraits/women/2.jpg",
-      "https://randomuser.me/api/portraits/women/3.jpg",
-      "https://randomuser.me/api/portraits/women/4.jpg",
-      "https://randomuser.me/api/portraits/women/5.jpg",
-      "https://randomuser.me/api/portraits/women/6.jpg",
-      "https://randomuser.me/api/portraits/women/7.jpg",
-      "https://randomuser.me/api/portraits/women/8.jpg",
-      "https://randomuser.me/api/portraits/women/9.jpg",
-      "https://randomuser.me/api/portraits/women/10.jpg"
+      "https://randomuser.me/api/portraits/men/10.jpg",
+      "https://randomuser.me/api/portraits/men/11.jpg",
+      "https://randomuser.me/api/portraits/men/12.jpg",
+      "https://randomuser.me/api/portraits/men/13.jpg",
+      "https://randomuser.me/api/portraits/men/14.jpg",
+      "https://randomuser.me/api/portraits/men/15.jpg",
+      "https://randomuser.me/api/portraits/men/16.jpg",
+      "https://randomuser.me/api/portraits/men/17.jpg",
+      "https://randomuser.me/api/portraits/men/18.jpg",
+      "https://randomuser.me/api/portraits/men/19.jpg",
+      "https://randomuser.me/api/portraits/men/20.jpg"
     ];
 
+    // Hash function for deterministic avatar picking
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = (hash << 5) - hash + str.charCodeAt(i);
-        hash |= 0;
+        hash |= 0; // Convert to 32bit int
       }
       return Math.abs(hash);
     }
 
+    // Shuffle array deterministically with seeded PRNG (Mulberry32)
     function mulberry32(a) {
       return function() {
         var t = a += 0x6D2B79F5;
@@ -375,11 +377,14 @@
       }
     }
 
+    // Store and retrieve user profile
     function getUserProfile() {
-      const name = sessionStorage.getItem("username");
-      const gender = sessionStorage.getItem("gender");
-      return name && gender ? { name, gender } : null;
+      let name = sessionStorage.getItem("username");
+      let gender = sessionStorage.getItem("gender");
+      if (!name || !gender) return null;
+      return { name, gender };
     }
+
     function setUserProfile(name, gender) {
       sessionStorage.setItem("username", name);
       sessionStorage.setItem("gender", gender);
@@ -387,154 +392,218 @@
       sessionStorage.removeItem("avatarDate");
     }
 
-    function getDailyAvatar(name, gender) {
+    // Assign daily avatar, unique per user per day (only male avatars)
+    function getDailyAvatar(name) {
       const today = new Date().toISOString().slice(0, 10);
-      const key = name + "|" + gender + "|" + today;
+      const key = name + "|" + today;
 
-      if (sessionStorage.getItem("avatarDate") === today) {
-        return sessionStorage.getItem("avatar");
-      }
+      const cachedDate = sessionStorage.getItem("avatarDate");
+      const cachedAvatar = sessionStorage.getItem("avatar");
+      if (cachedDate === today && cachedAvatar) return cachedAvatar;
 
-      const pool = gender === "male" ? maleAvatars.slice() : femaleAvatars.slice();
+      const pool = maleAvatars.slice(); // clone
       const seed = hashString(key);
       shuffleArrayWithSeed(pool, seed);
+
+      // Pick avatar index based on hash mod pool length
       const avatar = pool[seed % pool.length];
 
       sessionStorage.setItem("avatar", avatar);
       sessionStorage.setItem("avatarDate", today);
+
       return avatar;
     }
 
-    function showUserModal(name = "", gender = "") {
-      usernameInput.value = name;
-      document.getElementsByName("gender").forEach(r => r.checked = r.value === gender);
+    // Show modal for profile (only male gender selectable and preselected)
+    function showUserModal(existingName = "", existingGender = "male") {
+      usernameInput.value = existingName;
+      // Set gender radio - only male and disabled
+      const radios = document.getElementsByName("gender");
+      radios.forEach(r => {
+        r.checked = r.value === "male";
+        r.disabled = true;
+      });
       modalOverlay.style.display = "flex";
       usernameInput.focus();
     }
 
     function saveUserProfile() {
       const name = usernameInput.value.trim() || "Anonymous";
-      const gender = [...document.getElementsByName("gender")].find(r => r.checked)?.value;
-      if (!gender) {
-        alert("Please select a gender.");
-        return;
-      }
+      // Gender forced male
+      const gender = "male";
       setUserProfile(name, gender);
       modalOverlay.style.display = "none";
     }
 
-    function sendMessage() {
+    // Get username or show modal if missing profile
+    function getUserName() {
       const profile = getUserProfile();
       if (!profile) {
         showUserModal();
-        return;
+        return null;
       }
-      const text = textInput.value.trim();
-      const file = fileInput.files[0];
-      if (!text && !file) return;
-
-      const payload = {
-        name: profile.name,
-        gender: profile.gender,
-        timestamp: new Date().toISOString()
-      };
-      if (text) payload.text = text;
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          payload.file = reader.result;
-          payload.fileName = file.name;
-          push(messagesRef, payload);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        push(messagesRef, payload);
-      }
-
-      textInput.value = "";
-      fileInput.value = "";
-      emojiPicker.style.display = "none";
+      return profile.name;
     }
 
-    onChildAdded(messagesRef, snap => {
-      const msg = snap.val(), profile = getUserProfile();
-      const isMe = profile && msg.name === profile.name;
-      const avatar = msg.gender ? getDailyAvatar(msg.name, msg.gender) : "";
+    // Create message HTML element
+    function createMessageElement(msg) {
+      const me = getUserProfile()?.name === msg.name;
 
-      const div = document.createElement("div");
-      div.className = "message " + (isMe ? "you" : "other");
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("message");
+      if (me) msgDiv.classList.add("you");
 
       const avatarImg = document.createElement("img");
-      avatarImg.src = avatar;
-      avatarImg.alt = msg.name + " avatar";
       avatarImg.className = "avatar";
+      avatarImg.src = getDailyAvatar(msg.name);
+      avatarImg.alt = msg.name + " avatar";
 
       const contentDiv = document.createElement("div");
       contentDiv.className = "message-content";
+
       const senderDiv = document.createElement("div");
       senderDiv.className = "sender";
       senderDiv.textContent = msg.name;
 
       const bubbleDiv = document.createElement("div");
       bubbleDiv.className = "bubble";
-      if (msg.text) {
-        bubbleDiv.innerHTML = msg.text.replace(/\n/g, "<br>");
-      } else if (msg.file) {
-        if (msg.fileName.match(/\.(jpe?g|png|gif)$/i)) {
+
+      if (msg.type === "text") {
+        bubbleDiv.textContent = msg.text;
+      } else if (msg.type === "file") {
+        // File display
+        if (msg.fileType.startsWith("image/")) {
           const img = document.createElement("img");
-          img.src = msg.file;
-          img.style.maxWidth = "150px";
+          img.src = msg.fileUrl;
+          img.alt = "Shared image";
+          img.style.maxWidth = "200px";
           img.style.borderRadius = "8px";
           bubbleDiv.appendChild(img);
         } else {
-          const a = document.createElement("a");
-          a.href = msg.file;
-          a.target = "_blank";
-          a.textContent = msg.fileName;
-          bubbleDiv.appendChild(a);
+          const link = document.createElement("a");
+          link.href = msg.fileUrl;
+          link.target = "_blank";
+          link.textContent = `Download file: ${msg.fileName}`;
+          bubbleDiv.appendChild(link);
         }
       }
 
-      contentDiv.append(senderDiv, bubbleDiv);
-      if (isMe) {
-        div.append(contentDiv, avatarImg);
-      } else {
-        div.append(avatarImg, contentDiv);
-      }
+      contentDiv.appendChild(senderDiv);
+      contentDiv.appendChild(bubbleDiv);
 
-      messagesDiv.appendChild(div);
+      msgDiv.appendChild(avatarImg);
+      msgDiv.appendChild(contentDiv);
+
+      return msgDiv;
+    }
+
+    // Append message to chat
+    function addMessageToChat(msg) {
+      const el = createMessageElement(msg);
+      messagesDiv.appendChild(el);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // Send message to Firebase
+    function sendMessage(text, fileData = null) {
+      const profile = getUserProfile();
+      if (!profile) {
+        showUserModal();
+        return;
+      }
+      if ((!text || text.trim() === "") && !fileData) return;
+
+      const msg = {
+        name: profile.name,
+        type: fileData ? "file" : "text",
+        text: fileData ? "" : text,
+        timestamp: Date.now()
+      };
+      if (fileData) {
+        msg.fileUrl = fileData.url;
+        msg.fileName = fileData.name;
+        msg.fileType = fileData.type;
+      }
+      push(messagesRef, msg);
+    }
+
+    // Firebase listener for new messages
+    onChildAdded(messagesRef, (data) => {
+      const msg = data.val();
+      addMessageToChat(msg);
     });
 
-    // Emoji picker
-    const emojis = ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎","😍","😘","😗","😙","😚","🙂","🤗","🤩"];
-    emojis.forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.onclick = () => { textInput.value += e; textInput.focus(); };
-      emojiPicker.appendChild(span);
-    });
-
-    emojiBtn.onclick = () => {
-      emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
+    // Event handlers
+    sendBtn.onclick = () => {
+      sendMessage(textInput.value);
+      textInput.value = "";
+    };
+    textInput.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        sendMessage(textInput.value);
+        textInput.value = "";
+      }
     };
     fileBtn.onclick = () => fileInput.click();
-    sendBtn.onclick = sendMessage;
-    textInput.addEventListener("keydown", e => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
+    fileInput.onchange = () => {
+      if (!fileInput.files.length) return;
+      const file = fileInput.files[0];
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        sendMessage(null, {
+          url: e.target.result,
+          name: file.name,
+          type: file.type
+        });
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = "";
+    };
+
+    // Emoji picker
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚"];
+    emojiBtn.onclick = () => {
+      if (emojiPicker.style.display === "flex") {
+        emojiPicker.style.display = "none";
+      } else {
+        emojiPicker.style.display = "flex";
+        emojiPicker.innerHTML = "";
+        emojis.forEach(e => {
+          const span = document.createElement("span");
+          span.textContent = e;
+          span.onclick = () => {
+            textInput.value += e;
+            textInput.focus();
+            emojiPicker.style.display = "none";
+          };
+          emojiPicker.appendChild(span);
+        });
       }
-    });
-    fileInput.addEventListener("change", () => fileInput.files.length && sendMessage());
-    nightModeBtn.onclick = () => document.body.classList.toggle("night");
+    };
+
+    // Night mode toggle
+    nightModeBtn.onclick = () => {
+      document.body.classList.toggle("night");
+    };
+
+    // Change user button
     changeUserBtn.onclick = () => {
       const profile = getUserProfile();
-      showUserModal(profile?.name, profile?.gender);
+      showUserModal(profile ? profile.name : "", "male");
     };
-    saveProfileBtn.onclick = saveUserProfile;
+
+    // Modal save
+    saveProfileBtn.onclick = () => {
+      saveUserProfile();
+    };
+
+    // If no profile on load, show modal
     window.onload = () => {
-      if (!getUserProfile()) showUserModal();
+      const profile = getUserProfile();
+      if (!profile) {
+        showUserModal();
+      }
     };
   </script>
 </body>
