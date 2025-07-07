@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Chat</title>
   <style>
-    /* Your existing styles remain unchanged */
+    /* (All your existing CSS here, unchanged) */
     body {
       margin: 0;
       font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
@@ -242,12 +242,8 @@
       margin-bottom: 12px;
     }
     .gender-options label {
-      cursor: not-allowed; /* user cannot select female */
+      cursor: pointer;
       user-select: none;
-    }
-    .gender-options input[type="radio"]:disabled + label {
-      opacity: 0.5;
-      cursor: not-allowed;
     }
     .modal button {
       background: #0084ff;
@@ -292,10 +288,8 @@
       <input type="text" id="usernameInput" maxlength="30" placeholder="Enter your name" />
       <label>Gender:</label>
       <div class="gender-options">
-        <input type="radio" id="maleRadio" name="gender" value="male" checked />
-        <label for="maleRadio">Male</label>
-        <input type="radio" id="femaleRadio" name="gender" value="female" disabled />
-        <label for="femaleRadio" style="opacity:0.4; cursor:not-allowed;">Female (disabled)</label>
+        <label><input type="radio" name="gender" value="male" checked /> Male</label>
+        <label><input type="radio" name="gender" value="female" disabled /> Female</label>
       </div>
       <button id="saveProfileBtn">Save</button>
     </div>
@@ -333,20 +327,22 @@
     const usernameInput = document.getElementById("usernameInput");
     const saveProfileBtn = document.getElementById("saveProfileBtn");
 
-    // Male avatars only (real photo URLs)
+    // 100% Male avatar images, fixed set, no females
+    // These are static male portrait images from Unsplash users (safe & fixed)
     const maleAvatars = [
-      "https://randomuser.me/api/portraits/men/1.jpg",
-      "https://randomuser.me/api/portraits/men/2.jpg",
-      "https://randomuser.me/api/portraits/men/3.jpg",
-      "https://randomuser.me/api/portraits/men/4.jpg",
-      "https://randomuser.me/api/portraits/men/5.jpg",
-      "https://randomuser.me/api/portraits/men/6.jpg",
-      "https://randomuser.me/api/portraits/men/7.jpg",
-      "https://randomuser.me/api/portraits/men/8.jpg",
-      "https://randomuser.me/api/portraits/men/9.jpg",
-      "https://randomuser.me/api/portraits/men/10.jpg"
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1511367461989-f85a21fda167?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1544005313-c0bd12494f82?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1546456073-92b359b2f7a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80"
     ];
 
+    // Simple hash function
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -373,6 +369,20 @@
       }
     }
 
+    function getUserProfile() {
+      let name = sessionStorage.getItem("username");
+      let gender = sessionStorage.getItem("gender");
+      if (!name || !gender) return null;
+      return { name, gender };
+    }
+
+    function setUserProfile(name, gender) {
+      sessionStorage.setItem("username", name);
+      sessionStorage.setItem("gender", gender);
+      sessionStorage.removeItem("avatar");
+      sessionStorage.removeItem("avatarDate");
+    }
+
     function getAssignedAvatars() {
       const today = new Date().toISOString().slice(0, 10);
       const data = sessionStorage.getItem("assignedAvatars");
@@ -391,27 +401,14 @@
       sessionStorage.setItem("assignedAvatars", JSON.stringify({ date: today, assignments }));
     }
 
-    function getUserProfile() {
-      let name = sessionStorage.getItem("username");
-      let gender = sessionStorage.getItem("gender") || "male"; // default male
-      if (!name) return null;
-      return { name, gender };
-    }
-
-    function setUserProfile(name, gender) {
-      sessionStorage.setItem("username", name);
-      sessionStorage.setItem("gender", gender);
-      sessionStorage.removeItem("avatar");
-      sessionStorage.removeItem("avatarDate");
-    }
-
     function getDailyAvatar(name, gender) {
-      // Gender ignored - always male avatars only
       const today = new Date().toISOString().slice(0, 10);
-      const key = name + "|" + today; // gender removed from key to unify
+      const key = name + "|" + gender + "|" + today;
 
       const assignedAvatars = getAssignedAvatars();
-      if (assignedAvatars[key]) return assignedAvatars[key];
+      if (assignedAvatars[key]) {
+        return assignedAvatars[key];
+      }
 
       let pool = maleAvatars.slice();
       const seed = hashString(key);
@@ -423,6 +420,7 @@
       if (pool.length === 0) pool = maleAvatars.slice();
 
       const chosenAvatar = pool[0];
+
       assignedAvatars[key] = chosenAvatar;
       setAssignedAvatars(assignedAvatars);
 
@@ -431,8 +429,8 @@
 
     function showUserModal(existingName = "", existingGender = "male") {
       usernameInput.value = existingName;
-      // Always select male radio (female disabled)
-      document.getElementById("maleRadio").checked = true;
+      const radios = document.getElementsByName("gender");
+      radios.forEach(r => r.checked = r.value === existingGender);
       modalOverlay.style.display = "flex";
       usernameInput.focus();
     }
@@ -440,32 +438,44 @@
     function saveUserProfile() {
       const name = usernameInput.value.trim() || "Anonymous";
       const genderRadios = document.getElementsByName("gender");
-      let gender = "male"; // forced male
+      let gender = "";
+      for (const r of genderRadios) {
+        if (r.checked) {
+          gender = r.value;
+          break;
+        }
+      }
+      if (gender !== "male") gender = "male"; // Force male gender to keep avatar consistency
+
       setUserProfile(name, gender);
       modalOverlay.style.display = "none";
     }
 
-    function sendMessage() {
+    async function sendMessage() {
       const profile = getUserProfile();
       if (!profile) {
+        alert("Please set your username and gender.");
         showUserModal();
         return;
       }
-      const text = textInput.value.trim();
-      const file = fileInput.files[0];
-      if (!text && !file) return;
 
-      let data = {
+      const text = textInput.value.trim();
+      if (!text && !fileInput.files.length) return;
+
+      const data = {
         name: profile.name,
         gender: profile.gender,
-        timestamp: new Date().toISOString()
+        timestamp: Date.now(),
       };
+
       if (text) data.text = text;
-      if (file) {
+
+      if (fileInput.files.length) {
+        const file = fileInput.files[0];
         data.fileName = file.name;
         data.fileType = file.type;
         data.fileSize = file.size;
-        // For simplicity, file sending skipped here - can add base64 or URL upload if needed
+        data.fileData = await readFileAsDataURL(file);
       }
 
       push(messagesRef, data);
@@ -473,6 +483,14 @@
       fileInput.value = "";
       emojiPicker.style.display = "none";
       textInput.focus();
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
     }
 
     function renderMessage(msg) {
@@ -500,6 +518,20 @@
       bubble.className = "bubble";
 
       if (msg.text) bubble.textContent = msg.text;
+      else if (msg.fileData) {
+        if (msg.fileType.startsWith("image/")) {
+          const img = document.createElement("img");
+          img.src = msg.fileData;
+          img.style.maxWidth = "100%";
+          bubble.appendChild(img);
+        } else {
+          const link = document.createElement("a");
+          link.href = msg.fileData;
+          link.textContent = msg.fileName || "Download file";
+          link.target = "_blank";
+          bubble.appendChild(link);
+        }
+      }
 
       const info = document.createElement("div");
       info.className = "info";
@@ -538,7 +570,9 @@
       }
     };
     fileBtn.onclick = () => fileInput.click();
-    fileInput.onchange = () => sendMessage();
+    fileInput.onchange = () => {
+      sendMessage();
+    };
 
     emojiBtn.onclick = () => {
       emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
