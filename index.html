@@ -1,11 +1,11 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Chat</title>
   <style>
-    /* Your existing styles unchanged */
+    /* --- Existing styles --- */
     body {
       margin: 0;
       font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
@@ -99,7 +99,6 @@
       border: 2px solid white;
       border-radius: 50%;
       box-shadow: 0 0 4px #4caf50;
-      pointer-events: none;
     }
     .message-content {
       max-width: 70%;
@@ -166,7 +165,6 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      position: relative;
     }
     body.night .chat-input {
       background: #242526;
@@ -208,9 +206,9 @@
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
       flex-wrap: wrap;
       gap: 6px;
-      z-index: 1000;
-      max-width: 180px;
-      max-height: 140px;
+      z-index: 10;
+      max-width: 220px;
+      max-height: 150px;
       overflow-y: auto;
     }
     body.night .emoji-picker {
@@ -244,8 +242,9 @@
       max-width: 320px;
       width: 90%;
       box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-      position: relative;
       color: #000;
+      display: flex;
+      flex-direction: column;
     }
     body.night .modal {
       background: #3a3b3c;
@@ -255,6 +254,7 @@
       margin-top: 0;
       margin-bottom: 15px;
       font-weight: 600;
+      user-select: none;
     }
     .modal label {
       display: block;
@@ -298,6 +298,7 @@
     body.night .modal button {
       background: #1877f2;
     }
+
     /* Typing indicator */
     #typingIndicator {
       font-size: 0.8rem;
@@ -310,76 +311,92 @@
       color: #aaa;
     }
 
-    /* Avatar picker panel */
-    #avatarPickerPanel {
-      position: absolute;
-      bottom: 60px;
-      left: 10px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-      padding: 10px;
+    /* Avatar picker modal */
+    #avatarPickerOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
       display: none;
-      width: 200px;
-      max-height: 150px;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    #avatarPickerModal {
+      background: white;
+      max-width: 360px;
+      width: 90%;
+      max-height: 300px;
       overflow-y: auto;
-      z-index: 1000;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
+      justify-content: center;
+      color: #000;
     }
-    body.night #avatarPickerPanel {
+    body.night #avatarPickerModal {
       background: #3a3b3c;
+      color: #e4e6eb;
     }
-    #avatarPickerPanel img {
-      width: 40px;
-      height: 40px;
+    .avatar-option {
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       cursor: pointer;
       border: 2px solid transparent;
       object-fit: cover;
-      transition: border-color 0.2s ease-in-out;
+      transition: border-color 0.2s;
     }
-    #avatarPickerPanel img.selected {
+    .avatar-option.selected {
       border-color: #0084ff;
     }
+
   </style>
 </head>
 <body>
-  <div class="chat-container">
+  <div class="chat-container" role="main" aria-label="Chat Application">
     <div class="chat-header">
       <div class="title">Quick Chat</div>
       <div class="header-buttons">
-        <button id="changeUserBtn" title="Change Username/Gender">👤</button>
-        <button id="avatarPickerBtn" title="Pick Avatar">🖼️</button>
-        <button id="nightModeBtn" title="Toggle Night Mode">🌙</button>
+        <button id="changeUserBtn" title="Change Username/Gender" aria-label="Change Username and Gender">👤</button>
+        <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">🖼️</button>
+        <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
       </div>
     </div>
-    <div class="chat-messages" id="messages"></div>
-    <div id="typingIndicator"></div>
+    <div class="chat-messages" id="messages" tabindex="0" aria-live="polite" aria-relevant="additions"></div>
+    <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
     <div class="chat-input">
-      <input id="text" type="text" placeholder="Type a message…" autocomplete="off" />
-      <button id="emojiBtn" title="Emoji picker">😊</button>
-      <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" />
-      <button id="fileBtn" title="Attach file">📎</button>
-      <button id="sendBtn" title="Send message">➤</button>
-      <div id="avatarPickerPanel"></div>
-      <div class="emoji-picker" id="emojiPicker"></div>
+      <input id="text" type="text" placeholder="Type a message…" autocomplete="off" aria-label="Message input" />
+      <button id="emojiBtn" title="Emoji picker" aria-label="Open Emoji Picker">😊</button>
+      <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" aria-label="File Input"/>
+      <button id="fileBtn" title="Attach file" aria-label="Attach file">📎</button>
+      <button id="sendBtn" title="Send message" aria-label="Send message">➤</button>
     </div>
+    <div class="emoji-picker" id="emojiPicker" role="list"></div>
   </div>
 
   <!-- Modal for username + gender -->
   <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal">
+    <div class="modal" role="document">
       <h2 id="modalTitle">Set Your Profile</h2>
       <label for="usernameInput">Name:</label>
-      <input type="text" id="usernameInput" maxlength="30" placeholder="Enter your name" />
+      <input type="text" id="usernameInput" maxlength="30" placeholder="Enter your name" autocomplete="off" />
       <label>Gender:</label>
       <div class="gender-options">
         <label><input type="radio" name="gender" value="male" checked /> Male</label>
         <label><input type="radio" name="gender" value="female" disabled /> Female</label>
       </div>
       <button id="saveProfileBtn">Save</button>
+    </div>
+  </div>
+
+  <!-- Modal for Avatar Picker -->
+  <div class="modal-overlay" id="avatarPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
+    <div id="avatarPickerModal" role="document" tabindex="0">
+      <h2 id="avatarPickerTitle" style="width:100%; text-align:center; user-select:none;">Pick Your Avatar</h2>
+      <!-- Avatars appended here dynamically -->
     </div>
   </div>
 
@@ -418,13 +435,14 @@
     const nightModeBtn = document.getElementById("nightModeBtn");
     const changeUserBtn = document.getElementById("changeUserBtn");
     const typingIndicator = document.getElementById("typingIndicator");
-    const avatarPickerBtn = document.getElementById("avatarPickerBtn");
-    const avatarPickerPanel = document.getElementById("avatarPickerPanel");
     const modalOverlay = document.getElementById("modalOverlay");
     const usernameInput = document.getElementById("usernameInput");
     const saveProfileBtn = document.getElementById("saveProfileBtn");
+    const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
+    const avatarPickerModal = document.getElementById("avatarPickerModal");
+    const avatarPickerBtn = document.getElementById("avatarPickerBtn");
 
-    // 20 Male avatar images
+    // 20 Male avatar images - visible in avatar picker list
     const maleAvatars = [
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
@@ -434,176 +452,211 @@
       "https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
       "https://images.unsplash.com/photo-1544005313-c0bd12494f82?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
       "https://images.unsplash.com/photo-1546456073-92b359b2f7a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1543269865-cbf427effbad?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1508214751197-70f57c9e4af8?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1508214751196-1c7a5a5be67a?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1527980965257-964c0f0304d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
       "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1541534741688-6f0373e6c8d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80"
+      "https://images.unsplash.com/photo-1542206395-9feb3edaa68f?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1544005310-2c4f9c4d88bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1543269867-29055b16a5ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1519895609930-57935de9db89?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
+      "https://images.unsplash.com/photo-1527980965259-d16402d28a10?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80"
     ];
 
     // State
-    let username = "";
-    let gender = "male"; // female disabled as per UI
-    let userId = ""; // unique ID per user for presence, typing etc
-    let userAvatar = null; // URL string of avatar chosen
-    let isTypingTimeout = null;
+    let currentUser = null; // { username, gender, avatar }
+    let typingTimeout = null;
+    let isTyping = false;
+    let typingUsers = new Set();
 
-    // Load profile from localStorage or prompt modal
-    function loadProfile() {
-      username = localStorage.getItem("qc_username") || "";
-      gender = localStorage.getItem("qc_gender") || "male";
-      userAvatar = localStorage.getItem("qc_avatar");
-
-      // Generate userId if none
-      userId = localStorage.getItem("qc_userId");
-      if (!userId) {
-        userId = "user_" + Math.random().toString(36).slice(2, 11);
-        localStorage.setItem("qc_userId", userId);
-      }
-
-      if (!username || !gender) {
-        showProfileModal();
-      } else {
-        // If no avatar stored, assign default first male avatar
-        if (!userAvatar || !maleAvatars.includes(userAvatar)) {
-          userAvatar = maleAvatars[0];
-          localStorage.setItem("qc_avatar", userAvatar);
-        }
-        hideProfileModal();
-        setupPresence();
-        loadMessages();
-        loadTypingIndicator();
-        renderAvatarPicker();
+    // Utilities
+    function saveUserData(user) {
+      localStorage.setItem('quickchat_user', JSON.stringify(user));
+    }
+    function loadUserData() {
+      const data = localStorage.getItem('quickchat_user');
+      if (!data) return null;
+      try {
+        return JSON.parse(data);
+      } catch {
+        return null;
       }
     }
 
-    // Show profile modal to enter username and gender (only male enabled)
-    function showProfileModal() {
-      usernameInput.value = username;
-      if (gender === "male") {
-        document.querySelector('input[name="gender"][value="male"]').checked = true;
-      } else {
-        document.querySelector('input[name="gender"][value="male"]').checked = true;
-      }
-      modalOverlay.style.display = "flex";
+    // Modal controls
+    function openProfileModal() {
+      usernameInput.value = currentUser?.username || '';
+      const genderRadios = modalOverlay.querySelectorAll('input[name="gender"]');
+      genderRadios.forEach(r => r.checked = (currentUser && currentUser.gender === r.value));
+      modalOverlay.style.display = 'flex';
+      usernameInput.focus();
     }
-    function hideProfileModal() {
-      modalOverlay.style.display = "none";
+    function closeProfileModal() {
+      modalOverlay.style.display = 'none';
     }
-
     saveProfileBtn.onclick = () => {
-      const nameVal = usernameInput.value.trim();
-      if (!nameVal) {
-        alert("Please enter your name");
+      const name = usernameInput.value.trim();
+      if (name.length === 0) {
+        alert("Please enter a name.");
+        usernameInput.focus();
         return;
       }
-      username = nameVal;
-      gender = "male"; // Only male enabled for now
-
-      // Reset avatar to first avatar of male avatars to force reselect if wanted
-      userAvatar = maleAvatars[0];
-      localStorage.setItem("qc_username", username);
-      localStorage.setItem("qc_gender", gender);
-      localStorage.setItem("qc_avatar", userAvatar);
-
-      hideProfileModal();
-      messagesDiv.innerHTML = ""; // clear old messages
-      loadMessages();
-      setupPresence();
-      loadTypingIndicator();
-      renderAvatarPicker();
+      const gender = modalOverlay.querySelector('input[name="gender"]:checked').value;
+      // If gender changes, reset avatar
+      if (!currentUser || currentUser.gender !== gender) {
+        currentUser = { username: name, gender, avatar: null };
+      } else {
+        currentUser.username = name;
+      }
+      if (!currentUser.avatar) {
+        // Default avatar for gender: first avatar from maleAvatars for male (since female disabled)
+        currentUser.avatar = maleAvatars[0];
+      }
+      saveUserData(currentUser);
+      closeProfileModal();
+      updatePresence();
+      loadMessages(); // refresh to show updated username/avatar
     };
 
-    changeUserBtn.onclick = () => {
-      showProfileModal();
-    };
-
-    // Avatar picker panel toggle
-    avatarPickerBtn.onclick = () => {
-      avatarPickerPanel.style.display = avatarPickerPanel.style.display === "flex" ? "none" : "flex";
-    };
-
-    // Render avatar picker panel with avatars and select highlight
-    function renderAvatarPicker() {
-      avatarPickerPanel.innerHTML = "";
-      maleAvatars.forEach((avatarUrl) => {
-        const img = document.createElement("img");
-        img.src = avatarUrl;
-        img.alt = "Avatar";
-        if (avatarUrl === userAvatar) {
-          img.classList.add("selected");
-        }
-        img.addEventListener("click", () => {
-          userAvatar = avatarUrl;
-          localStorage.setItem("qc_avatar", userAvatar);
-          renderAvatarPicker();
-          avatarPickerPanel.style.display = "none";
-          // Optionally refresh messages so new avatar applies to future messages
-        });
-        avatarPickerPanel.appendChild(img);
-      });
-    }
-
-    // Setup presence in Firebase Realtime Database
-    function setupPresence() {
-      const userPresenceRef = ref(db, `presence/${userId}`);
-      set(userPresenceRef, {
-        username,
-        gender,
-        avatar: userAvatar,
-        online: true,
-      });
+    // Presence - Online/Offline user status
+    let presenceKey = null;
+    function updatePresence() {
+      if (!currentUser) return;
+      // generate presenceKey from username (simple key)
+      presenceKey = 'presence_' + currentUser.username.replace(/\W/g, '_');
+      const userPresenceRef = ref(db, `presence/${presenceKey}`);
+      set(userPresenceRef, { username: currentUser.username, avatar: currentUser.avatar, online: true });
       onDisconnect(userPresenceRef).remove();
+    }
+    function markOffline() {
+      if (!presenceKey) return;
+      const userPresenceRef = ref(db, `presence/${presenceKey}`);
+      set(userPresenceRef, { username: currentUser.username, avatar: currentUser.avatar, online: false });
+    }
 
-      // Listen for presence changes to update UI presence dots
-      onValue(ref(db, "presence"), (snapshot) => {
-        const presenceData = snapshot.val() || {};
-        updatePresenceDots(presenceData);
+    // Avatar picker modal
+    function openAvatarPicker() {
+      avatarPickerOverlay.style.display = 'flex';
+      avatarPickerModal.focus();
+    }
+    function closeAvatarPicker() {
+      avatarPickerOverlay.style.display = 'none';
+    }
+
+    // Render avatars inside avatarPickerModal
+    function renderAvatarOptions() {
+      avatarPickerModal.innerHTML = '<h2 id="avatarPickerTitle" style="width:100%; text-align:center; user-select:none;">Pick Your Avatar</h2>';
+      maleAvatars.forEach((url) => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'avatar-option';
+        if (currentUser?.avatar === url) img.classList.add('selected');
+        img.title = 'Select this avatar';
+        img.tabIndex = 0;
+        img.setAttribute('role', 'option');
+        img.setAttribute('aria-selected', currentUser?.avatar === url ? 'true' : 'false');
+
+        img.onclick = () => {
+          currentUser.avatar = url;
+          saveUserData(currentUser);
+          renderAvatarOptions();
+          loadMessages(); // update messages to show new avatar
+          closeAvatarPicker();
+          updatePresence();
+        };
+        img.onkeydown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            img.click();
+          } else if (e.key === 'Escape') {
+            closeAvatarPicker();
+          }
+        };
+
+        avatarPickerModal.appendChild(img);
       });
     }
 
-    // Update presence dots on all avatars displayed in chat
-    function updatePresenceDots(presenceData) {
-      // For each message avatar, check if user is online and add/remove presence-online class
-      document.querySelectorAll(".avatar").forEach((avatarEl) => {
-        const uid = avatarEl.dataset.userid;
-        if (uid && presenceData[uid] && presenceData[uid].online) {
-          avatarEl.classList.add("presence-online");
-        } else {
-          avatarEl.classList.remove("presence-online");
-        }
-      });
-    }
+    avatarPickerBtn.onclick = () => {
+      if (!currentUser) {
+        alert("Please set your profile first.");
+        openProfileModal();
+        return;
+      }
+      renderAvatarOptions();
+      openAvatarPicker();
+    };
+    avatarPickerOverlay.onclick = (e) => {
+      if (e.target === avatarPickerOverlay) {
+        closeAvatarPicker();
+      }
+    };
 
-    // Send a message to Firebase
-    function sendMessage(text, fileUrl = null, fileName = null) {
-      if (!text && !fileUrl) return;
-      const message = {
-        text: text || "",
-        sender: username,
-        gender,
-        avatar: userAvatar,
-        userId,
-        timestamp: Date.now(),
-        fileUrl: fileUrl || null,
-        fileName: fileName || null,
+    // Dark mode toggle
+    function loadDarkMode() {
+      const mode = localStorage.getItem("quickchat_nightmode");
+      if (mode === "true") document.body.classList.add("night");
+      else document.body.classList.remove("night");
+    }
+    nightModeBtn.onclick = () => {
+      document.body.classList.toggle("night");
+      localStorage.setItem("quickchat_nightmode", document.body.classList.contains("night"));
+    };
+    loadDarkMode();
+
+    // Emoji picker (simple emojis)
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚"];
+    emojiBtn.onclick = () => {
+      if (emojiPicker.style.display === "flex") {
+        emojiPicker.style.display = "none";
+        textInput.focus();
+        return;
+      }
+      emojiPicker.style.display = "flex";
+      emojiPicker.innerHTML = "";
+      emojis.forEach(e => {
+        const span = document.createElement("span");
+        span.textContent = e;
+        span.onclick = () => {
+          const start = textInput.selectionStart;
+          const end = textInput.selectionEnd;
+          const text = textInput.value;
+          textInput.value = text.slice(0, start) + e + text.slice(end);
+          textInput.selectionStart = textInput.selectionEnd = start + e.length;
+          emojiPicker.style.display = "none";
+          textInput.focus();
+        };
+        emojiPicker.appendChild(span);
+      });
+    };
+    // Close emoji picker if click outside
+    document.body.addEventListener('click', e => {
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+        emojiPicker.style.display = 'none';
+      }
+    });
+
+    // Send message function
+    function sendMessage(content, type="text") {
+      if (!currentUser || !content.trim()) return;
+      const msg = {
+        username: currentUser.username,
+        avatar: currentUser.avatar,
+        gender: currentUser.gender,
+        content,
+        type,
+        timestamp: Date.now()
       };
-      push(messagesRef, message);
+      push(messagesRef, msg);
       textInput.value = "";
       stopTyping();
     }
-
     sendBtn.onclick = () => {
       sendMessage(textInput.value);
     };
-
     textInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -613,154 +666,180 @@
       }
     });
 
-    // File upload
+    // File sending (image only preview)
     fileBtn.onclick = () => fileInput.click();
-    fileInput.onchange = async () => {
-      const file = fileInput.files[0];
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
       if (!file) return;
-      // For simplicity, this example skips file upload and uses URL if image
-      // You should upload to Firebase Storage or similar and get URL
-      alert("File sending not implemented in this demo.");
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          sendMessage(evt.target.result, "image");
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert("Only image files supported for sending.");
+      }
       fileInput.value = "";
     };
 
-    // Emoji picker (simple emoji set)
-    const emojis = ["😀","😂","😅","😊","😍","😎","😢","😡","👍","🙏"];
-    emojiBtn.onclick = () => {
-      if (emojiPicker.style.display === "flex") {
-        emojiPicker.style.display = "none";
-        return;
-      }
-      emojiPicker.innerHTML = "";
-      emojis.forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = emoji;
-        span.onclick = () => {
-          textInput.value += emoji;
-          emojiPicker.style.display = "none";
-          textInput.focus();
-        };
-        emojiPicker.appendChild(span);
-      });
-      emojiPicker.style.display = "flex";
-    };
+    // Typing indicator logic
+    function startTyping() {
+      if (!currentUser) return;
+      if (isTyping) return;
+      isTyping = true;
+      const userTypingRef = ref(db, `typing/${currentUser.username.replace(/\W/g, '_')}`);
+      set(userTypingRef, true);
+      // Remove typing status after 3 seconds of inactivity
+      if (typingTimeout) clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(stopTyping, 3000);
+    }
+    function stopTyping() {
+      if (!currentUser) return;
+      isTyping = false;
+      const userTypingRef = ref(db, `typing/${currentUser.username.replace(/\W/g, '_')}`);
+      remove(userTypingRef);
+    }
 
-    document.body.addEventListener("click", (e) => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-        emojiPicker.style.display = "none";
+    // Listen for others typing
+    onValue(typingRef, (snapshot) => {
+      const typingUsersObj = snapshot.val() || {};
+      typingUsers.clear();
+      for (const user in typingUsersObj) {
+        if (user !== currentUser?.username.replace(/\W/g, '_')) {
+          typingUsers.add(user);
+        }
       }
-      if (!avatarPickerPanel.contains(e.target) && e.target !== avatarPickerBtn) {
-        avatarPickerPanel.style.display = "none";
+      if (typingUsers.size > 0) {
+        typingIndicator.textContent = `Someone is typing...`;
+      } else {
+        typingIndicator.textContent = "";
       }
     });
 
-    // Load and render messages from Firebase
-    function loadMessages() {
-      onChildAdded(messagesRef, (data) => {
-        const msg = data.val();
-        msg.key = data.key;
-        appendMessage(msg);
-      });
-      // TODO: Add onChildRemoved, onChildChanged handlers if you want edit/delete
-    }
-
-    // Append a single message to chat
-    function appendMessage(msg) {
+    // Message rendering
+    function createMessageElement(msg) {
       const div = document.createElement("div");
       div.classList.add("message");
-      if (msg.userId === userId) div.classList.add("you");
+      if (msg.username === currentUser?.username) div.classList.add("you");
 
-      const avatar = document.createElement("img");
-      avatar.classList.add("avatar");
-      avatar.src = msg.avatar || maleAvatars[0];
-      avatar.alt = "Avatar";
-      avatar.dataset.userid = msg.userId;
+      // Avatar with online presence dot if online
+      const avatarImg = document.createElement("img");
+      avatarImg.classList.add("avatar");
+      avatarImg.src = msg.avatar || maleAvatars[0];
+      avatarImg.alt = `${msg.username}'s avatar`;
 
-      const content = document.createElement("div");
-      content.classList.add("message-content");
-
-      const sender = document.createElement("div");
-      sender.classList.add("sender");
-      sender.textContent = msg.sender;
-
-      const bubble = document.createElement("div");
-      bubble.classList.add("bubble");
-      bubble.textContent = msg.text;
-
-      content.appendChild(sender);
-      content.appendChild(bubble);
-
-      div.appendChild(avatar);
-      div.appendChild(content);
-
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-      // Update presence dots on avatars
-      updatePresenceDotsForMessage(avatar);
-    }
-
-    // Update presence dot on a single message avatar
-    function updatePresenceDotsForMessage(avatarEl) {
-      const uid = avatarEl.dataset.userid;
-      get(ref(db, `presence/${uid}`)).then((snap) => {
-        if (snap.exists() && snap.val().online) {
-          avatarEl.classList.add("presence-online");
-        } else {
-          avatarEl.classList.remove("presence-online");
-        }
-      });
-    }
-
-    // Typing indicator logic
-    function startTyping() {
-      set(typingRef.child(userId), username);
-      if (isTypingTimeout) clearTimeout(isTypingTimeout);
-      isTypingTimeout = setTimeout(() => {
-        stopTyping();
-      }, 1500);
-    }
-    function stopTyping() {
-      remove(typingRef.child(userId));
-      if (isTypingTimeout) {
-        clearTimeout(isTypingTimeout);
-        isTypingTimeout = null;
+      // Online presence dot - check presence from cache later
+      // We'll track online users in a Map updated via presence listener
+      const presenceKey = msg.username.replace(/\W/g, '_');
+      if (onlineUsers.has(presenceKey)) {
+        avatarImg.classList.add("presence-online");
       }
-    }
-    function loadTypingIndicator() {
-      onValue(typingRef, (snap) => {
-        const typingUsers = snap.val() || {};
-        const otherTypingUsers = Object.entries(typingUsers)
-          .filter(([id]) => id !== userId)
-          .map(([_, name]) => name);
 
-        if (otherTypingUsers.length === 0) {
-          typingIndicator.textContent = "";
-        } else if (otherTypingUsers.length === 1) {
-          typingIndicator.textContent = `${otherTypingUsers[0]} is typing...`;
-        } else {
-          typingIndicator.textContent = `${otherTypingUsers.join(", ")} are typing...`;
-        }
-      });
-    }
+      // Message content container
+      const contentDiv = document.createElement("div");
+      contentDiv.classList.add("message-content");
 
-    // Night mode toggle and persistence
-    nightModeBtn.onclick = () => {
-      if (document.body.classList.contains("night")) {
-        document.body.classList.remove("night");
-        localStorage.setItem("qc_nightMode", "false");
+      // Sender name
+      const senderDiv = document.createElement("div");
+      senderDiv.classList.add("sender");
+      senderDiv.textContent = msg.username;
+
+      // Message bubble
+      const bubbleDiv = document.createElement("div");
+      bubbleDiv.classList.add("bubble");
+      if (msg.type === "image") {
+        const img = document.createElement("img");
+        img.src = msg.content;
+        img.alt = "Image message";
+        img.style.maxWidth = "200px";
+        img.style.borderRadius = "8px";
+        bubbleDiv.appendChild(img);
       } else {
-        document.body.classList.add("night");
-        localStorage.setItem("qc_nightMode", "true");
+        bubbleDiv.textContent = msg.content;
       }
-    };
-    // Load night mode preference
-    if (localStorage.getItem("qc_nightMode") === "true") {
-      document.body.classList.add("night");
+
+      contentDiv.appendChild(senderDiv);
+      contentDiv.appendChild(bubbleDiv);
+
+      div.appendChild(avatarImg);
+      div.appendChild(contentDiv);
+
+      return div;
     }
+
+    // Store online users presence locally
+    const onlineUsers = new Map();
+
+    // Presence listener
+    const presenceDbRef = ref(db, "presence");
+    onValue(presenceDbRef, (snapshot) => {
+      const presences = snapshot.val() || {};
+      onlineUsers.clear();
+      for (const key in presences) {
+        if (presences[key].online) {
+          onlineUsers.set(key, presences[key]);
+        }
+      }
+      // Update existing message avatars with presence dot
+      document.querySelectorAll(".message").forEach(msgEl => {
+        const userName = msgEl.querySelector(".sender")?.textContent || "";
+        const pKey = userName.replace(/\W/g, '_');
+        const avatar = msgEl.querySelector(".avatar");
+        if (avatar) {
+          if (onlineUsers.has(pKey)) {
+            avatar.classList.add("presence-online");
+          } else {
+            avatar.classList.remove("presence-online");
+          }
+        }
+      });
+    });
+
+    // Load and render all messages from DB
+    function loadMessages() {
+      messagesDiv.innerHTML = "";
+      get(messagesRef).then(snapshot => {
+        if (!snapshot.exists()) return;
+        const msgs = snapshot.val();
+        const sortedMsgs = Object.values(msgs).sort((a,b) => a.timestamp - b.timestamp);
+        sortedMsgs.forEach(msg => {
+          const el = createMessageElement(msg);
+          messagesDiv.appendChild(el);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+    }
+
+    // Real-time new message listener
+    onChildAdded(messagesRef, (data) => {
+      const msg = data.val();
+      const el = createMessageElement(msg);
+      messagesDiv.appendChild(el);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    // User presence: on page unload mark offline
+    window.addEventListener("beforeunload", () => {
+      markOffline();
+      stopTyping();
+    });
+
+    // Load user from storage or open modal
+    function initUser() {
+      currentUser = loadUserData();
+      if (!currentUser || !currentUser.username) {
+        openProfileModal();
+      } else {
+        updatePresence();
+        loadMessages();
+      }
+    }
+
+    changeUserBtn.onclick = () => openProfileModal();
 
     // Initialize app
-    loadProfile();
+    initUser();
 
   </script>
 </body>
