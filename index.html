@@ -381,18 +381,20 @@
     const saveProfileBtn = document.getElementById("saveProfileBtn");
 
     // 100% Male avatar images, fixed set, no females
-    const maleAvatars = [
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1511367461989-f85a21fda167?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1544005313-c0bd12494f82?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1546456073-92b359b2f7a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80",
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64&q=80"
-    ];
+      const maleAvatars = [
+    "https://images.unsplash.com/photo-1595152772835-219674b2a8a6?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1573497161133-1db2e59c2ad3?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1586281380349-632531db7ed4?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1544717304-a2db4caa5b9c?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1551836022-d5d88e9218df?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1598257006463-0d8c3cf9f347?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1594824476967-48c8b9642735?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1565682591418-5b4b9af05de7?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1591696205602-2b6c94cdce38?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1607746882042-944635dfe10e?fit=crop&w=64&h=64&q=80",
+    "https://images.unsplash.com/photo-1610484828423-325b7c99cc87?fit=crop&w=64&h=64&q=80"
+  ];
 
     // Simple hash function
     function hashString(str) {
