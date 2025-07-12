@@ -1,956 +1,658 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quick Chat</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI','Helvetica Neue',Arial,sans-serif;
-      background: #eceef0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-      transition: background 0.3s;
-    }
-    body.night {
-      background: #18191a;
-    }
-    .chat-container {
-      width: 100%; max-width: 380px;
-      height: 600px;
-      background: #ffffff;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-      overflow: hidden;
-      position: relative;
-    }
-    body.night .chat-container {
-      background: #242526;
-      box-shadow: 0 2px 12px rgba(255,255,255,0.1);
-    }
-    .chat-header {
-      background: #0084ff;
-      color: white;
-      padding: 12px;
-      font-weight: 600;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .chat-header .title {
-      font-size: 1rem;
-    }
-    .chat-header .header-buttons {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .chat-header button {
-      background: transparent;
-      border: none;
-      font-size: 1.2rem;
-      color: white;
-      cursor: pointer;
-    }
-    .chat-messages {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
-      background: #f0f2f5;
-      outline: none;
-    }
-    body.night .chat-messages {
-      background: #3a3b3c;
-    }
-    .message {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 14px;
-      max-width: 100%;
-    }
-    .message.you {
-      flex-direction: row-reverse;
-      text-align: right;
-    }
-    .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      margin: 0 8px;
-      object-fit: cover;
-      flex-shrink: 0;
-      position: relative;
-      border: 2px solid transparent;
-      transition: border-color 0.3s, opacity 0.3s;
-    }
-    .avatar.presence-online::after {
-      content: '';
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 10px;
-      height: 10px;
-      background: #4caf50;
-      border: 2px solid white;
-      border-radius: 50%;
-      box-shadow: 0 0 4px #4caf50;
-    }
-    .avatar.presence-offline {
-      opacity: 0.5;
-    }
-    .message-content {
-      max-width: 70%;
-      display: flex;
-      flex-direction: column;
-    }
-    .sender {
-      font-size: 0.75rem;
-      color: #666;
-      margin-bottom: 2px;
-      user-select: text;
-    }
-    body.night .sender {
-      color: #aaa;
-    }
-    .bubble {
-      background: #0084ff;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 18px;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-    }
-    .message.you .bubble {
-      background: #dcf8c6;
-      color: #050505;
-    }
-    body.night .bubble {
-      background: #4b4b4b;
-      color: #e4e6eb;
-    }
-    .info {
-      font-size: 0.7rem;
-      color: #555;
-      margin-top: 2px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      user-select: none;
-    }
-    body.night .info {
-      color: #aaa;
-    }
-    .info .actions {
-      display: none;
-      gap: 8px;
-      cursor: pointer;
-    }
-    .message-content:hover .actions {
-      display: inline-flex;
-    }
-    .info .actions button {
-      background: transparent;
-      border: none;
-      color: inherit;
-      font-size: 1rem;
-      cursor: pointer;
-      padding: 0 3px;
-      user-select: none;
-    }
-    .chat-input {
-      padding: 10px;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    body.night .chat-input {
-      background: #242526;
-    }
-    .chat-input input[type="text"] {
-      flex: 1;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 18px;
-      background: #f0f2f5;
-      outline: none;
-      font-size: 1rem;
-      color: #000;
-    }
-    body.night .chat-input input[type="text"] {
-      background: #3a3b3c;
-      color: #e4e6eb;
-    }
-    .chat-input button {
-      background: #0084ff;
-      border: none;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 18px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    body.night .chat-input button {
-      background: #1877f2;
-    }
-    .emoji-picker {
-      position: absolute;
-      bottom: 60px;
-      right: 60px;
-      background: #ffffff;
-      border-radius: 8px;
-      padding: 8px;
-      display: none;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-      flex-wrap: wrap;
-      gap: 6px;
-      z-index: 10;
-      max-width: 220px;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-    body.night .emoji-picker {
-      background: #3a3b3c;
-    }
-    .emoji-picker span {
-      font-size: 1.2rem;
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
-      user-select: none;
-    }
-    .emoji-picker span:hover {
-      background: #0084ff;
-      color: white;
-    }
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    .modal {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 320px;
-      width: 90%;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-      color: #000;
-      display: flex;
-      flex-direction: column;
-    }
-    body.night .modal {
-      background: #3a3b3c;
-      color: #e4e6eb;
-    }
-    .modal h2 {
-      margin-top: 0;
-      margin-bottom: 15px;
-      font-weight: 600;
-      user-select: none;
-    }
-    .modal label {
-      display: block;
-      margin-bottom: 6px;
-      user-select: none;
-    }
-    .modal input[type="text"] {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      margin-bottom: 12px;
-      font-size: 1rem;
-      color: #000;
-    }
-    body.night .modal input[type="text"] {
-      background: #555;
-      border: 1px solid #777;
-      color: #e4e6eb;
-    }
-    .gender-options {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 12px;
-    }
-    .gender-options label {
-      cursor: pointer;
-      user-select: none;
-    }
-    .modal button {
-      background: #0084ff;
-      border: none;
-      color: white;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 1rem;
-      width: 100%;
-      user-select: none;
-    }
-    body.night .modal button {
-      background: #1877f2;
-    }
-    #typingIndicator {
-      font-size: 0.8rem;
-      color: #666;
-      padding: 0 12px 6px 12px;
-      min-height: 20px;
-      user-select: none;
-    }
-    body.night #typingIndicator {
-      color: #aaa;
-    }
-    #avatarPickerOverlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-    }
-    #avatarPickerModal {
-      background: white;
-      max-width: 360px;
-      width: 90%;
-      max-height: 300px;
-      overflow-y: auto;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      color: #000;
-      outline: none;
-    }
-    body.night #avatarPickerModal {
-      background: #3a3b3c;
-      color: #e4e6eb;
-    }
-    .avatar-option {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-      object-fit: cover;
-      transition: border-color 0.2s;
-    }
-    .avatar-option.selected {
-      border-color: #0084ff;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quick Chat</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+    color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+  body.night {
+    background: #18191a;
+    color: #e4e6eb;
+  }
+  #container {
+    width: 380px;
+    height: 600px;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  body.night #container {
+    background: #242526;
+  }
+  header {
+    background: #0084ff;
+    color: #fff;
+    padding: 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header button {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+  }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background: #e5ddd5;
+  }
+  body.night #messages {
+    background: #3a3b3c;
+  }
+  .message {
+    display: flex;
+    margin-bottom: 12px;
+  }
+  .message.you {
+    justify-content: flex-end;
+  }
+  .message .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .message.you .avatar {
+    margin-left: 8px;
+    margin-right: 0;
+  }
+  .presence-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 9px;
+    height: 9px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #4caf50;
+  }
+  .message-content {
+    max-width: 70%;
+    background: #0084ff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 18px;
+    position: relative;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .message.you .message-content {
+    background: #dcf8c6;
+    color: black;
+  }
+  .message-info {
+    font-size: 10px;
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    font-size: 14px;
+    margin-left: 6px;
+  }
+  footer {
+    padding: 10px;
+    background: #fff;
+    display: flex;
+    gap: 8px;
+  }
+  body.night footer {
+    background: #242526;
+  }
+  #inputMsg {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    outline: none;
+    font-size: 16px;
+  }
+  body.night #inputMsg {
+    background: #3a3b3c;
+    border: 1px solid #555;
+    color: #e4e6eb;
+  }
+  #sendBtn, #emojiBtn, #nightModeBtn {
+    cursor: pointer;
+    font-size: 20px;
+    background: #0084ff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+  }
+  body.night #sendBtn, body.night #emojiBtn, body.night #nightModeBtn {
+    background: #1877f2;
+  }
+  #typingIndicator {
+    font-size: 12px;
+    color: #666;
+    padding-left: 10px;
+    height: 20px;
+  }
+  body.night #typingIndicator {
+    color: #aaa;
+  }
+  /* Modal */
+  #modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  #modal.hidden {
+    display: none;
+  }
+  #modalContent {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 320px;
+    color: black;
+  }
+  body.night #modalContent {
+    background: #3a3b3c;
+    color: #e4e6eb;
+  }
+  #modalContent h2 {
+    margin-top: 0;
+  }
+  #modalContent label {
+    display: block;
+    margin-top: 10px;
+  }
+  #modalContent input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    outline: none;
+  }
+  body.night #modalContent input[type="text"] {
+    background: #555;
+    border: 1px solid #777;
+    color: #e4e6eb;
+  }
+  #modalContent button {
+    margin-top: 20px;
+    width: 100%;
+    background: #0084ff;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  body.night #modalContent button {
+    background: #1877f2;
+  }
+  #avatarPicker {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #avatarPicker img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    object-fit: cover;
+  }
+  #avatarPicker img.selected {
+    border-color: #0084ff;
+  }
+</style>
 </head>
 <body>
-  <div class="chat-container" role="main" aria-label="Chat Application">
-    <div class="chat-header">
-      <div class="title">Quick Chat</div>
-      <div class="header-buttons">
-        <button id="changeUserBtn" title="Change Username/Gender" aria-label="Change Username and Gender">👤</button>
-        <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">🖼️</button>
-        <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
-      </div>
+<div id="container" role="main" aria-label="Chat Application">
+  <header>
+    <div>Quick Chat</div>
+    <div>
+      <button id="changeProfileBtn" aria-label="Change Profile" title="Change Profile">👤</button>
+      <button id="nightModeBtn" aria-label="Toggle Night Mode" title="Toggle Night Mode">🌙</button>
     </div>
-    <div class="chat-messages" id="messages" tabindex="0" aria-live="polite" aria-relevant="additions"></div>
-    <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
-    <div class="chat-input">
-      <input id="text" type="text" placeholder="Type a message…" autocomplete="off" aria-label="Message input" />
-      <button id="emojiBtn" title="Emoji picker" aria-label="Open Emoji Picker">😊</button>
-      <input type="file" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" aria-label="File Input"/>
-      <button id="fileBtn" title="Attach file" aria-label="Attach file">📎</button>
-      <button id="sendBtn" title="Send message" aria-label="Send message">➤</button>
-    </div>
-    <div class="emoji-picker" id="emojiPicker" role="list"></div>
+  </header>
+  <div id="messages" tabindex="0" aria-live="polite"></div>
+  <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
+  <footer>
+    <button id="emojiBtn" aria-label="Emoji Picker" title="Emoji Picker">😊</button>
+    <input id="inputMsg" type="text" placeholder="Type a message..." aria-label="Message input" autocomplete="off" />
+    <button id="sendBtn" aria-label="Send Message" title="Send Message">➤</button>
+  </footer>
+</div>
+
+<!-- Modal for Profile Setup -->
+<div id="modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div id="modalContent">
+    <h2 id="modalTitle">Set Your Profile</h2>
+    <label for="usernameInput">Name:</label>
+    <input id="usernameInput" type="text" maxlength="30" autocomplete="off" />
+    <label>Gender:</label>
+    <input type="radio" id="male" name="gender" value="male" checked disabled />
+    <label for="male" style="display:inline">Male (Only option)</label>
+    <div id="avatarPicker" aria-label="Avatar Picker"></div>
+    <button id="saveProfileBtn">Save</button>
   </div>
+</div>
 
-  <!-- Modal for username + gender -->
-  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal" role="document" tabindex="0">
-      <h2 id="modalTitle">Set Your Profile</h2>
-      <label for="usernameInput">Name:</label>
-      <input type="text" id="usernameInput" maxlength="30" placeholder="Enter your name" autocomplete="off" />
-      <label>Gender:</label>
-      <div class="gender-options">
-        <label><input type="radio" name="gender" value="male" checked /> Male</label>
-        <label><input type="radio" name="gender" value="female" disabled /> Female</label>
-      </div>
-      <button id="saveProfileBtn">Save</button>
-    </div>
-  </div>
+<!-- Emoji Picker -->
+<div id="emojiPicker" style="display:none; position:fixed; bottom:60px; right:20px; background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.2); padding:8px; max-width:220px; max-height:150px; overflow-y:auto; user-select:none; z-index:10000;"></div>
 
-  <!-- Modal for Avatar Picker -->
-  <div class="modal-overlay" id="avatarPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
-    <div id="avatarPickerModal" role="document" tabindex="0">
-      <h2 id="avatarPickerTitle" style="width:100%; text-align:center; user-select:none;">Pick Your Avatar</h2>
-      <!-- Avatars appended here dynamically -->
-    </div>
-  </div>
+<script type="module">
+// Firebase SDK imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import {
+  getDatabase, ref, push, onChildAdded, set, remove,
+  onValue, onDisconnect
+} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import {
-      getDatabase, ref, push, onChildAdded, get, set,
-      remove, onValue, onDisconnect
-    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+// Firebase config - your config here
+const firebaseConfig = {
+  apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
+  authDomain: "live-chat-app-5ea98.firebaseapp.com",
+  databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
+  projectId: "live-chat-app-5ea98",
+  storageBucket: "live-chat-app-5ea98.firebasestorage.app",
+  messagingSenderId: "58710835031",
+  appId: "1:58710835031:web:9248de0eba59c09c0fc812",
+  measurementId: "G-M7BMS3FS2L"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const messagesRef = ref(db, "messages");
+const typingRef = ref(db, "typing");
+const presenceRef = ref(db, "presence");
 
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
-      authDomain: "live-chat-app-5ea98.firebaseapp.com",
-      databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
-      projectId: "live-chat-app-5ea98",
-      storageBucket: "live-chat-app-5ea98.appspot.com",
-      messagingSenderId: "58710835031",
-      appId: "1:58710835031:web:9248de0eba59c09c0fc812"
-    };
+// Elements
+const container = document.getElementById("container");
+const messagesDiv = document.getElementById("messages");
+const inputMsg = document.getElementById("inputMsg");
+const sendBtn = document.getElementById("sendBtn");
+const emojiBtn = document.getElementById("emojiBtn");
+const emojiPicker = document.getElementById("emojiPicker");
+const nightModeBtn = document.getElementById("nightModeBtn");
+const typingIndicator = document.getElementById("typingIndicator");
+const modal = document.getElementById("modal");
+const usernameInput = document.getElementById("usernameInput");
+const saveProfileBtn = document.getElementById("saveProfileBtn");
+const avatarPicker = document.getElementById("avatarPicker");
+const changeProfileBtn = document.getElementById("changeProfileBtn");
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const messagesRef = ref(db, "messages");
-    const typingRef = ref(db, "typing");
-    const presenceRef = ref(db, "presence");
+// User state
+let username = localStorage.getItem("username") || "";
+let gender = localStorage.getItem("gender") || "male";
+let avatar = localStorage.getItem("avatar") || "";
+let userId = localStorage.getItem("userId") || generateUserId();
 
-    // Elements
-    const textInput = document.getElementById("text");
-    const sendBtn = document.getElementById("sendBtn");
-    const fileInput = document.getElementById("fileInput");
-    const fileBtn = document.getElementById("fileBtn");
-    const emojiBtn = document.getElementById("emojiBtn");
-    const emojiPicker = document.getElementById("emojiPicker");
-    const messagesDiv = document.getElementById("messages");
-    const nightModeBtn = document.getElementById("nightModeBtn");
-    const changeUserBtn = document.getElementById("changeUserBtn");
-    const typingIndicator = document.getElementById("typingIndicator");
-    const modalOverlay = document.getElementById("modalOverlay");
-    const usernameInput = document.getElementById("usernameInput");
-    const saveProfileBtn = document.getElementById("saveProfileBtn");
-    const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
-    const avatarPickerModal = document.getElementById("avatarPickerModal");
-    const avatarPickerBtn = document.getElementById("avatarPickerBtn");
+localStorage.setItem("userId", userId);
 
-    // Male avatars
-    const maleAvatars = [
-      "https://randomuser.me/api/portraits/men/1.jpg",
-      "https://randomuser.me/api/portraits/men/2.jpg",
-      "https://randomuser.me/api/portraits/men/3.jpg",
-      "https://randomuser.me/api/portraits/men/4.jpg",
-      "https://randomuser.me/api/portraits/men/5.jpg",
-      "https://randomuser.me/api/portraits/men/6.jpg",
-      "https://randomuser.me/api/portraits/men/7.jpg",
-      "https://randomuser.me/api/portraits/men/8.jpg",
-      "https://randomuser.me/api/portraits/men/9.jpg",
-      "https://randomuser.me/api/portraits/men/10.jpg",
-      "https://randomuser.me/api/portraits/men/11.jpg",
-      "https://randomuser.me/api/portraits/men/12.jpg",
-      "https://randomuser.me/api/portraits/men/13.jpg",
-      "https://randomuser.me/api/portraits/men/14.jpg",
-      "https://randomuser.me/api/portraits/men/15.jpg",
-      "https://randomuser.me/api/portraits/men/16.jpg",
-      "https://randomuser.me/api/portraits/men/17.jpg",
-      "https://randomuser.me/api/portraits/men/18.jpg",
-      "https://randomuser.me/api/portraits/men/19.jpg",
-      "https://randomuser.me/api/portraits/men/20.jpg"
-    ];
+// Male avatars URLs
+const maleAvatars = [
+  "https://randomuser.me/api/portraits/men/1.jpg",
+  "https://randomuser.me/api/portraits/men/2.jpg",
+  "https://randomuser.me/api/portraits/men/3.jpg",
+  "https://randomuser.me/api/portraits/men/4.jpg",
+  "https://randomuser.me/api/portraits/men/5.jpg",
+  "https://randomuser.me/api/portraits/men/6.jpg",
+  "https://randomuser.me/api/portraits/men/7.jpg",
+  "https://randomuser.me/api/portraits/men/8.jpg",
+  "https://randomuser.me/api/portraits/men/9.jpg",
+  "https://randomuser.me/api/portraits/men/10.jpg"
+];
 
-    // Emojis list
-    const emojis = [
-      "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
-      "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
-      "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳",
-      "😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖",
-      "😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯"
-    ];
+// Emojis list
+const emojis = [
+  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
+  "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
+  "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳"
+];
 
-    // Local user state
-    let currentUser = null; // { name, gender, avatar, id }
-    let editingMessageId = null;
-    let typingTimeout = null;
+// Generate user ID if not present
+function generateUserId() {
+  return "user_" + Math.random().toString(36).slice(2, 11);
+}
 
-    // Helpers
-    function saveUserToStorage() {
-      if (currentUser) {
-        localStorage.setItem('quickChatUser', JSON.stringify(currentUser));
-      }
-    }
-    function loadUserFromStorage() {
-      const userStr = localStorage.getItem('quickChatUser');
-      if (userStr) {
-        try {
-          return JSON.parse(userStr);
-        } catch { return null; }
-      }
-      return null;
-    }
-    function generateUserId() {
-      return 'user_' + Math.random().toString(36).slice(2, 10);
-    }
-    // Pick avatar based on user id and date so avatar rotates daily and no duplicates
-    function getDailyAvatar(userId) {
-      // Simple hash to int
-      let hash = 0;
-      for(let i=0; i<userId.length; i++){
-        hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-        hash |= 0;
-      }
-      // Add day offset for daily change
-      const day = new Date().toISOString().slice(0,10);
-      for(let i=0; i<day.length; i++){
-        hash += day.charCodeAt(i);
-      }
-      const idx = Math.abs(hash) % maleAvatars.length;
-      return maleAvatars[idx];
-    }
-
-    // Show modal for user profile
-    function showUserProfileModal() {
-      modalOverlay.style.display = "flex";
-      usernameInput.value = currentUser?.name || "";
-      // Gender only male enabled
-      modalOverlay.querySelector('input[name="gender"][value="male"]').checked = true;
-      setTimeout(() => usernameInput.focus(), 100);
-    }
-    // Hide modal
-    function hideUserProfileModal() {
-      modalOverlay.style.display = "none";
-    }
-    // Show avatar picker modal
-    function showAvatarPicker() {
-      avatarPickerOverlay.style.display = "flex";
-      avatarPickerModal.innerHTML = '<h2 id="avatarPickerTitle" style="width:100%; text-align:center; user-select:none;">Pick Your Avatar</h2>';
-      maleAvatars.forEach((url, idx) => {
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = "Avatar " + (idx + 1);
-        img.className = "avatar-option";
-        if (currentUser && currentUser.avatar === url) img.classList.add("selected");
-        img.tabIndex = 0;
-        img.setAttribute("role", "button");
-        img.addEventListener('click', () => {
-          currentUser.avatar = url;
-          saveUserToStorage();
-          updatePresence();
-          renderMessages();
-          hideAvatarPicker();
-        });
-        img.addEventListener('keydown', e => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            img.click();
-          }
-        });
-        avatarPickerModal.appendChild(img);
-      });
-      setTimeout(() => avatarPickerModal.focus(), 100);
-    }
-    function hideAvatarPicker() {
-      avatarPickerOverlay.style.display = "none";
-    }
-
-    // Render messages
-    let messagesCache = {};
-    function renderMessages() {
-      messagesDiv.innerHTML = "";
-      const messagesArr = Object.entries(messagesCache)
-        .sort((a,b) => a[1].timestamp - b[1].timestamp);
-      for (const [id, msg] of messagesArr) {
-        messagesDiv.appendChild(createMessageElement(id, msg));
-      }
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    function createMessageElement(id, msg) {
-      const isMe = currentUser && msg.userId === currentUser.id;
-
-      const messageEl = document.createElement("div");
-      messageEl.classList.add("message");
-      if (isMe) messageEl.classList.add("you");
-      messageEl.setAttribute("data-id", id);
-
-      // Avatar with presence dot
-      const avatar = document.createElement("img");
-      avatar.classList.add("avatar");
-      avatar.src = msg.avatar || getDailyAvatar(msg.userId);
-      avatar.alt = msg.name + "'s avatar";
-
-      // Presence from presenceCache
-      const presence = presenceCache[msg.userId];
-      if (presence?.online) {
-        avatar.classList.add("presence-online");
-        avatar.title = `Online`;
-      } else if (presence?.lastSeen) {
-        avatar.classList.add("presence-offline");
-        avatar.title = `Last seen: ${new Date(presence.lastSeen).toLocaleString()}`;
-      } else {
-        avatar.title = "Offline";
-      }
-
-      // Content container
-      const content = document.createElement("div");
-      content.className = "message-content";
-
-      // Sender name
-      const sender = document.createElement("div");
-      sender.className = "sender";
-      sender.textContent = msg.name;
-
-      // Message bubble
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = msg.text || "";
-
-      // If message has a file (image or link)
-      if (msg.file) {
-        bubble.innerHTML = "";
-        if (msg.file.type?.startsWith("image/")) {
-          const img = document.createElement("img");
-          img.src = msg.file.url;
-          img.alt = "Sent image";
-          img.style.maxWidth = "100%";
-          img.style.borderRadius = "8px";
-          bubble.appendChild(img);
-        } else {
-          // Other files - show link
-          const a = document.createElement("a");
-          a.href = msg.file.url;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = `📎 ${msg.file.name || "File"}`;
-          bubble.appendChild(a);
-        }
-        // Add caption if any text
-        if (msg.text) {
-          const caption = document.createElement("div");
-          caption.textContent = msg.text;
-          caption.style.marginTop = "4px";
-          bubble.appendChild(caption);
-        }
-      }
-
-      // Info row with timestamp and edit/delete buttons for own messages
-      const info = document.createElement("div");
-      info.className = "info";
-
-      // Timestamp formatted
-      const time = new Date(msg.timestamp);
-      const timeStr = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-      const timeEl = document.createElement("span");
-      timeEl.textContent = timeStr;
-
-      info.appendChild(timeEl);
-
-      // Edit/Delete buttons only for own messages
-      if (isMe) {
-        const actions = document.createElement("span");
-        actions.className = "actions";
-
-        // Edit button
-        const editBtn = document.createElement("button");
-        editBtn.textContent = "✏️";
-        editBtn.title = "Edit message";
-        editBtn.ariaLabel = "Edit message";
-        editBtn.addEventListener("click", () => {
-          startEditingMessage(id, msg.text);
-        });
-        actions.appendChild(editBtn);
-
-        // Delete button
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "🗑️";
-        deleteBtn.title = "Delete message";
-        deleteBtn.ariaLabel = "Delete message";
-        deleteBtn.addEventListener("click", () => {
-          if (confirm("Delete this message?")) {
-            remove(ref(db, `messages/${id}`));
-          }
-        });
-        actions.appendChild(deleteBtn);
-
-        info.appendChild(actions);
-      }
-
-      content.appendChild(sender);
-      content.appendChild(bubble);
-      content.appendChild(info);
-
-      messageEl.appendChild(avatar);
-      messageEl.appendChild(content);
-
-      return messageEl;
-    }
-
-    // Editing message
-    function startEditingMessage(id, currentText) {
-      editingMessageId = id;
-      textInput.value = currentText;
-      textInput.focus();
-      sendBtn.textContent = "💾";
-    }
-    function finishEditingMessage() {
-      if (!editingMessageId) return false;
-      const newText = textInput.value.trim();
-      if (!newText) return false;
-      set(ref(db, `messages/${editingMessageId}/text`), newText);
-      editingMessageId = null;
-      sendBtn.textContent = "➤";
-      textInput.value = "";
-      return true;
-    }
-
-    // Send message
-    async function sendMessage() {
-      if (editingMessageId) {
-        if (finishEditingMessage()) {
-          updateTyping(false);
-          return;
-        }
-      }
-      const text = textInput.value.trim();
-      if (!text) return;
-
-      // Push new message
-      const msg = {
-        text,
-        timestamp: Date.now(),
-        userId: currentUser.id,
-        name: currentUser.name,
-        avatar: currentUser.avatar || getDailyAvatar(currentUser.id),
-      };
-      await push(messagesRef, msg);
-      textInput.value = "";
-      updateTyping(false);
-    }
-
-    // Typing indicator logic
-    let typingStatus = false;
-    let typingTimer = null;
-    function updateTyping(isTyping) {
-      if (!currentUser) return;
-      if (typingStatus === isTyping) return;
-      typingStatus = isTyping;
-      if (isTyping) {
-        set(ref(db, `typing/${currentUser.id}`), {
-          name: currentUser.name,
-          timestamp: Date.now(),
-        });
-        if (typingTimer) clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => {
-          updateTyping(false);
-        }, 3000);
-      } else {
-        remove(ref(db, `typing/${currentUser.id}`));
-        if (typingTimer) {
-          clearTimeout(typingTimer);
-          typingTimer = null;
-        }
-      }
-    }
-
-    // Presence logic
-    let presenceCache = {};
-    function updatePresence() {
-      if (!currentUser) return;
-      const userPresenceRef = ref(db, `presence/${currentUser.id}`);
-      set(userPresenceRef, {
-        name: currentUser.name,
-        avatar: currentUser.avatar,
-        online: true,
-        lastSeen: null,
-        timestamp: Date.now(),
-      });
-      onDisconnect(userPresenceRef).set({
-        name: currentUser.name,
-        avatar: currentUser.avatar,
-        online: false,
-        lastSeen: Date.now(),
-        timestamp: Date.now(),
-      });
-    }
-
-    // Listen presence updates
-    onValue(presenceRef, snapshot => {
-      presenceCache = snapshot.val() || {};
-      renderMessages();
+// Setup avatar picker UI
+function setupAvatarPicker() {
+  avatarPicker.innerHTML = "";
+  maleAvatars.forEach(url => {
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "Avatar";
+    if (url === avatar) img.classList.add("selected");
+    img.tabIndex = 0;
+    img.addEventListener("click", () => {
+      avatar = url;
+      Array.from(avatarPicker.children).forEach(c => c.classList.remove("selected"));
+      img.classList.add("selected");
     });
-
-    // Listen messages updates
-    onValue(messagesRef, snapshot => {
-      messagesCache = snapshot.val() || {};
-      renderMessages();
-    });
-
-    // Listen typing status updates
-    onValue(typingRef, snapshot => {
-      const typingUsers = snapshot.val() || {};
-      let othersTyping = Object.entries(typingUsers)
-        .filter(([id]) => id !== currentUser?.id);
-      if (othersTyping.length === 0) {
-        typingIndicator.textContent = "";
-      } else {
-        const names = othersTyping.map(([, v]) => v.name);
-        typingIndicator.textContent = names.join(", ") + " typing...";
-      }
-    });
-
-    // Emoji picker setup
-    emojis.forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.tabIndex = 0;
-      span.setAttribute("role", "button");
-      span.addEventListener("click", () => {
-        textInput.value += e;
-        textInput.focus();
-      });
-      span.addEventListener("keydown", e2 => {
-        if (e2.key === "Enter" || e2.key === " ") {
-          e2.preventDefault();
-          span.click();
-        }
-      });
-      emojiPicker.appendChild(span);
-    });
-
-    // Events
-    sendBtn.onclick = () => sendMessage();
-
-    textInput.addEventListener("input", () => {
-      updateTyping(textInput.value.trim().length > 0);
-    });
-
-    textInput.addEventListener("keydown", e => {
-      if (e.key === "Enter" && !e.shiftKey) {
+    img.addEventListener("keypress", e => {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        sendMessage();
+        avatar = url;
+        Array.from(avatarPicker.children).forEach(c => c.classList.remove("selected"));
+        img.classList.add("selected");
       }
     });
+    avatarPicker.appendChild(img);
+  });
+}
 
-    fileBtn.onclick = () => fileInput.click();
-    fileInput.onchange = async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      // For demo, just create a local URL (no upload)
-      const url = URL.createObjectURL(file);
-      const msg = {
-        text: "",
-        timestamp: Date.now(),
-        userId: currentUser.id,
-        name: currentUser.name,
-        avatar: currentUser.avatar || getDailyAvatar(currentUser.id),
-        file: {
-          url,
-          name: file.name,
-          type: file.type
-        }
-      };
-      await push(messagesRef, msg);
-      fileInput.value = "";
-    };
+// Open profile modal
+function openProfileModal() {
+  usernameInput.value = username;
+  setupAvatarPicker();
+  modal.classList.remove("hidden");
+  usernameInput.focus();
+}
+function closeProfileModal() {
+  modal.classList.add("hidden");
+}
 
-    emojiBtn.onclick = () => {
-      emojiPicker.style.display = emojiPicker.style.display === "flex" ? "none" : "flex";
-    };
+// Save profile
+saveProfileBtn.addEventListener("click", () => {
+  const nameVal = usernameInput.value.trim();
+  if (!nameVal) {
+    alert("Please enter your name");
+    usernameInput.focus();
+    return;
+  }
+  username = nameVal;
+  gender = "male"; // fixed
+  if (!avatar) avatar = maleAvatars[0];
+  localStorage.setItem("username", username);
+  localStorage.setItem("gender", gender);
+  localStorage.setItem("avatar", avatar);
+  updatePresence(true);
+  closeProfileModal();
+  renderMessages();
+});
 
-    // Close emoji picker clicking outside
-    document.addEventListener("click", e => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-        emojiPicker.style.display = "none";
-      }
-    });
+changeProfileBtn.addEventListener("click", openProfileModal);
 
-    // Night mode toggle
-    function loadNightMode() {
-      if (localStorage.getItem("nightMode") === "true") {
-        document.body.classList.add("night");
-      } else {
-        document.body.classList.remove("night");
-      }
+// Load night mode
+function loadNightMode() {
+  if(localStorage.getItem("nightMode") === "true") {
+    document.body.classList.add("night");
+  }
+}
+loadNightMode();
+
+nightModeBtn.addEventListener("click", () => {
+  document.body.classList.toggle("night");
+  localStorage.setItem("nightMode", document.body.classList.contains("night"));
+});
+
+// Send message
+sendBtn.addEventListener("click", () => {
+  const msg = inputMsg.value.trim();
+  if (!msg) return;
+  sendMessage(msg);
+});
+inputMsg.addEventListener("keypress", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendBtn.click();
+  }
+});
+
+// Send message to Firebase
+function sendMessage(text) {
+  const msgObj = {
+    userId,
+    username,
+    avatar,
+    content: text,
+    timestamp: Date.now(),
+  };
+  push(messagesRef, msgObj);
+  inputMsg.value = "";
+  updateTypingStatus(false);
+}
+
+// Listen for new messages and render
+const messages = [];
+onChildAdded(messagesRef, (data) => {
+  messages.push({...data.val(), key: data.key});
+  renderMessages();
+});
+
+// Render messages
+function renderMessages() {
+  messagesDiv.innerHTML = "";
+  messages.forEach(msg => {
+    const div = document.createElement("div");
+    div.classList.add("message");
+    if(msg.userId === userId) div.classList.add("you");
+
+    // Avatar
+    const avatarImg = document.createElement("img");
+    avatarImg.src = msg.avatar;
+    avatarImg.alt = `${msg.username} avatar`;
+    avatarImg.className = "avatar";
+    div.appendChild(avatarImg);
+
+    // Content container
+    const content = document.createElement("div");
+    content.className = "message-content";
+    content.textContent = msg.content;
+
+    // Info
+    const info = document.createElement("div");
+    info.className = "message-info";
+
+    const time = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const timeSpan = document.createElement("span");
+    timeSpan.textContent = time;
+    info.appendChild(timeSpan);
+
+    if(msg.userId === userId) {
+      // Edit/Delete buttons
+      const actions = document.createElement("span");
+      actions.className = "actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✏️";
+      editBtn.title = "Edit message";
+      editBtn.onclick = () => editMessage(msg);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "🗑️";
+      deleteBtn.title = "Delete message";
+      deleteBtn.onclick = () => deleteMessage(msg);
+
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
+      info.appendChild(actions);
     }
-    nightModeBtn.onclick = () => {
-      document.body.classList.toggle("night");
-      localStorage.setItem("nightMode", document.body.classList.contains("night"));
-    };
-    loadNightMode();
 
-    // Change user modal
-    changeUserBtn.onclick = () => {
-      showUserProfileModal();
-    };
+    content.appendChild(info);
 
-    saveProfileBtn.onclick = () => {
-      const name = usernameInput.value.trim();
-      if (!name) {
-        alert("Please enter a name.");
-        usernameInput.focus();
-        return;
-      }
-      // Gender fixed to male only for now
-      currentUser = currentUser || {};
-      currentUser.name = name;
-      currentUser.gender = "male";
-      currentUser.id = currentUser.id || generateUserId();
-      currentUser.avatar = currentUser.avatar || getDailyAvatar(currentUser.id);
-      saveUserToStorage();
-      updatePresence();
-      hideUserProfileModal();
+    if(msg.userId === userId) {
+      div.appendChild(content);
+    } else {
+      div.insertBefore(content, avatarImg.nextSibling);
+    }
+
+    messagesDiv.appendChild(div);
+  });
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Edit message
+function editMessage(msg) {
+  const newText = prompt("Edit your message:", msg.content);
+  if(newText !== null && newText.trim() !== "") {
+    const msgRef = ref(db, `messages/${msg.key}`);
+    set(msgRef, {...msg, content: newText.trim()});
+    // Update local messages array for instant UI update
+    const index = messages.findIndex(m => m.key === msg.key);
+    if(index !== -1) {
+      messages[index].content = newText.trim();
       renderMessages();
-    };
-
-    modalOverlay.onclick = e => {
-      if (e.target === modalOverlay) {
-        if (currentUser) hideUserProfileModal();
-      }
-    };
-
-    // Avatar picker events
-    avatarPickerBtn.onclick = () => {
-      if (!currentUser) {
-        alert("Please set your profile first.");
-        showUserProfileModal();
-        return;
-      }
-      showAvatarPicker();
-    };
-    avatarPickerOverlay.onclick = e => {
-      if (e.target === avatarPickerOverlay) {
-        hideAvatarPicker();
-      }
-    };
-
-    // Initialize app
-    function init() {
-      currentUser = loadUserFromStorage();
-      if (!currentUser) {
-        showUserProfileModal();
-      } else {
-        // Validate avatar
-        if (!currentUser.avatar) {
-          currentUser.avatar = getDailyAvatar(currentUser.id);
-          saveUserToStorage();
-        }
-        updatePresence();
-      }
     }
+  }
+}
 
-    // Scroll chat to bottom on new messages
-    messagesDiv.addEventListener("DOMNodeInserted", () => {
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+// Delete message
+function deleteMessage(msg) {
+  if(confirm("Delete this message?")) {
+    const msgRef = ref(db, `messages/${msg.key}`);
+    remove(msgRef);
+    const index = messages.findIndex(m => m.key === msg.key);
+    if(index !== -1) {
+      messages.splice(index, 1);
+      renderMessages();
+    }
+  }
+}
+
+// Presence system
+const userPresenceRef = ref(db, `presence/${userId}`);
+
+function updatePresence(online) {
+  if(online) {
+    set(userPresenceRef, {
+      username,
+      avatar,
+      lastOnline: Date.now(),
+      online: true
     });
+    onDisconnect(userPresenceRef).remove();
+  } else {
+    remove(userPresenceRef);
+  }
+}
 
-    init();
+// Update presence dots on avatars
+function updatePresenceDots() {
+  onValue(presenceRef, snapshot => {
+    const presenceData = snapshot.val() || {};
+    document.querySelectorAll(".message .avatar").forEach(img => {
+      const src = img.src;
+      let online = false;
+      for (const uid in presenceData) {
+        if (presenceData[uid].avatar === src && presenceData[uid].online) {
+          online = true;
+          break;
+        }
+      }
+      if(online) {
+        if(!img.querySelector(".presence-dot")) {
+          const dot = document.createElement("span");
+          dot.className = "presence-dot";
+          img.appendChild(dot);
+        }
+      } else {
+        const dot = img.querySelector(".presence-dot");
+        if(dot) dot.remove();
+      }
+    });
+  });
+}
+updatePresenceDots();
 
-  </script>
+// Typing indicator
+let typingTimeout;
+inputMsg.addEventListener("input", () => {
+  if(inputMsg.value.trim()) {
+    set(ref(db, `typing/${userId}`), username);
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      remove(ref(db, `typing/${userId}`));
+    }, 3000);
+  } else {
+    remove(ref(db, `typing/${userId}`));
+  }
+});
+
+onValue(typingRef, snapshot => {
+  const typingUsers = snapshot.val() || {};
+  const othersTyping = Object.values(typingUsers).filter(name => name !== username);
+  if(othersTyping.length > 0) {
+    typingIndicator.textContent = othersTyping.join(", ") + (othersTyping.length > 1 ? " are typing..." : " is typing...");
+  } else {
+    typingIndicator.textContent = "";
+  }
+});
+
+// On page load, prompt profile if missing
+if(!username || !avatar) {
+  openProfileModal();
+} else {
+  updatePresence(true);
+  renderMessages();
+}
+window.addEventListener("beforeunload", () => {
+  updatePresence(false);
+});
+
+// Emoji picker
+emojiBtn.addEventListener("click", () => {
+  if(emojiPicker.style.display === "block") {
+    emojiPicker.style.display = "none";
+  } else {
+    emojiPicker.style.display = "block";
+  }
+});
+
+emojiPicker.innerHTML = "";
+emojis.forEach(e => {
+  const span = document.createElement("span");
+  span.textContent = e;
+  span.style.cursor = "pointer";
+  span.style.fontSize = "20px";
+  span.style.padding = "4px";
+  span.tabIndex = 0;
+  span.addEventListener("click", () => {
+    inputMsg.value += e;
+    inputMsg.focus();
+    emojiPicker.style.display = "none";
+  });
+  span.addEventListener("keypress", ev => {
+    if(ev.key === "Enter" || ev.key === " ") {
+      ev.preventDefault();
+      inputMsg.value += e;
+      inputMsg.focus();
+      emojiPicker.style.display = "none";
+    }
+  });
+  emojiPicker.appendChild(span);
+});
+</script>
 </body>
 </html>
