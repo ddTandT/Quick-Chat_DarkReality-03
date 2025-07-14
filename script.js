@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import {
   getDatabase, ref, push, onChildAdded, get, set,
-  remove, onValue, onDisconnect
+  remove, onValue, onDisconnect, onDisconnectSet
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
 // Firebase config - replace with your own config if needed
@@ -20,6 +20,7 @@ const db = getDatabase(app);
 const messagesRef = ref(db, "messages");
 const typingRef = ref(db, "typing");
 const presenceRef = ref(db, "presence");
+const connectedRef = ref(db, ".info/connected");  // Firebase connection state
 
 // DOM elements
 const textInput = document.getElementById("text");
@@ -108,10 +109,24 @@ function loadNightMode() {
   return localStorage.getItem("quickchat-nightmode") === "1";
 }
 function generateUserId() {
-  return "u_" + Math.random().toString(36).slice(2, 10);
+  // Persist userId per user in localStorage
+  let id = localStorage.getItem("quickchat-userid");
+  if (!id) {
+    id = "u_" + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("quickchat-userid", id);
+  }
+  return id;
 }
 function formatTime(date) {
   return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+// Format "last seen" relative time
+function formatLastSeen(timestamp) {
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 60) return "Last seen just now";
+  if (diffSec < 3600) return `Last seen ${Math.floor(diffSec / 60)} min ago`;
+  if (diffSec < 86400) return `Last seen ${Math.floor(diffSec / 3600)} hr ago`;
+  return `Last seen ${new Date(timestamp).toLocaleDateString()}`;
 }
 
 // Avatar picker
@@ -158,18 +173,45 @@ function selectAvatar(url) {
   closeAvatarPicker();
 }
 
-// Presence update
+// Presence update with robust handling
 function updatePresence() {
   if (!userId || !currentUser) return;
   const presenceUserRef = ref(db, `presence/${userId}`);
+
+  // Set presence data with lastActive timestamp
   set(presenceUserRef, {
     username: currentUser.username,
     gender: currentUser.gender,
     avatarUrl: currentUser.avatarUrl,
     lastActive: Date.now()
   });
+
+  // Remove presence on disconnect
   onDisconnect(presenceUserRef).remove();
 }
+
+// Listen for Firebase connection state and handle presence accordingly
+function setupConnectionListener() {
+  onValue(connectedRef, snap => {
+    if (snap.val() === true) {
+      // Client is connected to Firebase
+      updatePresence();
+
+      // Refresh lastActive periodically while connected
+      presenceHeartbeatInterval = setInterval(() => {
+        updatePresence();
+      }, 15000); // every 15 seconds
+    } else {
+      // Client disconnected from Firebase
+      if (presenceHeartbeatInterval) {
+        clearInterval(presenceHeartbeatInterval);
+        presenceHeartbeatInterval = null;
+      }
+    }
+  });
+}
+
+let presenceHeartbeatInterval = null;
 
 // Render one message element
 function createMessageElement(msgObj) {
@@ -179,12 +221,31 @@ function createMessageElement(msgObj) {
   container.className = "message" + (isCurrentUser ? " you" : "");
   container.tabIndex = -1;
 
-  // Avatar with presence classes
+  // Avatar with presence classes and last seen tooltip
   const avatarImg = document.createElement("img");
   avatarImg.className = "avatar presence-offline";
   avatarImg.src = msgObj.avatarUrl || getDefaultAvatar(msgObj.gender);
   avatarImg.alt = `${msgObj.username}'s avatar`;
   avatarImg.loading = "lazy";
+
+  // Set presence dot class and tooltip after presence map is loaded
+  const presenceUser = [...presenceMap.values()].find(u => u.username === msgObj.username);
+  if (presenceUser) {
+    const online = (Date.now() - presenceUser.lastActive) < 30000;
+    if (online) {
+      avatarImg.classList.add("presence-online");
+      avatarImg.classList.remove("presence-offline");
+      avatarImg.title = "Online";
+    } else {
+      avatarImg.classList.remove("presence-online");
+      avatarImg.classList.add("presence-offline");
+      avatarImg.title = formatLastSeen(presenceUser.lastActive);
+    }
+  } else {
+    avatarImg.classList.remove("presence-online");
+    avatarImg.classList.add("presence-offline");
+    avatarImg.title = "";
+  }
 
   container.appendChild(avatarImg);
 
@@ -279,7 +340,6 @@ function renderMessages() {
     messagesDiv.appendChild(el);
   });
   scrollToBottom();
-  updatePresenceDots();
 }
 
 function scrollToBottom() {
@@ -366,7 +426,7 @@ function updateTypingIndicator() {
   }
 }
 
-// Presence listener and dot update
+// Presence listener and map update
 function listenPresence() {
   onValue(presenceRef, snapshot => {
     const data = snapshot.val() || {};
@@ -374,34 +434,7 @@ function listenPresence() {
     for (const uid in data) {
       presenceMap.set(uid, data[uid]);
     }
-    updatePresenceDots();
-  });
-}
-
-function updatePresenceDots() {
-  document.querySelectorAll(".message").forEach(msgEl => {
-    const avatar = msgEl.querySelector(".avatar");
-    const senderName = msgEl.querySelector(".sender")?.textContent || "";
-    let foundUser = null;
-    for (const [uid, user] of presenceMap) {
-      if (user.username === senderName) {
-        foundUser = user;
-        break;
-      }
-    }
-    if (!foundUser) {
-      avatar.classList.remove("presence-online");
-      avatar.classList.add("presence-offline");
-    } else {
-      const online = (Date.now() - foundUser.lastActive) < 30000;
-      if (online) {
-        avatar.classList.add("presence-online");
-        avatar.classList.remove("presence-offline");
-      } else {
-        avatar.classList.remove("presence-online");
-        avatar.classList.add("presence-offline");
-      }
-    }
+    renderMessages(); // To update presence dots and tooltips
   });
 }
 
@@ -548,12 +581,12 @@ function updateUIForUser() {
 
 // Initialize
 function init() {
-  // Load user
+  // Load user and userId
   currentUser = loadUserFromLocal();
+  userId = generateUserId();
   if (!currentUser) {
     openProfileModal();
   } else {
-    userId = generateUserId();
     selectedAvatarUrl = currentUser.avatarUrl;
     updatePresence();
     updateUIForUser();
@@ -567,8 +600,7 @@ function init() {
   listenMessages();
   listenTyping();
   listenPresence();
-
-  // Accessibility focus trap for modals could be added here if needed
+  setupConnectionListener();
 }
 
 init();
