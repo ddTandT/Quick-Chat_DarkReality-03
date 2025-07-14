@@ -41,6 +41,30 @@ main {
 .presence-offline {
   border-color: #bbb;
 }
+
+/* Tooltip for presence "last seen" */
+.avatar[presence-tooltip]:hover::after {
+  content: attr(presence-tooltip);
+  position: absolute;
+  bottom: 110%; /* above avatar */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.avatar[presence-tooltip]:hover::after {
+  opacity: 1;
+}
+
 .message-content {
   background: white; border-radius: 12px; padding: 8px 12px; position: relative;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
