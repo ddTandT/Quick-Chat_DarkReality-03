@@ -467,16 +467,17 @@ textInput.addEventListener("input", () => {
   }, 3000);
 });
 
-// Send button
+// Send button click
 sendBtn.addEventListener("click", () => {
-  const text = textInput.value.trim();
-  if (text) {
-    sendMessage(text);
+  if (textInput.value.trim() !== "") {
+    sendMessage(textInput.value.trim());
     textInput.value = "";
-    textInput.focus();
+    setTyping(false);
+    isTyping = false;
   }
 });
-// Enter key sends message
+
+// Enter key to send
 textInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -484,7 +485,33 @@ textInput.addEventListener("keydown", e => {
   }
 });
 
-// Emoji picker toggle
+// File upload handling
+fileBtn.addEventListener("click", () => {
+  fileInput.click();
+});
+
+fileInput.addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Upload file to Firebase Storage or other file hosting service here
+  // For simplicity, assume file is uploaded and URL is obtained as fileUrl
+  // Implement your own file upload method or use Firebase Storage SDK
+
+  // Example placeholder:
+  const fileUrl = URL.createObjectURL(file);
+
+  // Send message with file URL
+  if (file.type.startsWith("image/")) {
+    sendMessage("", "image", fileUrl);
+  } else {
+    sendMessage("", "file", fileUrl);
+  }
+
+  fileInput.value = "";
+});
+
+// Emoji picker toggle and insertion
 emojiBtn.addEventListener("click", () => {
   if (emojiPicker.style.display === "block") {
     emojiPicker.style.display = "none";
@@ -493,125 +520,101 @@ emojiBtn.addEventListener("click", () => {
   }
 });
 
-// Build emoji picker buttons
-function buildEmojiPicker() {
-  emojiPicker.innerHTML = "";
-  emojis.forEach(emoji => {
-    const btn = document.createElement("button");
-    btn.className = "emoji-btn";
-    btn.textContent = emoji;
-    btn.type = "button";
-    btn.addEventListener("click", () => {
-      textInput.value += emoji;
-      textInput.focus();
-      emojiPicker.style.display = "none";
-    });
-    emojiPicker.appendChild(btn);
+emojiPicker.innerHTML = emojis.map(e => `<button type="button" class="emoji" title="${e}">${e}</button>`).join("");
+emojiPicker.querySelectorAll(".emoji").forEach(btn => {
+  btn.addEventListener("click", () => {
+    textInput.value += btn.textContent;
+    textInput.focus();
+    emojiPicker.style.display = "none";
   });
-}
-buildEmojiPicker();
-
-// File upload
-fileBtn.addEventListener("click", () => {
-  fileInput.click();
-});
-fileInput.addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  // Only image files supported for display in chat
-  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
-  if (!allowedTypes.includes(file.type)) {
-    alert("Only JPG, PNG, and GIF image files are supported.");
-    fileInput.value = "";
-    return;
-  }
-
-  // Upload to Firebase Storage - omitted for brevity (implement if needed)
-  alert("File upload feature is not implemented in this demo.");
-  fileInput.value = "";
 });
 
-// Night mode toggle
+// Night mode toggle with persistence
 nightModeBtn.addEventListener("click", () => {
-  document.body.classList.toggle("night");
-  saveNightMode(document.body.classList.contains("night"));
+  document.body.classList.toggle("night-mode");
+  saveNightMode(document.body.classList.contains("night-mode"));
 });
 
-// Load night mode
-if (loadNightMode()) {
-  document.body.classList.add("night");
-}
-
-// Change user button
+// Change user button opens profile modal
 changeUserBtn.addEventListener("click", () => {
-  openUserModal();
+  openProfileModal();
 });
 
-// User modal
-function openUserModal() {
+// Open profile modal to set username & avatar
+function openProfileModal() {
+  if (currentUser) {
+    usernameInput.value = currentUser.username || "";
+  } else {
+    usernameInput.value = "";
+  }
   modalOverlay.style.display = "flex";
-  usernameInput.value = currentUser?.username || "";
   usernameInput.focus();
-  selectedAvatarUrl = currentUser?.avatarUrl || maleAvatars[0];
-  openAvatarPicker();
-}
-function closeUserModal() {
-  modalOverlay.style.display = "none";
-  closeAvatarPicker();
 }
 
-// Save profile from modal
+// Save profile button
 saveProfileBtn.addEventListener("click", () => {
   const name = usernameInput.value.trim();
   if (!name) {
     alert("Please enter a username.");
+    usernameInput.focus();
     return;
   }
-  currentUser.username = name;
-  if (!currentUser.avatarUrl) currentUser.avatarUrl = maleAvatars[0];
+  if (!selectedAvatarUrl) {
+    selectedAvatarUrl = maleAvatars[Math.floor(Math.random() * maleAvatars.length)];
+  }
+  currentUser = {
+    username: name,
+    gender: "male",
+    avatarUrl: selectedAvatarUrl
+  };
   saveUserToLocal(currentUser);
   updatePresence();
   updateUIForUser();
-  renderMessages();
-  closeUserModal();
+  modalOverlay.style.display = "none";
 });
 
-// Avatar picker button
+// Avatar picker open/close events
 avatarPickerBtn.addEventListener("click", openAvatarPicker);
 avatarPickerOverlay.addEventListener("click", e => {
   if (e.target === avatarPickerOverlay) closeAvatarPicker();
 });
 
-// UI update when user changes
+// Update UI elements for logged in user
 function updateUIForUser() {
   if (!currentUser) return;
-  document.getElementById("usernameDisplay").textContent = currentUser.username;
-  document.getElementById("avatarDisplay").src = currentUser.avatarUrl;
+  document.getElementById("currentUsername").textContent = currentUser.username;
+  document.getElementById("currentAvatar").src = currentUser.avatarUrl;
 }
 
-// Initial setup
+// Initialize app: load user, setup listeners
 function init() {
   userId = generateUserId();
   currentUser = loadUserFromLocal();
 
-  if (!currentUser || !currentUser.username) {
-    currentUser = {
-      username: "Guest" + Math.floor(Math.random() * 1000),
-      gender: "male",
-      avatarUrl: maleAvatars[0]
-    };
-    saveUserToLocal(currentUser);
+  if (!currentUser) {
+    openProfileModal();
+  } else {
+    selectedAvatarUrl = currentUser.avatarUrl;
+    updateUIForUser();
   }
-  selectedAvatarUrl = currentUser.avatarUrl || maleAvatars[0];
-  updateUIForUser();
+
   listenMessages();
   listenTyping();
   listenPresence();
   setupConnectionListener();
 
-  updatePresence();
-  renderMessages();
+  // Load night mode state
+  if (loadNightMode()) {
+    document.body.classList.add("night-mode");
+  }
+
+  // Fix: Remove typing status on page unload
+  window.addEventListener('beforeunload', () => {
+    if (userId) {
+      const typingUserRef = ref(db, `typing/${userId}`);
+      remove(typingUserRef);
+    }
+  });
 }
 
 init();
