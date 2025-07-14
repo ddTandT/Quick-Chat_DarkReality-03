@@ -410,7 +410,10 @@ function setTyping(isTypingNow) {
   const typingUserRef = ref(db, `typing/${userId}`);
 
   if (isTypingNow) {
-    set(typingUserRef, currentUser.username);
+    set(typingUserRef, {
+      username: currentUser.username,
+      timestamp: Date.now()
+    });
     onDisconnect(typingUserRef).remove();
   } else {
     remove(typingUserRef);
@@ -423,9 +426,13 @@ function listenTyping() {
   onValue(typingRef, snapshot => {
     const typingUsers = snapshot.val() || {};
     userTypingUsers.clear();
+    const now = Date.now();
     for (const uid in typingUsers) {
+      const data = typingUsers[uid];
       if (uid.toString() !== userId.toString()) {
-        userTypingUsers.add(typingUsers[uid]);
+        if (data.timestamp && (now - data.timestamp < 5000)) {
+          userTypingUsers.add(data.username);
+        }
       }
     }
     updateTypingIndicator();
@@ -465,6 +472,7 @@ function listenPresence() {
 
 // Input event for typing with longer debounce timeout
 textInput.addEventListener("input", () => {
+  if (!currentUser) return;
   if (!isTyping) {
     setTyping(true);
     isTyping = true;
@@ -473,71 +481,73 @@ textInput.addEventListener("input", () => {
 
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
-    if (Date.now() - lastTypingTime >= 3000) {
+    if (Date.now() - lastTypingTime >= 1000) {
       setTyping(false);
       isTyping = false;
     }
-  }, 3000);
+  }, 1000);
 });
 
-sendBtn.addEventListener("click", () => {
-  if (textInput.value.trim()) {
-    sendMessage(textInput.value.trim());
-    textInput.value = "";
-  }
-});
-
-textInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendBtn.click();
-  }
-});
-
-// Emoji picker toggle and emoji insert
+// Emoji picker toggle
 emojiBtn.addEventListener("click", () => {
   emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block";
-  if (emojiPicker.style.display === "block") emojiPicker.focus();
-});
-emojiPicker.innerHTML = emojis.map(e => `<span tabindex="0" class="emoji">${e}</span>`).join("");
-emojiPicker.addEventListener("click", e => {
-  if (e.target.classList.contains("emoji")) {
-    insertAtCursor(textInput, e.target.textContent);
-    textInput.focus();
-    emojiPicker.style.display = "none";
-    textInput.dispatchEvent(new Event("input"));
+  if (emojiPicker.style.display === "block") {
+    emojiPicker.focus();
   }
 });
-emojiPicker.addEventListener("keydown", e => {
-  if (e.key === "Enter" && e.target.classList.contains("emoji")) {
-    e.preventDefault();
-    insertAtCursor(textInput, e.target.textContent);
-    textInput.focus();
-    emojiPicker.style.display = "none";
-    textInput.dispatchEvent(new Event("input"));
-  }
-});
-function insertAtCursor(input, text) {
+
+// Add emojis to picker
+function populateEmojiPicker() {
+  emojis.forEach(e => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "emoji-button";
+    btn.textContent = e;
+    btn.title = e;
+    btn.addEventListener("click", () => {
+      insertAtCursor(textInput, e);
+      emojiPicker.style.display = "none";
+      textInput.focus();
+      updateTypingIndicator();
+    });
+    emojiPicker.appendChild(btn);
+  });
+}
+populateEmojiPicker();
+
+// Helper: insert emoji at cursor position in textarea/input
+function insertAtCursor(input, textToInsert) {
   const start = input.selectionStart;
   const end = input.selectionEnd;
-  const val = input.value;
-  input.value = val.slice(0, start) + text + val.slice(end);
-  input.selectionStart = input.selectionEnd = start + text.length;
+  input.value = input.value.substring(0, start) + textToInsert + input.value.substring(end);
+  input.selectionStart = input.selectionEnd = start + textToInsert.length;
 }
 
-// File upload
-fileBtn.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", () => {
+// Send button
+sendBtn.addEventListener("click", async () => {
+  const val = textInput.value.trim();
+  if (!val) return;
+  await sendMessage(val, "text");
+  textInput.value = "";
+  setTyping(false);
+  isTyping = false;
+});
+
+// File send
+fileBtn.addEventListener("click", () => {
+  fileInput.click();
+});
+fileInput.addEventListener("change", async () => {
+  if (!fileInput.files.length) return;
   const file = fileInput.files[0];
-  if (!file) return;
-  if (!file.type.startsWith("image/") && !file.type.startsWith("application/")) {
-    alert("Only image and file types are supported");
-    return;
-  }
-  // For demo: simulate upload by creating object URL (replace with real upload if needed)
-  const fileUrl = URL.createObjectURL(file);
-  sendMessage("", file.type.startsWith("image/") ? "image" : "file", fileUrl);
-  fileInput.value = "";
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    const type = file.type.startsWith("image/") ? "image" : "file";
+    await sendMessage("", type, dataUrl);
+    fileInput.value = "";
+  };
+  reader.readAsDataURL(file);
 });
 
 // Night mode toggle
@@ -546,80 +556,100 @@ nightModeBtn.addEventListener("click", () => {
   saveNightMode(enabled);
 });
 
-// Change username modal
+// Change user profile button
 changeUserBtn.addEventListener("click", () => {
-  openModal();
+  openProfileModal();
 });
 
-// Modal functions
-function openModal() {
+// Profile modal controls
+function openProfileModal() {
   modalOverlay.style.display = "flex";
   usernameInput.value = currentUser?.username || "";
   usernameInput.focus();
 }
-function closeModal() {
+function closeProfileModal() {
   modalOverlay.style.display = "none";
 }
+
+// Save profile button
 saveProfileBtn.addEventListener("click", () => {
-  const name = usernameInput.value.trim();
-  if (!name) {
-    alert("Please enter your username");
+  const username = usernameInput.value.trim();
+  if (!username) {
+    alert("Username cannot be empty.");
     return;
   }
-  currentUser.username = name;
+  currentUser = currentUser || {};
+  currentUser.username = username;
   if (!currentUser.avatarUrl) {
-    currentUser.avatarUrl = maleAvatars[0];
+    selectedAvatarUrl = maleAvatars[Math.floor(Math.random() * maleAvatars.length)];
+    currentUser.avatarUrl = selectedAvatarUrl;
+  } else {
+    selectedAvatarUrl = currentUser.avatarUrl;
   }
   saveUserToLocal(currentUser);
   updatePresence();
   updateUIForUser();
-  closeModal();
-});
-modalOverlay.addEventListener("click", e => {
-  if (e.target === modalOverlay) closeModal();
+  renderMessages();
+  closeProfileModal();
 });
 
-// Avatar picker open/close
-avatarPickerBtn.addEventListener("click", openAvatarPicker);
-avatarPickerOverlay.addEventListener("click", e => {
-  if (e.target === avatarPickerOverlay) closeAvatarPicker();
+// Avatar picker button
+avatarPickerBtn.addEventListener("click", () => {
+  openAvatarPicker();
 });
-
-// Initialize user data on startup
-function initUser() {
-  currentUser = loadUserFromLocal();
-  if (!currentUser) {
-    currentUser = {
-      username: "Anonymous",
-      gender: "male",
-      avatarUrl: maleAvatars[0]
-    };
-    saveUserToLocal(currentUser);
+avatarPickerOverlay.addEventListener("click", (e) => {
+  if (e.target === avatarPickerOverlay) {
+    closeAvatarPicker();
   }
+});
+
+// Initialize user info from local storage or prompt
+function initUser() {
   userId = generateUserId();
-  selectedAvatarUrl = currentUser.avatarUrl;
-  updateUIForUser();
+  let user = loadUserFromLocal();
+  if (!user || !user.username) {
+    openProfileModal();
+  } else {
+    currentUser = user;
+    selectedAvatarUrl = user.avatarUrl || maleAvatars[Math.floor(Math.random() * maleAvatars.length)];
+    if (!user.avatarUrl) {
+      currentUser.avatarUrl = selectedAvatarUrl;
+      saveUserToLocal(currentUser);
+    }
+    updateUIForUser();
+  }
+  updatePresence();
 }
 
-// Update UI elements to reflect user data
+// Update UI after user info changes
 function updateUIForUser() {
-  // Could update user avatar preview, username display, etc.
-  // For example:
-  document.title = `Quick Chat - ${currentUser.username}`;
+  document.getElementById("profileUsername").textContent = currentUser.username;
+  document.getElementById("profileAvatar").src = currentUser.avatarUrl;
 }
 
-function initNightMode() {
-  if (loadNightMode()) document.body.classList.add("nightmode");
+// On page unload remove typing presence for cleanup
+window.addEventListener("beforeunload", () => {
+  if (userId) {
+    remove(ref(db, `typing/${userId}`));
+    remove(ref(db, `presence/${userId}`));
+  }
+});
+
+// Load night mode preference
+if (loadNightMode()) {
+  document.body.classList.add("nightmode");
 }
 
-function init() {
-  initUser();
-  initNightMode();
-  listenMessages();
-  listenTyping();
-  listenPresence();
-  setupConnectionListener();
-  updateUIForUser();
-}
+// Listen for messages, typing, presence, connection state
+listenMessages();
+listenTyping();
+listenPresence();
+setupConnectionListener();
 
-init();
+// Initialize current user
+initUser();
+
+// Scroll messages to bottom when focused
+messagesDiv.addEventListener("DOMNodeInserted", () => {
+  scrollToBottom();
+});
