@@ -292,9 +292,9 @@
 <header>
   <h1>Quick Chat</h1>
   <div>
-    <button id="avatarPickerBtn" title="Pick Avatar">Avatar</button>
-    <button id="changeUserBtn" title="Change Username">Change User</button>
-    <button id="nightModeBtn" title="Toggle Night Mode">🌙</button>
+    <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">Avatar</button>
+    <button id="changeUserBtn" title="Change Username" aria-label="Change Username">Change User</button>
+    <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
   </div>
 </header>
 
@@ -302,11 +302,11 @@
 <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
 
 <footer>
-  <button id="fileBtn" title="Send File">📎</button>
-  <input type="file" id="fileInput" />
-  <button id="emojiBtn" title="Emoji Picker">😊</button>
+  <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
+  <input type="file" id="fileInput" aria-label="File input" />
+  <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
-  <button id="sendBtn" title="Send Message">Send</button>
+  <button id="sendBtn" title="Send Message" aria-label="Send Message">Send</button>
 </footer>
 
 <div id="emojiPicker" role="listbox" aria-label="Emoji picker"></div>
@@ -332,6 +332,7 @@
     remove, onValue, onDisconnect
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+  // Firebase config (replace with your own!)
   const firebaseConfig = {
     apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
     authDomain: "live-chat-app-5ea98.firebaseapp.com",
@@ -367,6 +368,7 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
 
+  // Male avatars only
   const maleAvatars = [
     "https://randomuser.me/api/portraits/men/1.jpg",
     "https://randomuser.me/api/portraits/men/2.jpg",
@@ -403,7 +405,7 @@
     "💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾"
   ];
 
-  // State
+  // State variables
   let currentUser = null;
   let userId = null;
   let typingTimeout = null;
@@ -415,7 +417,7 @@
   let selectedAvatarUrl = null;
   let presenceHeartbeatInterval = null;
 
-  // Utils
+  // Utility functions
   function saveUserToLocal(user) {
     localStorage.setItem("quickchat-user", JSON.stringify(user));
   }
@@ -446,6 +448,7 @@
     return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
   }
   function formatLastSeen(timestamp) {
+    if (!timestamp) return "Last seen unknown";
     const diffSec = Math.floor((Date.now() - timestamp) / 1000);
     if (diffSec < 60) return "Last seen just now";
     if (diffSec < 3600) return `Last seen ${Math.floor(diffSec / 60)} min ago`;
@@ -453,7 +456,7 @@
     return `Last seen ${new Date(timestamp).toLocaleDateString()}`;
   }
 
-  // Avatar picker functions
+  // Avatar picker
   function openAvatarPicker() {
     avatarPickerModal.innerHTML = '<h2 id="avatarPickerTitle" style="width:100%; text-align:center; user-select:none;">Pick Your Avatar</h2>';
     maleAvatars.forEach(url => {
@@ -489,7 +492,7 @@
     closeAvatarPicker();
   }
 
-  // Display messages
+  // Show messages
   function displayMessage(msgObj) {
     if (!msgObj) return;
     if (messagesCache.find(m => m.id === msgObj.id)) return; // skip duplicates
@@ -501,7 +504,7 @@
     div.setAttribute("tabindex", "0");
     div.setAttribute("aria-label", `${msgObj.username} said: ${msgObj.text || "file message"}`);
 
-    // Avatar + presence dot + tooltip for last seen
+    // Avatar + presence dot + tooltip
     const avatarWrapper = document.createElement("div");
     avatarWrapper.classList.add("avatar");
     // presence dot class
@@ -532,7 +535,7 @@
     const bubbleDiv = document.createElement("div");
     bubbleDiv.classList.add("bubble");
     if (msgObj.file) {
-      // Display image if file type image
+      // Show image if image file
       if (msgObj.fileType && msgObj.fileType.startsWith("image/")) {
         const img = document.createElement("img");
         img.src = msgObj.file;
@@ -541,7 +544,7 @@
         img.style.borderRadius = "8px";
         bubbleDiv.appendChild(img);
       } else {
-        // Otherwise a link to file
+        // Else file link
         const a = document.createElement("a");
         a.href = msgObj.file;
         a.target = "_blank";
@@ -553,7 +556,7 @@
       bubbleDiv.textContent = msgObj.text || "";
     }
 
-    // Info row with time and edit/delete for own messages
+    // Info row: time and own message actions
     const infoDiv = document.createElement("div");
     infoDiv.classList.add("info");
     const timeSpan = document.createElement("span");
@@ -567,6 +570,7 @@
       const editBtn = document.createElement("button");
       editBtn.textContent = "✏️";
       editBtn.title = "Edit message";
+      editBtn.setAttribute("aria-label", "Edit message");
       editBtn.addEventListener("click", () => {
         editMessage(msgObj);
       });
@@ -574,6 +578,7 @@
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "🗑️";
       deleteBtn.title = "Delete message";
+      deleteBtn.setAttribute("aria-label", "Delete message");
       deleteBtn.addEventListener("click", () => {
         if (confirm("Delete this message?")) {
           deleteMessage(msgObj.id);
@@ -598,8 +603,6 @@
 
   // Edit message inline
   function editMessage(msgObj) {
-    // Find the message div (last one with that id)
-    // Instead, simply prompt for new text
     const newText = prompt("Edit your message:", msgObj.text || "");
     if (newText === null) return; // cancel
     const newTrimmed = newText.trim();
@@ -623,16 +626,9 @@
     remove(msgRef);
   }
 
-  // Listen for messages added/changed/removed
+  // Listen for messages changes
   function listenMessages() {
-    onChildAdded(messagesRef, snapshot => {
-      const val = snapshot.val();
-      if (!val) return;
-      val.id = snapshot.key;
-      displayMessage(val);
-    });
     onValue(messagesRef, snapshot => {
-      // Handle changes and removals
       const messages = snapshot.val() || {};
       messagesCache = [];
       messagesDiv.innerHTML = "";
@@ -655,7 +651,6 @@
     let fileUrl = null;
     let fileType = null;
     if (fileObj) {
-      // For demo, use local URL; real apps should upload to storage
       fileUrl = URL.createObjectURL(fileObj);
       fileType = fileObj.type;
     }
@@ -704,7 +699,6 @@
       emojiPicker.focus();
     }
   });
-  // Populate emoji picker
   emojis.forEach(emoji => {
     const span = document.createElement("span");
     span.textContent = emoji;
@@ -724,8 +718,6 @@
     });
     emojiPicker.appendChild(span);
   });
-
-  // Clicking outside emoji picker closes it
   document.addEventListener("click", e => {
     if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
       emojiPicker.style.display = "none";
@@ -759,6 +751,7 @@
       const val = snapshot.val() || {};
       userTypingUsers.clear();
       Object.entries(val).forEach(([id, username]) => {
+        // FIX: exclude own userId to avoid self-typing indicator
         if (id !== userId) userTypingUsers.add(username);
       });
       updateTypingIndicator();
@@ -774,155 +767,180 @@
     }
   }
 
-  // User presence
-  function updatePresence() {
-    if (!userId || !currentUser) return;
-    const userPresenceRef = ref(db, `presence/${userId}`);
-    set(userPresenceRef, { username: currentUser.username, avatarUrl: currentUser.avatarUrl, online: true, lastSeen: Date.now() });
-    onDisconnect(userPresenceRef).set({ username: currentUser.username, avatarUrl: currentUser.avatarUrl, online: false, lastSeen: Date.now() });
-  }
+  // Presence system (online/offline)
+  function setupPresence() {
+    userId = generateUserId();
 
-  // Listen presence changes
-  function listenPresence() {
-    onValue(presenceRef, snapshot => {
-      const val = snapshot.val() || {};
-      presenceMap.clear();
-      Object.entries(val).forEach(([id, p]) => {
-        presenceMap.set(id, p);
-      });
-      // Update avatars presence dots in messages
-      refreshPresenceDots();
-    });
-  }
+    onValue(connectedRef, snap => {
+      if (snap.val() === true) {
+        const userStatusRef = ref(db, `presence/${userId}`);
+        set(userStatusRef, {
+          online: true,
+          username: currentUser ? currentUser.username : null,
+          avatarUrl: currentUser ? currentUser.avatarUrl : null,
+          lastSeen: null
+        });
+        onDisconnect(userStatusRef).set({
+          online: false,
+          username: currentUser ? currentUser.username : null,
+          avatarUrl: currentUser ? currentUser.avatarUrl : null,
+          lastSeen: Date.now()
+        });
 
-  function refreshPresenceDots() {
-    const messageDivs = messagesDiv.querySelectorAll(".message");
-    messageDivs.forEach(div => {
-      const avatarDiv = div.querySelector(".avatar");
-      if (!avatarDiv) return;
-      const senderName = div.querySelector(".sender")?.textContent;
-      // Find userId by matching username in presenceMap
-      let foundId = null;
-      for (const [id, p] of presenceMap.entries()) {
-        if (p.username === senderName) {
-          foundId = id;
-          break;
-        }
-      }
-      if (!foundId) return;
-      const presence = presenceMap.get(foundId);
-      if (presence.online) {
-        avatarDiv.classList.add("presence-online");
-        avatarDiv.classList.remove("presence-offline");
-        avatarDiv.title = "Online";
-      } else {
-        avatarDiv.classList.remove("presence-online");
-        avatarDiv.classList.add("presence-offline");
-        avatarDiv.title = formatLastSeen(presence.lastSeen || 0);
-      }
-    });
-  }
-
-  // Connection monitor - update presence accordingly
-  function setupConnectionListener() {
-    onValue(connectedRef, snapshot => {
-      if (snapshot.val() === true) {
-        updatePresence();
-        // Heartbeat to update lastSeen every 30s while online
+        // Heartbeat every 25 seconds to keep online
         if (presenceHeartbeatInterval) clearInterval(presenceHeartbeatInterval);
         presenceHeartbeatInterval = setInterval(() => {
-          if (userId && currentUser) {
-            const userPresenceRef = ref(db, `presence/${userId}`);
-            set(userPresenceRef, { username: currentUser.username, avatarUrl: currentUser.avatarUrl, online: true, lastSeen: Date.now() });
-          }
-        }, 30000);
-      } else {
-        if (presenceHeartbeatInterval) clearInterval(presenceHeartbeatInterval);
+          set(userStatusRef, {
+            online: true,
+            username: currentUser ? currentUser.username : null,
+            avatarUrl: currentUser ? currentUser.avatarUrl : null,
+            lastSeen: null
+          });
+        }, 25000);
       }
+    });
+
+    // Listen to all users presence
+    onValue(presenceRef, snap => {
+      const val = snap.val() || {};
+      presenceMap.clear();
+      Object.entries(val).forEach(([uid, status]) => {
+        presenceMap.set(uid, status);
+      });
+      updatePresenceDots();
+    });
+  }
+  // Update presence dots on messages
+  function updatePresenceDots() {
+    // Update all message avatars presence dot and tooltip
+    const msgDivs = messagesDiv.querySelectorAll(".message");
+    msgDivs.forEach(div => {
+      const avatarDiv = div.querySelector(".avatar");
+      const usernameSpan = div.querySelector(".sender");
+      if (!avatarDiv || !usernameSpan) return;
+
+      // We find userId by matching message in cache (best effort)
+      const msgId = null;
+      // Instead, match by username + avatarUrl to presence user
+      const sender = usernameSpan.textContent;
+      // Find presence by username - fallback if multiple users same username
+      // We will skip this complex logic for now due to no userId on DOM
+
+      // Instead, rely on message userId in messagesCache
+      let msgObj = null;
+      const allMsgs = messagesCache.filter(m => m.username === sender);
+      if (allMsgs.length === 1) msgObj = allMsgs[0];
+      else if (allMsgs.length > 1) msgObj = allMsgs[allMsgs.length-1]; // last one
+
+      if (!msgObj) return;
+
+      const presenceStatus = presenceMap.get(msgObj.userId) || { online: false, lastSeen: 0 };
+      avatarDiv.classList.remove("presence-online", "presence-offline");
+      avatarDiv.classList.add(presenceStatus.online ? "presence-online" : "presence-offline");
+      avatarDiv.title = presenceStatus.online
+        ? "Online"
+        : formatLastSeen(presenceStatus.lastSeen || 0);
     });
   }
 
-  // Night mode toggle
-  nightModeBtn.addEventListener("click", () => {
-    document.body.classList.toggle("night");
-    const enabled = document.body.classList.contains("night");
-    saveNightMode(enabled);
-  });
-
-  // Change user profile modal open
-  changeUserBtn.addEventListener("click", () => {
-    openProfileModal();
-  });
-
-  // Profile modal open/close functions
+  // Modal profile
   function openProfileModal() {
-    if (currentUser) {
-      usernameInput.value = currentUser.username || "";
-      selectedAvatarUrl = currentUser.avatarUrl || maleAvatars[0];
-    } else {
-      usernameInput.value = "";
-      selectedAvatarUrl = maleAvatars[0];
-    }
     modalOverlay.style.display = "flex";
+    usernameInput.value = currentUser ? currentUser.username : "";
     usernameInput.focus();
   }
   function closeProfileModal() {
     modalOverlay.style.display = "none";
   }
   saveProfileBtn.addEventListener("click", () => {
-    const name = usernameInput.value.trim();
-    if (!name) {
-      alert("Please enter your username");
+    const username = usernameInput.value.trim();
+    if (!username) {
+      alert("Username cannot be empty.");
       usernameInput.focus();
       return;
     }
     if (!currentUser) currentUser = {};
-    currentUser.username = name;
-    currentUser.avatarUrl = selectedAvatarUrl || maleAvatars[0];
-    userId = userId || generateUserId();
+    currentUser.username = username;
+    // Set default avatar if none
+    if (!currentUser.avatarUrl) {
+      currentUser.avatarUrl = maleAvatars[0];
+      selectedAvatarUrl = currentUser.avatarUrl;
+    }
     saveUserToLocal(currentUser);
-    updatePresence();
-    updateUIForUser();
     closeProfileModal();
+    updatePresence();
   });
+  changeUserBtn.addEventListener("click", openProfileModal);
+
   modalOverlay.addEventListener("click", e => {
     if (e.target === modalOverlay) closeProfileModal();
   });
 
-  // Avatar picker open/close
+  modalOverlay.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeProfileModal();
+  });
+
+  // Avatar picker button
   avatarPickerBtn.addEventListener("click", openAvatarPicker);
   avatarPickerOverlay.addEventListener("click", e => {
     if (e.target === avatarPickerOverlay) closeAvatarPicker();
   });
+  avatarPickerOverlay.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeAvatarPicker();
+  });
 
-  // Update UI for user
-  function updateUIForUser() {
-    if (!currentUser) return;
-    document.title = `Quick Chat - ${currentUser.username}`;
+  // Update presence info after user changes username/avatar
+  function updatePresence() {
+    if (!userId || !currentUser) return;
+    const userStatusRef = ref(db, `presence/${userId}`);
+    set(userStatusRef, {
+      online: true,
+      username: currentUser.username,
+      avatarUrl: currentUser.avatarUrl,
+      lastSeen: null
+    });
   }
 
-  // Initialize app
+  // Night mode
+  function applyNightMode(enable) {
+    if (enable) {
+      document.body.classList.add("night");
+      nightModeBtn.textContent = "☀️";
+    } else {
+      document.body.classList.remove("night");
+      nightModeBtn.textContent = "🌙";
+    }
+    saveNightMode(enable);
+  }
+  nightModeBtn.addEventListener("click", () => {
+    const enabled = !document.body.classList.contains("night");
+    applyNightMode(enabled);
+  });
+
+  // Initialization
   function init() {
     currentUser = loadUserFromLocal();
     userId = generateUserId();
-    if (!currentUser) {
+
+    // Set avatar from user if exists
+    if (currentUser && currentUser.avatarUrl) selectedAvatarUrl = currentUser.avatarUrl;
+
+    if (!currentUser || !currentUser.username) {
       openProfileModal();
-    } else {
-      selectedAvatarUrl = currentUser.avatarUrl || maleAvatars[0];
-      updatePresence();
-      updateUIForUser();
     }
-    if (loadNightMode()) {
-      document.body.classList.add("night");
-    }
+
+    applyNightMode(loadNightMode());
+
     listenMessages();
     listenTyping();
-    listenPresence();
-    setupConnectionListener();
+    setupPresence();
+
+    // Update presence info if username exists at start
+    if (currentUser && currentUser.username) updatePresence();
   }
 
   init();
-
 </script>
+
 </body>
 </html>
