@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 import {
   getDatabase, ref, push, onChildAdded, get, set,
-  remove, onValue, onDisconnect, onDisconnectSet
+  remove, onValue, onDisconnect
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
 // Firebase config - replace with your own config if needed
@@ -88,6 +88,8 @@ let userTypingUsers = new Set();
 let messagesCache = [];
 let presenceMap = new Map();
 let selectedAvatarUrl = null;
+let lastTypingState = false; // for typing status debounce
+let presenceHeartbeatInterval = null;
 
 // Utils
 function saveUserToLocal(user) {
@@ -210,8 +212,6 @@ function setupConnectionListener() {
     }
   });
 }
-
-let presenceHeartbeatInterval = null;
 
 // Render one message element
 function createMessageElement(msgObj) {
@@ -395,13 +395,17 @@ function listenMessages() {
   });
 }
 
-// Typing indicator handling
+// Typing indicator handling with fixes
 function setTyping(isTypingNow) {
   if (!userId) return;
+  if (lastTypingState === isTypingNow) return; // prevent repeated writes
+
+  lastTypingState = isTypingNow;
   const typingUserRef = ref(db, `typing/${userId}`);
+
   if (isTypingNow) {
     set(typingUserRef, currentUser.username);
-    lastTypingTime = Date.now();
+    onDisconnect(typingUserRef).remove();
   } else {
     remove(typingUserRef);
   }
@@ -438,7 +442,7 @@ function listenPresence() {
   });
 }
 
-// Input event for typing
+// Input event for typing with longer debounce timeout
 textInput.addEventListener("input", () => {
   if (!isTyping) {
     setTyping(true);
@@ -449,11 +453,11 @@ textInput.addEventListener("input", () => {
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
     const diff = Date.now() - lastTypingTime;
-    if (diff >= 2000 && isTyping) {
+    if (diff >= 3000 && isTyping) {
       setTyping(false);
       isTyping = false;
     }
-  }, 2000);
+  }, 3000);
 });
 
 // Send button
@@ -478,129 +482,142 @@ fileBtn.addEventListener("click", () => {
   fileInput.click();
 });
 fileInput.addEventListener("change", async () => {
-  if (!fileInput.files.length) return;
   const file = fileInput.files[0];
   if (!file) return;
-  // No Firebase Storage, so simulate with local URL (demo only)
+  // Assume you upload file to your storage and get URL here (placeholder)
   const fileUrl = URL.createObjectURL(file);
-  await sendMessage("", file.type.startsWith("image/") ? "image" : "file", fileUrl);
+  let type = "file";
+  if (file.type.startsWith("image/")) type = "image";
+  await sendMessage(null, type, fileUrl);
   fileInput.value = "";
 });
 
-// Emoji picker toggle
+// Emoji picker toggle and insert
 emojiBtn.addEventListener("click", () => {
-  if (emojiPicker.style.display === "flex") {
-    emojiPicker.style.display = "none";
-  } else {
-    emojiPicker.style.display = "flex";
-  }
+  emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block";
 });
-
-// Populate emoji picker
-emojis.forEach(emoji => {
-  const span = document.createElement("span");
-  span.textContent = emoji;
-  span.tabIndex = 0;
-  span.addEventListener("click", () => {
-    textInput.value += emoji;
+emojiPicker.innerHTML = emojis.map(e => `<button type="button" class="emoji-btn" aria-label="Emoji ${e}">${e}</button>`).join("");
+emojiPicker.querySelectorAll(".emoji-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    textInput.value += btn.textContent;
     textInput.focus();
     emojiPicker.style.display = "none";
+    // Trigger input event to reset typing timer
+    textInput.dispatchEvent(new Event("input"));
   });
-  span.addEventListener("keypress", e => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      textInput.value += emoji;
-      textInput.focus();
-      emojiPicker.style.display = "none";
-    }
-  });
-  emojiPicker.appendChild(span);
 });
 
 // Night mode toggle
 nightModeBtn.addEventListener("click", () => {
-  document.body.classList.toggle("night");
-  const enabled = document.body.classList.contains("night");
+  const enabled = document.body.classList.toggle("night");
   saveNightMode(enabled);
 });
 
-// Change user profile (open modal)
+// Change user button opens modal
 changeUserBtn.addEventListener("click", () => {
-  openProfileModal();
+  openUserModal();
 });
 
-// Profile modal functions
-function openProfileModal() {
-  if (currentUser) {
-    usernameInput.value = currentUser.username;
-  } else {
-    usernameInput.value = "";
-  }
+// Modal UI and user setup
+function openUserModal() {
   modalOverlay.style.display = "flex";
+  usernameInput.value = currentUser ? currentUser.username : "";
+  selectedAvatarUrl = currentUser ? currentUser.avatarUrl : maleAvatars[0];
+  updateAvatarPreview();
   usernameInput.focus();
 }
-function closeProfileModal() {
+
+function closeUserModal() {
   modalOverlay.style.display = "none";
 }
+
+function updateAvatarPreview() {
+  // Show selected avatar in modal - you can create an img element or similar
+  let preview = document.getElementById("avatarPreview");
+  if (!preview) {
+    preview = document.createElement("img");
+    preview.id = "avatarPreview";
+    preview.style.width = "80px";
+    preview.style.height = "80px";
+    preview.style.borderRadius = "50%";
+    preview.style.display = "block";
+    preview.style.margin = "10px auto";
+    usernameInput.parentNode.insertBefore(preview, saveProfileBtn);
+  }
+  preview.src = selectedAvatarUrl || maleAvatars[0];
+}
+
 saveProfileBtn.addEventListener("click", () => {
-  const name = usernameInput.value.trim();
-  if (!name) {
-    alert("Please enter your username");
+  const username = usernameInput.value.trim();
+  if (!username) {
+    alert("Please enter a username.");
     return;
   }
-  if (!currentUser) currentUser = {};
-  currentUser.username = name;
-  if (!currentUser.avatarUrl) {
-    // Assign random avatar if none
-    currentUser.avatarUrl = maleAvatars[Math.floor(Math.random() * maleAvatars.length)];
-  }
-  userId = userId || generateUserId();
+  currentUser = {
+    username,
+    gender: "male", // Fixed male gender here, you can add gender selection UI if you want
+    avatarUrl: selectedAvatarUrl || maleAvatars[0]
+  };
+  userId = generateUserId();
   saveUserToLocal(currentUser);
   updatePresence();
   updateUIForUser();
-  closeProfileModal();
+  closeUserModal();
+  listenTyping();
+  listenPresence();
+  listenMessages();
+  setTyping(false);
+  isTyping = false;
 });
 
-// Close profile modal when clicking outside content
-modalOverlay.addEventListener("click", e => {
-  if (e.target === modalOverlay) closeProfileModal();
+// Open avatar picker from modal
+avatarPickerBtn.addEventListener("click", () => {
+  openAvatarPicker();
 });
 
-// Avatar picker open/close
-avatarPickerBtn.addEventListener("click", openAvatarPicker);
-avatarPickerOverlay.addEventListener("click", e => {
-  if (e.target === avatarPickerOverlay) closeAvatarPicker();
+// Close avatar picker on overlay click
+avatarPickerOverlay.addEventListener("click", (e) => {
+  if (e.target === avatarPickerOverlay) {
+    closeAvatarPicker();
+  }
 });
 
-// Update UI for logged-in user
+// Initialize UI for user
 function updateUIForUser() {
   if (!currentUser) return;
-  // Show username somewhere or update UI accordingly
-  document.title = `Quick Chat - ${currentUser.username}`;
+  // Update avatar and username display
+  // For example, update header or user info area
+  document.getElementById("userDisplay").textContent = currentUser.username;
+  document.getElementById("userAvatar").src = currentUser.avatarUrl;
+  document.getElementById("userAvatar").alt = currentUser.username + "'s avatar";
 }
 
-// Initialize
+// Load user and settings on startup
 function init() {
-  // Load user and userId
-  currentUser = loadUserFromLocal();
   userId = generateUserId();
+  currentUser = loadUserFromLocal();
   if (!currentUser) {
-    openProfileModal();
+    openUserModal();
   } else {
-    selectedAvatarUrl = currentUser.avatarUrl;
-    updatePresence();
+    selectedAvatarUrl = currentUser.avatarUrl || maleAvatars[0];
     updateUIForUser();
+    listenTyping();
+    listenPresence();
+    listenMessages();
+    updatePresence();
   }
 
-  // Load night mode
   if (loadNightMode()) {
     document.body.classList.add("night");
   }
-
-  listenMessages();
-  listenTyping();
-  listenPresence();
   setupConnectionListener();
+
+  // Clear typing status on unload
+  window.addEventListener("beforeunload", () => {
+    if (userId) {
+      remove(ref(db, `typing/${userId}`));
+    }
+  });
 }
 
 init();
