@@ -411,7 +411,6 @@
   let typingTimeout = null;
   let isTyping = false;
   let lastTypingTime = 0;
-  let userTypingUsers = new Set();
   let messagesCache = [];
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
@@ -460,9 +459,8 @@
     return div.innerHTML;
   }
 
-  // --- Avatar assignment: randomly pick one from maleAvatars
+  // --- Avatar assignment: deterministically pick one from maleAvatars
   function assignAvatar(username) {
-    // Simple deterministic assignment by hashing username + date (daily change)
     const dateStr = new Date().toISOString().slice(0,10);
     const seed = username + dateStr;
     let hash = 0;
@@ -479,232 +477,373 @@
   function renderMessage(msg) {
     const isOwn = msg.userId === userId;
     const div = document.createElement("div");
-    div.className = "message" + (isOwn ? " you" : "");
-    div.setAttribute("data-id", msg.id);
-    div.tabIndex = 0;
+    div.classList.add("message");
+    if (isOwn) div.classList.add("you");
+    div.setAttribute("tabindex", "0");
+    div.setAttribute("role", "article");
+    div.setAttribute("aria-label", `${msg.username} says: ${msg.text}`);
 
-    const avatarDiv = document.createElement("div");
-    avatarDiv.className = "avatar";
-    avatarDiv.title = msg.username;
-    avatarDiv.style.backgroundImage = `url('${msg.avatarUrl}')`;
-    avatarDiv.style.backgroundSize = "cover";
-    avatarDiv.style.backgroundPosition = "center";
-    // presence dot:
-    const presence = presenceMap.get(msg.userId);
-    if (presence && presence.online) {
-      avatarDiv.classList.add("presence-online");
-      avatarDiv.title += ` (Online)`;
-    } else if (presence && presence.lastSeen) {
-      avatarDiv.classList.add("presence-offline");
-      avatarDiv.title += ` (${formatLastSeen(presence.lastSeen)})`;
+    // Avatar
+    const avatarImg = document.createElement("img");
+    avatarImg.src = msg.avatarUrl;
+    avatarImg.alt = `${msg.username} avatar`;
+    avatarImg.classList.add("avatar");
+
+    // Presence dot (online/offline)
+    const presenceStatus = presenceMap.get(msg.userId);
+    if (presenceStatus && presenceStatus.online) {
+      avatarImg.classList.add("presence-online");
+      avatarImg.classList.remove("presence-offline");
+      avatarImg.setAttribute("title", "Online");
     } else {
-      avatarDiv.classList.add("presence-offline");
+      avatarImg.classList.add("presence-offline");
+      avatarImg.classList.remove("presence-online");
+      avatarImg.setAttribute("title", formatLastSeen(presenceStatus?.lastSeen));
     }
 
+    // Message content
     const contentDiv = document.createElement("div");
-    contentDiv.className = "message-content";
+    contentDiv.classList.add("message-content");
 
-    const senderDiv = document.createElement("div");
-    senderDiv.className = "sender";
-    senderDiv.textContent = msg.username;
+    const senderSpan = document.createElement("div");
+    senderSpan.classList.add("sender");
+    senderSpan.textContent = msg.username;
 
     const bubbleDiv = document.createElement("div");
-    bubbleDiv.className = "bubble";
+    bubbleDiv.classList.add("bubble");
 
-    if (msg.type === "file") {
-      if (msg.fileType.startsWith("image/")) {
+    // If message contains image URL or file URL, show accordingly
+    if (msg.fileUrl) {
+      if (msg.fileType && msg.fileType.startsWith("image/")) {
         const img = document.createElement("img");
         img.src = msg.fileUrl;
-        img.alt = `Image from ${msg.username}`;
-        img.style.maxWidth = "200px";
-        img.style.borderRadius = "8px";
+        img.style.maxWidth = "300px";
+        img.style.maxHeight = "300px";
+        img.alt = "Sent image";
         bubbleDiv.appendChild(img);
       } else {
+        // Downloadable file link
         const a = document.createElement("a");
         a.href = msg.fileUrl;
         a.target = "_blank";
-        a.textContent = msg.fileName;
+        a.rel = "noopener noreferrer";
+        a.textContent = "Download file";
         bubbleDiv.appendChild(a);
       }
+      if (msg.text && msg.text.trim() !== "") {
+        const br = document.createElement("br");
+        bubbleDiv.appendChild(br);
+        bubbleDiv.appendChild(document.createTextNode(msg.text));
+      }
     } else {
-      bubbleDiv.innerHTML = escapeHtml(msg.text);
+      bubbleDiv.textContent = msg.text;
     }
 
-    contentDiv.appendChild(senderDiv);
-    contentDiv.appendChild(bubbleDiv);
-
-    // Message info bar with timestamp and actions
+    // Info line (timestamp and edit/delete for own)
     const infoDiv = document.createElement("div");
-    infoDiv.className = "info";
+    infoDiv.classList.add("info");
+
     const timeSpan = document.createElement("span");
     timeSpan.textContent = formatTime(new Date(msg.timestamp));
+
     infoDiv.appendChild(timeSpan);
 
-    // Only show edit/delete for own messages
     if (isOwn) {
       const actionsDiv = document.createElement("div");
-      actionsDiv.className = "actions";
+      actionsDiv.classList.add("actions");
 
       const editBtn = document.createElement("button");
       editBtn.title = "Edit message";
-      editBtn.innerHTML = "✏️";
+      editBtn.setAttribute("aria-label", "Edit message");
+      editBtn.textContent = "✏️";
       editBtn.addEventListener("click", () => editMessage(msg));
-      actionsDiv.appendChild(editBtn);
 
       const deleteBtn = document.createElement("button");
       deleteBtn.title = "Delete message";
-      deleteBtn.innerHTML = "🗑️";
+      deleteBtn.setAttribute("aria-label", "Delete message");
+      deleteBtn.textContent = "🗑️";
       deleteBtn.addEventListener("click", () => deleteMessage(msg));
+
+      actionsDiv.appendChild(editBtn);
       actionsDiv.appendChild(deleteBtn);
 
       infoDiv.appendChild(actionsDiv);
     }
 
+    contentDiv.appendChild(senderSpan);
+    contentDiv.appendChild(bubbleDiv);
     contentDiv.appendChild(infoDiv);
 
-    div.appendChild(avatarDiv);
-    div.appendChild(contentDiv);
+    if (isOwn) {
+      div.appendChild(contentDiv);
+      div.appendChild(avatarImg);
+    } else {
+      div.appendChild(avatarImg);
+      div.appendChild(contentDiv);
+    }
 
     return div;
   }
 
-  function editMessage(msg) {
-    const newText = prompt("Edit your message:", msg.text);
-    if (newText === null) return;
-    if (newText.trim() === "") return alert("Message cannot be empty.");
-    // Update message in Firebase
-    set(ref(db, `messages/${msg.id}/text`), newText.trim());
-  }
-
-  function deleteMessage(msg) {
-    if (!confirm("Delete this message?")) return;
-    remove(ref(db, `messages/${msg.id}`));
-  }
-
-  // Append a message element to messagesDiv (in order)
-  function addMessageToDom(msg) {
-    // Avoid duplicates:
-    if (messagesCache.find(m => m.id === msg.id)) return;
-    messagesCache.push(msg);
-    const el = renderMessage(msg);
-    messagesDiv.appendChild(el);
+  // Render all messages
+  function renderMessages() {
+    messagesDiv.innerHTML = "";
+    messagesCache.forEach(msg => {
+      const el = renderMessage(msg);
+      messagesDiv.appendChild(el);
+    });
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
-  // Load messages from Firebase
-  onChildAdded(messagesRef, (snapshot) => {
-    const data = snapshot.val();
-    const msg = {
-      id: snapshot.key,
-      userId: data.userId,
-      username: data.username,
-      avatarUrl: data.avatarUrl,
-      timestamp: data.timestamp,
-      type: data.type || "text",
-      text: data.text || "",
-      fileUrl: data.fileUrl || "",
-      fileType: data.fileType || "",
-      fileName: data.fileName || ""
-    };
-    addMessageToDom(msg);
-  });
-
-  // Send message function
+  // Send message
   function sendMessage() {
     const text = textInput.value.trim();
-    if (text === "") return;
-    const msgData = {
+    if (text === "" && !selectedFile) return;
+
+    const msgObj = {
       userId,
       username: currentUser.username,
-      avatarUrl: selectedAvatarUrl,
+      avatarUrl: selectedAvatarUrl || assignAvatar(currentUser.username),
       timestamp: Date.now(),
-      type: "text",
-      text
+      text: text,
+      fileUrl: null,
+      fileType: null,
     };
-    push(messagesRef, msgData);
+
+    if (selectedFile) {
+      // Simulate file upload by reading as DataURL (for demo)
+      const reader = new FileReader();
+      reader.onload = () => {
+        msgObj.fileUrl = reader.result;
+        msgObj.fileType = selectedFile.type;
+        push(messagesRef, msgObj);
+      };
+      reader.readAsDataURL(selectedFile);
+      selectedFile = null;
+    } else {
+      push(messagesRef, msgObj);
+    }
+
     textInput.value = "";
     stopTyping();
+    hideEmojiPicker();
   }
 
-  // Send file function
+  // Edit message (simplified alert for demo)
+  function editMessage(msg) {
+    const newText = prompt("Edit your message:", msg.text);
+    if (newText !== null) {
+      // Update message in Firebase
+      get(messagesRef).then(snapshot => {
+        snapshot.forEach(child => {
+          if (child.key === msg.key) {
+            set(ref(db, `messages/${child.key}`), {
+              ...msg,
+              text: newText,
+              timestamp: Date.now()
+            });
+          }
+        });
+      });
+    }
+  }
+
+  // Delete message
+  function deleteMessage(msg) {
+    if (confirm("Delete this message?")) {
+      get(messagesRef).then(snapshot => {
+        snapshot.forEach(child => {
+          if (child.key === msg.key) {
+            remove(ref(db, `messages/${child.key}`));
+          }
+        });
+      });
+    }
+  }
+
+  // File input change
+  let selectedFile = null;
   fileBtn.addEventListener("click", () => fileInput.click());
-  fileInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      const fileDataUrl = evt.target.result;
-      const msgData = {
-        userId,
-        username: currentUser.username,
-        avatarUrl: selectedAvatarUrl,
-        timestamp: Date.now(),
-        type: "file",
-        fileUrl: fileDataUrl,
-        fileType: file.type,
-        fileName: file.name
-      };
-      push(messagesRef, msgData);
-    };
-    reader.readAsDataURL(file);
-    fileInput.value = "";
+  fileInput.addEventListener("change", e => {
+    if (e.target.files.length > 0) {
+      selectedFile = e.target.files[0];
+      // Optional: auto send file immediately:
+      sendMessage();
+    }
   });
 
-  // Emoji picker setup
-  function setupEmojiPicker() {
+  // Emoji picker
+  emojiBtn.addEventListener("click", () => {
+    if (emojiPicker.style.display === "flex") {
+      hideEmojiPicker();
+    } else {
+      showEmojiPicker();
+    }
+  });
+
+  function showEmojiPicker() {
     emojiPicker.innerHTML = "";
-    emojis.forEach(e => {
+    emojis.forEach(emoji => {
       const span = document.createElement("span");
-      span.textContent = e;
+      span.textContent = emoji;
       span.tabIndex = 0;
       span.addEventListener("click", () => {
-        textInput.value += e;
-        emojiPicker.style.display = "none";
+        textInput.value += emoji;
         textInput.focus();
+        hideEmojiPicker();
       });
-      span.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter" || ev.key === " ") {
-          ev.preventDefault();
+      span.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
           span.click();
         }
       });
       emojiPicker.appendChild(span);
     });
+    emojiPicker.style.display = "flex";
   }
-  setupEmojiPicker();
+  function hideEmojiPicker() {
+    emojiPicker.style.display = "none";
+  }
 
-  emojiBtn.addEventListener("click", () => {
-    if (emojiPicker.style.display === "flex") {
-      emojiPicker.style.display = "none";
-    } else {
-      emojiPicker.style.display = "flex";
-    }
+  // Night mode toggle
+  nightModeBtn.addEventListener("click", () => {
+    const isNight = document.body.classList.toggle("night");
+    saveNightMode(isNight);
   });
 
-  // Hide emoji picker when clicking outside
-  document.body.addEventListener("click", (ev) => {
-    if (!emojiPicker.contains(ev.target) && ev.target !== emojiBtn) {
-      emojiPicker.style.display = "none";
-    }
+  // Change user
+  changeUserBtn.addEventListener("click", () => {
+    showModal();
   });
 
-  // Send message on Enter
-  textInput.addEventListener("keydown", (ev) => {
-    if (ev.key === "Enter" && !ev.shiftKey) {
-      ev.preventDefault();
-      sendMessage();
-    } else {
-      handleTyping();
-    }
+  // Avatar picker
+  avatarPickerBtn.addEventListener("click", () => {
+    showAvatarPicker();
   });
-  sendBtn.addEventListener("click", sendMessage);
 
-  // Typing indicator logic
-  function handleTyping() {
+  function showAvatarPicker() {
+    avatarPickerOverlay.style.display = "flex";
+    avatarPickerModal.innerHTML = "<h2 id='avatarPickerTitle'>Select Avatar</h2>";
+    maleAvatars.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.className = "avatar-option";
+      img.tabIndex = 0;
+      if (url === selectedAvatarUrl) {
+        img.classList.add("selected");
+      }
+      img.addEventListener("click", () => {
+        selectedAvatarUrl = url;
+        saveAvatarUrl(url);
+        updateUserAvatar(url);
+        avatarPickerOverlay.style.display = "none";
+      });
+      img.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          img.click();
+        }
+      });
+      avatarPickerModal.appendChild(img);
+    });
+  }
+  avatarPickerOverlay.addEventListener("click", (e) => {
+    if (e.target === avatarPickerOverlay) avatarPickerOverlay.style.display = "none";
+  });
+
+  function saveAvatarUrl(url) {
     if (!currentUser) return;
+    currentUser.avatarUrl = url;
+    saveUserToLocal(currentUser);
+  }
+  function updateUserAvatar(url) {
+    // No direct UI update needed; avatars appear with messages
+  }
+
+  // Modal for username
+  function showModal() {
+    modalOverlay.style.display = "flex";
+    usernameInput.value = currentUser?.username || "";
+    usernameInput.focus();
+  }
+  function hideModal() {
+    modalOverlay.style.display = "none";
+  }
+  modalOverlay.addEventListener("click", (e) => {
+    if (e.target === modalOverlay) hideModal();
+  });
+
+  saveProfileBtn.addEventListener("click", () => {
+    const val = usernameInput.value.trim();
+    if (val.length < 2) {
+      alert("Please enter a username with at least 2 characters.");
+      return;
+    }
+    currentUser = { username: val, avatarUrl: assignAvatar(val) };
+    userId = generateUserId();
+    selectedAvatarUrl = currentUser.avatarUrl;
+    saveUserToLocal(currentUser);
+    hideModal();
+    updatePresence(true);
+  });
+
+  usernameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      saveProfileBtn.click();
+    }
+  });
+
+  // Load user
+  function loadUser() {
+    const user = loadUserFromLocal();
+    if (user && user.username) {
+      currentUser = user;
+      userId = generateUserId();
+      selectedAvatarUrl = currentUser.avatarUrl || assignAvatar(currentUser.username);
+    } else {
+      showModal();
+    }
+  }
+
+  // Presence management
+  function updatePresence(isOnline) {
+    if (!userId) return;
+    const userPresenceRef = ref(db, `presence/${userId}`);
+    if (isOnline) {
+      set(userPresenceRef, { online: true, lastSeen: null });
+      onDisconnect(userPresenceRef).set({ online: false, lastSeen: Date.now() });
+    } else {
+      set(userPresenceRef, { online: false, lastSeen: Date.now() });
+    }
+  }
+
+  // Listen to presence updates
+  onValue(ref(db, "presence"), (snapshot) => {
+    const data = snapshot.val() || {};
+    presenceMap.clear();
+    for (const [uid, status] of Object.entries(data)) {
+      presenceMap.set(uid, status);
+    }
+    renderMessages();
+  });
+
+  // Messages listener
+  onChildAdded(messagesRef, (dataSnap) => {
+    const msg = dataSnap.val();
+    msg.key = dataSnap.key;
+    messagesCache.push(msg);
+    renderMessages();
+  });
+
+  // Typing indicator - FIXED HERE!
+  function startTyping() {
+    if (!currentUser || !userId) return;
     if (!isTyping) {
       isTyping = true;
-      set(ref(db, `typing/${userId}`), currentUser.username);
+      const typingUserRef = ref(db, `typing/${userId}`);
+      set(typingUserRef, currentUser.username);
+      onDisconnect(typingUserRef).remove(); // Remove on disconnect
     }
     lastTypingTime = Date.now();
 
@@ -716,15 +855,20 @@
       }
     }, 3000);
   }
+
   function stopTyping() {
+    if (!isTyping) return;
     isTyping = false;
     remove(ref(db, `typing/${userId}`));
   }
 
-  // Listen to typing users except yourself
   onValue(typingRef, (snapshot) => {
     const data = snapshot.val() || {};
-    const typingUsers = Object.entries(data).filter(([uid]) => uid !== userId).map(([, username]) => username);
+    // Filter out own userId to avoid showing typing indicator for self
+    const typingUsers = Object.entries(data)
+      .filter(([uid]) => uid !== userId)
+      .map(([, username]) => username);
+
     if (typingUsers.length === 0) {
       typingIndicator.textContent = "";
     } else if (typingUsers.length === 1) {
@@ -734,172 +878,71 @@
     }
   });
 
-  // User presence system
+  // Input event listeners for typing
+  textInput.addEventListener("input", () => {
+    if (textInput.value.trim() === "") {
+      stopTyping();
+    } else {
+      startTyping();
+    }
+  });
+
+  // Send button
+  sendBtn.addEventListener("click", () => {
+    sendMessage();
+  });
+
+  textInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Initial setup
+  document.body.classList.toggle("night", loadNightMode());
+
+  loadUser();
+
+  // Manage connection presence
   onValue(connectedRef, (snap) => {
     if (snap.val() === true) {
-      const userPresenceRef = ref(db, `presence/${userId}`);
-      set(userPresenceRef, {online: true, lastSeen: Date.now()});
-      onDisconnect(userPresenceRef).set({online: false, lastSeen: Date.now()});
-    }
-  });
-
-  onValue(ref(db, "presence"), (snap) => {
-    presenceMap.clear();
-    const data = snap.val() || {};
-    Object.entries(data).forEach(([uid, presence]) => {
-      presenceMap.set(uid, presence);
-    });
-    // Refresh all message avatars presence dots
-    document.querySelectorAll("#messages .message").forEach(m => {
-      const uid = m.getAttribute("data-id") && messagesCache.find(msg=>msg.id===m.getAttribute("data-id"))?.userId;
-      if (!uid) return;
-      const presence = presenceMap.get(uid);
-      const avatarDiv = m.querySelector(".avatar");
-      if (!avatarDiv) return;
-      avatarDiv.classList.remove("presence-online","presence-offline");
-      if (presence && presence.online) {
-        avatarDiv.classList.add("presence-online");
-        avatarDiv.title = avatarDiv.title.replace(/\(.*\)/, "") + " (Online)";
-      } else if (presence && presence.lastSeen) {
-        avatarDiv.classList.add("presence-offline");
-        avatarDiv.title = avatarDiv.title.replace(/\(.*\)/, "") + ` (${formatLastSeen(presence.lastSeen)})`;
-      } else {
-        avatarDiv.classList.add("presence-offline");
-      }
-    });
-  });
-
-  // User profile management
-  function openProfileModal() {
-    usernameInput.value = currentUser ? currentUser.username : "";
-    modalOverlay.style.display = "flex";
-    usernameInput.focus();
-  }
-  function closeProfileModal() {
-    modalOverlay.style.display = "none";
-  }
-  saveProfileBtn.addEventListener("click", () => {
-    const val = usernameInput.value.trim();
-    if (val.length < 2) {
-      alert("Username must be at least 2 characters");
-      return;
-    }
-    currentUser = {username: val};
-    userId = generateUserId();
-    selectedAvatarUrl = assignAvatar(val);
-    currentUser.avatarUrl = selectedAvatarUrl;
-    saveUserToLocal(currentUser);
-    closeProfileModal();
-    refreshUIAfterUserSet();
-  });
-
-  changeUserBtn.addEventListener("click", openProfileModal);
-
-  // On load, check for user
-  function refreshUIAfterUserSet() {
-    document.title = `Quick Chat - ${currentUser.username}`;
-    selectedAvatarUrl = assignAvatar(currentUser.username);
-    currentUser.avatarUrl = selectedAvatarUrl;
-  }
-
-  function loadUser() {
-    const user = loadUserFromLocal();
-    if (user && user.username) {
-      currentUser = user;
-      userId = generateUserId();
-      selectedAvatarUrl = assignAvatar(user.username);
-      currentUser.avatarUrl = selectedAvatarUrl;
-      refreshUIAfterUserSet();
-      return true;
-    }
-    return false;
-  }
-
-  // Night mode toggle
-  function applyNightMode(enabled) {
-    if (enabled) document.body.classList.add("night");
-    else document.body.classList.remove("night");
-    saveNightMode(enabled);
-  }
-  nightModeBtn.addEventListener("click", () => {
-    const enabled = !document.body.classList.contains("night");
-    applyNightMode(enabled);
-  });
-
-  // Avatar picker modal
-  function openAvatarPicker() {
-    avatarPickerModal.innerHTML = "<h2 id='avatarPickerTitle'>Pick your avatar</h2>";
-    const container = document.createElement("div");
-    container.style.display = "flex";
-    container.style.flexWrap = "wrap";
-    container.style.justifyContent = "center";
-    maleAvatars.forEach(url => {
-      const img = document.createElement("img");
-      img.src = url;
-      img.alt = "Avatar option";
-      img.tabIndex = 0;
-      img.className = "avatar-option";
-      if (url === selectedAvatarUrl) img.classList.add("selected");
-      img.addEventListener("click", () => {
-        selectedAvatarUrl = url;
-        currentUser.avatarUrl = url;
-        saveUserToLocal(currentUser);
-        updateAllAvatars();
-        closeAvatarPicker();
+      updatePresence(true);
+      window.addEventListener("beforeunload", () => {
+        updatePresence(false);
+        stopTyping();
       });
-      img.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
+    } else {
+      updatePresence(false);
+      stopTyping();
+    }
+  });
+
+  // Accessibility focus on modal show
+  modalOverlay.addEventListener("keydown", e => {
+    if (e.key === "Tab") {
+      const focusableElements = modalOverlay.querySelectorAll("input, button");
+      if (focusableElements.length === 0) return;
+
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
           e.preventDefault();
-          img.click();
+          last.focus();
         }
-      });
-      container.appendChild(img);
-    });
-    avatarPickerModal.appendChild(container);
-    avatarPickerOverlay.style.display = "flex";
-    avatarPickerModal.focus();
-  }
-  function closeAvatarPicker() {
-    avatarPickerOverlay.style.display = "none";
-  }
-  avatarPickerBtn.addEventListener("click", openAvatarPicker);
-  avatarPickerOverlay.addEventListener("click", (e) => {
-    if (e.target === avatarPickerOverlay) closeAvatarPicker();
-  });
-
-  // Update all message avatars after avatar change
-  function updateAllAvatars() {
-    messagesCache.forEach(msg => {
-      if (msg.userId === userId) {
-        msg.avatarUrl = selectedAvatarUrl;
-        const msgDiv = messagesDiv.querySelector(`.message[data-id="${msg.id}"]`);
-        if (msgDiv) {
-          const avatarDiv = msgDiv.querySelector(".avatar");
-          if (avatarDiv) {
-            avatarDiv.style.backgroundImage = `url('${selectedAvatarUrl}')`;
-          }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
-    });
-  }
-
-  // Initialize app
-  (function init() {
-    if (!loadUser()) {
-      openProfileModal();
+    } else if (e.key === "Escape") {
+      hideModal();
     }
-    applyNightMode(loadNightMode());
-  })();
-
-  // Accessibility: close profile modal on Escape
-  modalOverlay.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeProfileModal();
-  });
-  avatarPickerModal.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeAvatarPicker();
   });
 
 </script>
-
 </body>
 </html>
