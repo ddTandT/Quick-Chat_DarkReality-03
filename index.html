@@ -332,7 +332,6 @@
     remove, onValue, onDisconnect
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-  // Firebase config (replace with your own!)
   const firebaseConfig = {
     apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
     authDomain: "live-chat-app-5ea98.firebaseapp.com",
@@ -368,7 +367,6 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
 
-  // Male avatars only
   const maleAvatars = [
     "https://randomuser.me/api/portraits/men/1.jpg",
     "https://randomuser.me/api/portraits/men/2.jpg",
@@ -405,7 +403,7 @@
     "💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾"
   ];
 
-  // State variables
+  // State
   let currentUser = null;
   let userId = null;
   let typingTimeout = null;
@@ -416,7 +414,7 @@
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
 
-  // Utility functions
+  // Util functions
   function saveUserToLocal(user) {
     localStorage.setItem("quickchat-user", JSON.stringify(user));
   }
@@ -455,50 +453,46 @@
     return `Last seen on ${new Date(timestamp).toLocaleDateString()}`;
   }
 
-  // Assign an avatar deterministically by username (simple hash mod)
+  // Avatar assign by username
   function assignAvatar(username) {
     if (!username) return maleAvatars[0];
     let hash = 0;
-    for (let i = 0; i < username.length; i++) {
+    for (let i=0; i<username.length; i++) {
       hash = username.charCodeAt(i) + ((hash << 5) - hash);
-      hash |= 0; // Convert to 32bit int
+      hash |= 0;
     }
     const index = Math.abs(hash) % maleAvatars.length;
     return maleAvatars[index];
   }
 
-  // UI updates
-
+  // Add message to DOM
   function addMessageToDOM(msg) {
     const div = document.createElement("div");
     div.classList.add("message");
     if (msg.userId === userId) div.classList.add("you");
 
-    // Avatar with presence dot
     const avatar = document.createElement("img");
     avatar.src = msg.avatar || assignAvatar(msg.username);
     avatar.alt = msg.username + " avatar";
     avatar.classList.add("avatar");
 
-    // presence dot
+    // Presence dot
     if (presenceMap.get(msg.userId) === true) {
       avatar.classList.add("presence-online");
+      avatar.title = msg.username + " is online";
     } else {
       avatar.classList.add("presence-offline");
       avatar.title = formatLastSeen(presenceMap.get(msg.userId + "-lastseen"));
     }
 
-    // Message content container
     const content = document.createElement("div");
     content.classList.add("message-content");
 
-    // Sender name
     const sender = document.createElement("div");
     sender.classList.add("sender");
     sender.textContent = msg.username;
     content.appendChild(sender);
 
-    // Message bubble
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
     bubble.textContent = msg.text;
@@ -511,6 +505,7 @@
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
+  // Typing indicator update UI
   function updateTypingIndicator() {
     if (userTypingUsers.size === 0) {
       typingIndicator.textContent = "";
@@ -521,8 +516,7 @@
     }
   }
 
-  // Typing indicator handlers
-
+  // Typing status send on user input
   function startTyping() {
     if (!currentUser) return;
     if (!isTyping) {
@@ -550,9 +544,10 @@
     }
   }
 
+  // Listen for typing data from others
   function listenTyping() {
     onValue(typingRef, (snapshot) => {
-      if (!userId) return; // FIXED: don't show typing if userId not set
+      if (!userId) return;
 
       const val = snapshot.val() || {};
       userTypingUsers.clear();
@@ -567,8 +562,7 @@
     });
   }
 
-  // Messages
-
+  // Send a new message
   function sendMessage(text) {
     if (!currentUser || !text.trim()) return;
     const msg = {
@@ -581,6 +575,7 @@
     push(messagesRef, msg);
   }
 
+  // Load all messages once on init
   function loadMessages() {
     messagesDiv.innerHTML = "";
     get(messagesRef).then(snapshot => {
@@ -594,10 +589,10 @@
     });
   }
 
+  // Listen for new messages added realtime
   function listenMessages() {
     onChildAdded(messagesRef, (data) => {
       const msg = data.val();
-      // Avoid duplicates
       if (!messagesCache.some(m => m.timestamp === msg.timestamp && m.userId === msg.userId)) {
         messagesCache.push(msg);
         addMessageToDOM(msg);
@@ -605,8 +600,7 @@
     });
   }
 
-  // Presence system
-
+  // Presence system setup & listener
   function setupPresence() {
     if (!userId) return;
 
@@ -632,12 +626,11 @@
           presenceMap.set(key, value === true);
         }
       });
-      // Refresh avatars with updated presence
+      // Update presence dots on avatars
       Array.from(messagesDiv.querySelectorAll(".message")).forEach((msgDiv) => {
         const avatarImg = msgDiv.querySelector(".avatar");
         if (!avatarImg) return;
         const senderName = msgDiv.querySelector(".sender")?.textContent;
-        // Find userId from messagesCache by username
         const userObj = messagesCache.find(m => m.username === senderName);
         if (!userObj) return;
         avatarImg.classList.remove("presence-online", "presence-offline");
@@ -652,8 +645,7 @@
     });
   }
 
-  // Profile modal
-
+  // Show profile modal to set username
   function showProfileModal() {
     modalOverlay.style.display = "flex";
     usernameInput.focus();
@@ -663,7 +655,6 @@
   }
 
   // Avatar picker modal
-
   function showAvatarPicker() {
     avatarPickerModal.innerHTML = '<h2 id="avatarPickerTitle">Choose Avatar</h2>';
     maleAvatars.forEach(url => {
@@ -693,8 +684,7 @@
     avatarPickerOverlay.style.display = "none";
   }
 
-  // Emoji picker
-
+  // Emoji picker toggling
   function toggleEmojiPicker() {
     if (emojiPicker.style.display === "flex") {
       emojiPicker.style.display = "none";
@@ -729,7 +719,7 @@
     input.selectionStart = input.selectionEnd = start + textToInsert.length;
   }
 
-  // Save profile after modal
+  // Save profile modal info
   function saveProfile() {
     const val = usernameInput.value.trim();
     if (val.length < 1) {
@@ -738,42 +728,19 @@
       return;
     }
     currentUser = { username: val };
-    userId = generateUserId(); // FIXED: generate userId before listenTyping
+    userId = generateUserId();
     selectedAvatarUrl = assignAvatar(currentUser.username);
     saveUserToLocal({ username: currentUser.username, avatar: selectedAvatarUrl });
     hideProfileModal();
 
     loadMessages();
     listenMessages();
-
-    listenTyping(); // FIXED: call after userId is defined
-
+    listenTyping();
     setupPresence();
     textInput.focus();
   }
 
-  // Init function on page load
-  function init() {
-    const userData = loadUserFromLocal();
-    if (userData && userData.username) {
-      currentUser = { username: userData.username };
-      userId = generateUserId(); // FIXED: generate userId first
-
-      selectedAvatarUrl = userData.avatar || assignAvatar(currentUser.username);
-      loadMessages();
-      listenMessages();
-
-      listenTyping(); // FIXED: call after userId is defined
-
-      setupPresence();
-      textInput.focus();
-    } else {
-      showProfileModal();
-    }
-    setNightMode(loadNightMode());
-  }
-
-  // Night mode toggling
+  // Night mode toggle
   function setNightMode(enabled) {
     if (enabled) {
       document.body.classList.add("night");
@@ -783,6 +750,24 @@
       nightModeBtn.textContent = "🌙";
     }
     saveNightMode(enabled);
+  }
+
+  // Initialization
+  function init() {
+    const userData = loadUserFromLocal();
+    if (userData && userData.username) {
+      currentUser = { username: userData.username };
+      userId = generateUserId();
+      selectedAvatarUrl = userData.avatar || assignAvatar(currentUser.username);
+      loadMessages();
+      listenMessages();
+      listenTyping();
+      setupPresence();
+      textInput.focus();
+    } else {
+      showProfileModal();
+    }
+    setNightMode(loadNightMode());
   }
 
   // Event listeners
@@ -815,7 +800,6 @@
       fileInput.value = "";
       return;
     }
-    // For simplicity, just show file name in chat
     sendMessage(`[File sent: ${file.name}]`);
     fileInput.value = "";
   });
@@ -834,36 +818,26 @@
   saveProfileBtn.addEventListener("click", saveProfile);
 
   usernameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      saveProfile();
-    }
+    if (e.key === "Enter") saveProfile();
   });
 
-  changeUserBtn.addEventListener("click", () => {
-    showProfileModal();
-  });
+  changeUserBtn.addEventListener("click", () => showProfileModal());
 
   avatarPickerBtn.addEventListener("click", () => {
     if (!currentUser) return alert("Set username first");
     showAvatarPicker();
   });
 
-  avatarPickerOverlay.addEventListener("click", (e) => {
-    if (e.target === avatarPickerOverlay) {
-      hideAvatarPicker();
-    }
+  avatarPickerOverlay.addEventListener("click", e => {
+    if (e.target === avatarPickerOverlay) hideAvatarPicker();
   });
 
-  modalOverlay.addEventListener("click", (e) => {
-    if (e.target === modalOverlay) {
-      // Don't close modal on click outside, force username set
-      // Optionally: hideProfileModal();
-    }
+  modalOverlay.addEventListener("click", e => {
+    // Prevent closing modal on outside click to force username
   });
 
-  // Initialize app
   init();
-</script>
 
+</script>
 </body>
 </html>
