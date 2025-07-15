@@ -138,62 +138,15 @@
   .actions button:hover {
     color: #ff4444;
   }
-
-  /* Typing bubbles container */
-  #typingIndicatorsContainer {
-    padding: 5px 10px;
-    min-height: 30px;
-  }
-
-  /* Typing bubble style */
-  .typing-bubble {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 6px;
-    padding: 6px 12px;
-    background: #0078d7;
-    color: white;
-    border-radius: 18px;
+  #typingIndicator {
+    height: 20px;
+    padding: 0 10px;
     font-style: italic;
-    font-size: 0.9em;
-    user-select: none;
+    color: #555;
   }
-  body.night .typing-bubble {
-    background: #005a9e;
+  body.night #typingIndicator {
+    color: #bbb;
   }
-  .typing-bubble .dots {
-    display: inline-block;
-    width: 24px;
-    text-align: left;
-  }
-  .typing-bubble .dot {
-    display: inline-block;
-    width: 5px;
-    height: 5px;
-    margin: 0 2px;
-    background: white;
-    border-radius: 50%;
-    opacity: 0.3;
-    animation-name: blink;
-    animation-duration: 1.4s;
-    animation-iteration-count: infinite;
-    animation-fill-mode: both;
-  }
-  .typing-bubble .dot:nth-child(1) {
-    animation-delay: 0s;
-  }
-  .typing-bubble .dot:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-  .typing-bubble .dot:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-  @keyframes blink {
-    0%, 80%, 100% { opacity: 0.3; }
-    40% { opacity: 1; }
-  }
-
   footer {
     padding: 10px 20px;
     background: #eee;
@@ -346,8 +299,7 @@
 </header>
 
 <div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
-<!-- Replaced single typing indicator with container for multiple bubbles -->
-<div id="typingIndicatorsContainer" aria-live="polite" aria-atomic="true"></div>
+<div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
 
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
@@ -408,7 +360,7 @@
   const messagesDiv = document.getElementById("messages");
   const nightModeBtn = document.getElementById("nightModeBtn");
   const changeUserBtn = document.getElementById("changeUserBtn");
-  const typingIndicatorsContainer = document.getElementById("typingIndicatorsContainer");
+  const typingIndicator = document.getElementById("typingIndicator");
   const modalOverlay = document.getElementById("modalOverlay");
   const usernameInput = document.getElementById("usernameInput");
   const saveProfileBtn = document.getElementById("saveProfileBtn");
@@ -416,19 +368,18 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
 
-  // Globals
-  let userId = localStorage.getItem("userId");
-  if (!userId) {
-    userId = "user_" + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem("userId", userId);
-  }
-  let username = localStorage.getItem("username");
-  let avatar = localStorage.getItem("avatar") || "";
-  let typingTimeout;
-  let isTyping = false;
-
-  // Avatar list (example male avatars)
-  const avatars = [
+  // Male avatars only
+  const maleAvatars = [
+    "https://randomuser.me/api/portraits/men/1.jpg",
+    "https://randomuser.me/api/portraits/men/2.jpg",
+    "https://randomuser.me/api/portraits/men/3.jpg",
+    "https://randomuser.me/api/portraits/men/4.jpg",
+    "https://randomuser.me/api/portraits/men/5.jpg",
+    "https://randomuser.me/api/portraits/men/6.jpg",
+    "https://randomuser.me/api/portraits/men/7.jpg",
+    "https://randomuser.me/api/portraits/men/8.jpg",
+    "https://randomuser.me/api/portraits/men/9.jpg",
+    "https://randomuser.me/api/portraits/men/10.jpg",
     "https://randomuser.me/api/portraits/men/11.jpg",
     "https://randomuser.me/api/portraits/men/12.jpg",
     "https://randomuser.me/api/portraits/men/13.jpg",
@@ -438,413 +389,513 @@
     "https://randomuser.me/api/portraits/men/17.jpg",
     "https://randomuser.me/api/portraits/men/18.jpg",
     "https://randomuser.me/api/portraits/men/19.jpg",
-    "https://randomuser.me/api/portraits/men/20.jpg",
-    "https://randomuser.me/api/portraits/men/21.jpg",
-    "https://randomuser.me/api/portraits/men/22.jpg",
-    "https://randomuser.me/api/portraits/men/23.jpg",
-    "https://randomuser.me/api/portraits/men/24.jpg",
-    "https://randomuser.me/api/portraits/men/25.jpg",
-    "https://randomuser.me/api/portraits/men/26.jpg",
-    "https://randomuser.me/api/portraits/men/27.jpg",
-    "https://randomuser.me/api/portraits/men/28.jpg",
-    "https://randomuser.me/api/portraits/men/29.jpg",
-    "https://randomuser.me/api/portraits/men/30.jpg"
+    "https://randomuser.me/api/portraits/men/20.jpg"
   ];
 
-  // Emoji list
-  const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😜","🤪","🤨","🧐","😎","🤓","🤑"];
+  const emojis = [
+    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
+    "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
+    "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳",
+    "🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄",
+    "😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴",
+    "😌","😔","😕","🙃","😢","😭","😤","😠","😡","🤬",
+    "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤤",
+    "😴","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+    "🤑","🤠","😈","👿","👹","👺","💀","👻","👽","🤖",
+    "💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾"
+  ];
 
-  // --- Init night mode ---
+  // State variables
+  let currentUser = null;
+  let userId = null;
+  let typingTimeout = null;
+  let isTyping = false;
+  let lastTypingTime = 0;
+  let userTypingUsers = new Set();
+  let messagesCache = [];
+  let presenceMap = new Map();
+  let selectedAvatarUrl = null;
+
+  // Utility functions
+  function saveUserToLocal(user) {
+    localStorage.setItem("quickchat-user", JSON.stringify(user));
+  }
+  function loadUserFromLocal() {
+    const userStr = localStorage.getItem("quickchat-user");
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  }
+  function saveNightMode(enabled) {
+    localStorage.setItem("quickchat-nightmode", enabled ? "1" : "0");
+  }
   function loadNightMode() {
-    if (localStorage.getItem("nightMode") === "true") {
+    return localStorage.getItem("quickchat-nightmode") === "1";
+  }
+  function generateUserId() {
+    let id = localStorage.getItem("quickchat-userid");
+    if (!id) {
+      id = "u_" + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem("quickchat-userid", id);
+    }
+    return id;
+  }
+  function formatTime(date) {
+    return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  }
+  function formatLastSeen(timestamp) {
+    if (!timestamp) return "Last seen unknown";
+    const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+    if (diffSec < 60) return "Last seen just now";
+    if (diffSec < 3600) return `Last seen ${Math.floor(diffSec / 60)} min ago`;
+    if (diffSec < 86400) return `Last seen ${Math.floor(diffSec / 3600)} hr ago`;
+    return `Last seen on ${new Date(timestamp).toLocaleDateString()}`;
+  }
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Avatar assignment
+  function assignAvatar(username) {
+    const dateStr = new Date().toISOString().slice(0,10);
+    const seed = username + dateStr;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    hash = Math.abs(hash);
+    const idx = hash % maleAvatars.length;
+    return maleAvatars[idx];
+  }
+
+  // Render a message
+  function renderMessage(msg) {
+    const isOwn = msg.userId === userId;
+    const div = document.createElement("div");
+    div.className = "message" + (isOwn ? " you" : "");
+    div.setAttribute("tabindex", "0");
+    div.dataset.messageId = msg.id;
+
+    // Avatar + presence dot
+    const avatarDiv = document.createElement("div");
+    avatarDiv.className = "avatar";
+    const avatarImg = document.createElement("img");
+    avatarImg.src = msg.avatar || assignAvatar(msg.username);
+    avatarImg.alt = msg.username + "'s avatar";
+    avatarImg.width = 40;
+    avatarImg.height = 40;
+    avatarDiv.appendChild(avatarImg);
+
+    // Presence dot
+    const online = presenceMap.get(msg.userId);
+    if (online === true) {
+      avatarDiv.classList.add("presence-online");
+      avatarDiv.title = "Online";
+    } else {
+      avatarDiv.classList.add("presence-offline");
+      avatarDiv.title = formatLastSeen(online);
+    }
+
+    div.appendChild(avatarDiv);
+
+    // Content bubble
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "message-content";
+
+    const senderSpan = document.createElement("span");
+    senderSpan.className = "sender";
+    senderSpan.textContent = msg.username;
+
+    const bubbleDiv = document.createElement("div");
+    bubbleDiv.className = "bubble";
+    if (msg.file) {
+      if (msg.fileType && msg.fileType.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = msg.file;
+        img.style.maxWidth = "250px";
+        img.style.borderRadius = "10px";
+        bubbleDiv.appendChild(img);
+      } else {
+        const a = document.createElement("a");
+        a.href = msg.file;
+        a.textContent = "Download file";
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        bubbleDiv.appendChild(a);
+      }
+    } else {
+      bubbleDiv.innerHTML = escapeHtml(msg.text || "");
+    }
+
+    contentDiv.appendChild(senderSpan);
+    contentDiv.appendChild(bubbleDiv);
+
+    div.appendChild(contentDiv);
+
+    messagesDiv.appendChild(div);
+    // Smooth scroll to bottom
+    messagesDiv.scrollTo({
+      top: messagesDiv.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
+
+  // Load messages initially
+  function loadMessages() {
+    get(messagesRef).then(snapshot => {
+      messagesDiv.innerHTML = "";
+      messagesCache = [];
+      if (snapshot.exists()) {
+        const msgs = snapshot.val();
+        for (const [id, data] of Object.entries(msgs)) {
+          messagesCache.push({ id, ...data });
+        }
+        messagesCache.sort((a,b) => a.timestamp - b.timestamp);
+        for (const msg of messagesCache) {
+          renderMessage(msg);
+        }
+      }
+      // Show welcome if empty
+      if (messagesCache.length === 0) {
+        const welcomeDiv = document.createElement("div");
+        welcomeDiv.style.textAlign = "center";
+        welcomeDiv.style.color = "#666";
+        welcomeDiv.style.fontStyle = "italic";
+        welcomeDiv.textContent = "Start chatting!";
+        messagesDiv.appendChild(welcomeDiv);
+      }
+    });
+  }
+
+  // Listen for new messages live
+  function listenMessages() {
+    onChildAdded(messagesRef, (data) => {
+      const msg = { id: data.key, ...data.val() };
+      // Avoid duplicate rendering
+      if (!messagesCache.find(m => m.id === msg.id)) {
+        messagesCache.push(msg);
+        renderMessage(msg);
+      }
+    });
+  }
+
+  // Send message
+  function sendMessage(text, file=null, fileType=null) {
+    if (!currentUser) return;
+    if (!text && !file) return;
+    const message = {
+      userId,
+      username: currentUser.username,
+      avatar: selectedAvatarUrl || assignAvatar(currentUser.username),
+      text: text || "",
+      file: file || null,
+      fileType: fileType || null,
+      timestamp: Date.now(),
+    };
+    push(messagesRef, message);
+  }
+
+  // TYPING indicator logic
+  function startTyping() {
+    if (!currentUser) return;
+    const userTypingRef = ref(db, `typing/${userId}`);
+
+    if (!isTyping) {
+      isTyping = true;
+      set(userTypingRef, currentUser.username);
+      onDisconnect(userTypingRef).remove();
+    }
+
+    lastTypingTime = Date.now();
+    if (typingTimeout) clearTimeout(typingTimeout);
+
+    typingTimeout = setTimeout(() => {
+      stopTyping();
+    }, 3000);
+  }
+
+  function stopTyping() {
+    if (!currentUser) return;
+    const userTypingRef = ref(db, `typing/${userId}`);
+    if (isTyping) {
+      isTyping = false;
+      remove(userTypingRef);
+    }
+  }
+
+  function listenTyping() {
+    onValue(typingRef, (snapshot) => {
+      const val = snapshot.val() || {};
+      userTypingUsers.clear();
+
+      Object.entries(val).forEach(([id, username]) => {
+        if (id !== userId && typeof username === "string") {
+          userTypingUsers.add(username);
+        }
+      });
+
+      updateTypingIndicator();
+    });
+  }
+
+  function updateTypingIndicator() {
+    const count = userTypingUsers.size;
+    if (count === 0) {
+      typingIndicator.textContent = "";
+    } else if (count === 1) {
+      const [name] = userTypingUsers;
+      typingIndicator.textContent = `${name} is typing...`;
+    } else {
+      typingIndicator.textContent = `Several people are typing...`;
+    }
+  }
+
+  // Night mode toggle
+  function setNightMode(enabled) {
+    if (enabled) {
       document.body.classList.add("night");
       nightModeBtn.textContent = "☀️";
     } else {
       document.body.classList.remove("night");
       nightModeBtn.textContent = "🌙";
     }
+    saveNightMode(enabled);
   }
-  loadNightMode();
 
-  nightModeBtn.onclick = () => {
-    const isNight = document.body.classList.toggle("night");
-    localStorage.setItem("nightMode", isNight);
-    nightModeBtn.textContent = isNight ? "☀️" : "🌙";
-  };
+  // Presence tracking
+  function setupPresence() {
+    const userPresenceRef = ref(db, `presence/${userId}`);
+    onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        set(userPresenceRef, true);
+        onDisconnect(userPresenceRef).set(Date.now());
+      } else {
+        set(userPresenceRef, Date.now());
+      }
+    });
 
-  // --- Show modal to set username if not set ---
+    onValue(ref(db, "presence"), (snap) => {
+      const pres = snap.val() || {};
+      presenceMap.clear();
+      for (const [id, val] of Object.entries(pres)) {
+        presenceMap.set(id, val === true ? true : val);
+      }
+      refreshMessagesPresence();
+    });
+  }
+
+  function refreshMessagesPresence() {
+    const msgDivs = messagesDiv.querySelectorAll(".message");
+    msgDivs.forEach(div => {
+      const msgId = div.dataset.messageId;
+      if (!msgId) return;
+      const msg = messagesCache.find(m => m.id === msgId);
+      if (!msg) return;
+      const avatarDiv = div.querySelector(".avatar");
+      avatarDiv.classList.remove("presence-online", "presence-offline");
+      const online = presenceMap.get(msg.userId);
+      if (online === true) {
+        avatarDiv.classList.add("presence-online");
+        avatarDiv.title = "Online";
+      } else {
+        avatarDiv.classList.add("presence-offline");
+        avatarDiv.title = formatLastSeen(online);
+      }
+    });
+  }
+
+  // Profile modal
   function showProfileModal() {
     modalOverlay.style.display = "flex";
-    usernameInput.value = username || "";
+    usernameInput.value = currentUser?.username || "";
     usernameInput.focus();
   }
-
-  saveProfileBtn.onclick = () => {
+  function hideProfileModal() {
+    modalOverlay.style.display = "none";
+  }
+  function saveProfile() {
     const val = usernameInput.value.trim();
-    if (val.length < 2) {
-      alert("Username must be at least 2 characters");
+    if (val.length < 1) {
+      alert("Please enter a username");
+      usernameInput.focus();
       return;
     }
-    username = val;
-    localStorage.setItem("username", username);
-    modalOverlay.style.display = "none";
-    updatePresence(true);
-  };
+    currentUser = { username: val };
+    userId = generateUserId();
+    selectedAvatarUrl = assignAvatar(currentUser.username);
+    saveUserToLocal({ username: currentUser.username, avatar: selectedAvatarUrl });
+    hideProfileModal();
+    loadMessages();
+    listenMessages();
+    listenTyping();
+    setupPresence();
+    textInput.focus();
+  }
 
-  // --- Avatar picker modal ---
-  avatarPickerBtn.onclick = () => {
-    openAvatarPicker();
-  };
-
+  // Avatar picker modal
   function openAvatarPicker() {
     avatarPickerOverlay.style.display = "flex";
-    avatarPickerModal.innerHTML = "<h2 id='avatarPickerTitle'>Pick Your Avatar</h2>";
-    const grid = document.createElement("div");
-    grid.style.display = "flex";
-    grid.style.flexWrap = "wrap";
-    grid.style.justifyContent = "center";
-    avatars.forEach((url) => {
+    avatarPickerModal.innerHTML = "<h2 id='avatarPickerTitle'>Choose Your Avatar</h2>";
+    const container = document.createElement("div");
+    container.style.display = "flex";
+    container.style.flexWrap = "wrap";
+    container.style.justifyContent = "center";
+
+    maleAvatars.forEach(url => {
       const img = document.createElement("img");
       img.src = url;
-      img.alt = "Avatar option";
-      img.tabIndex = 0;
       img.className = "avatar-option";
-      if (url === avatar) img.classList.add("selected");
-      img.onclick = () => {
-        avatar = url;
-        localStorage.setItem("avatar", avatar);
-        closeAvatarPicker();
-        // Update UI avatars immediately
-        refreshAllMessages();
-      };
-      img.onkeydown = (e) => {
+      img.tabIndex = 0;
+      if (url === selectedAvatarUrl) img.classList.add("selected");
+      img.alt = "Avatar option";
+      img.title = "Click to select avatar";
+      img.addEventListener("click", () => {
+        selectedAvatarUrl = url;
+        saveUserToLocal({ username: currentUser.username, avatar: selectedAvatarUrl });
+        avatarPickerOverlay.style.display = "none";
+        loadMessages(); // reload messages to update avatars
+      });
+      img.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           img.click();
         }
-      };
-      grid.appendChild(img);
+      });
+      container.appendChild(img);
     });
-    avatarPickerModal.appendChild(grid);
+    avatarPickerModal.appendChild(container);
     avatarPickerModal.focus();
   }
-
   function closeAvatarPicker() {
     avatarPickerOverlay.style.display = "none";
   }
 
-  avatarPickerOverlay.onclick = (e) => {
-    if (e.target === avatarPickerOverlay) closeAvatarPicker();
-  };
-
-  // --- Change User ---
-  changeUserBtn.onclick = () => {
-    showProfileModal();
-  };
-
-  // --- Emoji Picker ---
-  emojiBtn.onclick = () => {
+  // Emoji picker
+  function toggleEmojiPicker() {
     if (emojiPicker.style.display === "flex") {
       emojiPicker.style.display = "none";
     } else {
+      emojiPicker.style.display = "flex";
       emojiPicker.innerHTML = "";
       emojis.forEach(e => {
         const span = document.createElement("span");
         span.textContent = e;
         span.tabIndex = 0;
-        span.onclick = () => {
+        span.setAttribute("role", "option");
+        span.addEventListener("click", () => {
           textInput.value += e;
           textInput.focus();
           emojiPicker.style.display = "none";
-          triggerTyping();
-        };
-        span.onkeydown = (ev) => {
-          if(ev.key === "Enter" || ev.key === " ") {
-            ev.preventDefault();
+          startTyping();
+        });
+        span.addEventListener("keydown", e => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
             span.click();
           }
-        };
+        });
         emojiPicker.appendChild(span);
       });
-      emojiPicker.style.display = "flex";
-      emojiPicker.style.flexWrap = "wrap";
-      emojiPicker.style.position = "absolute";
-      emojiPicker.style.bottom = "60px";
-      emojiPicker.style.left = "10px";
-    }
-  };
-
-  document.addEventListener("click", e => {
-    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-      emojiPicker.style.display = "none";
-    }
-  });
-
-  // --- Sending Messages ---
-  sendBtn.onclick = sendMessage;
-  textInput.addEventListener("keydown", e => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-    triggerTyping();
-  });
-
-  fileBtn.onclick = () => fileInput.click();
-
-  fileInput.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    // Just show a file name message for simplicity
-    sendMessage(file.name, true);
-    fileInput.value = "";
-  };
-
-  async function sendMessage(text, isFile = false) {
-    if (!username) {
-      alert("Please set your username first.");
-      showProfileModal();
-      return;
-    }
-    if (!text.trim()) return;
-
-    const msgData = {
-      userId,
-      username,
-      avatar,
-      text: text.trim(),
-      timestamp: Date.now(),
-      isFile: !!isFile
-    };
-    try {
-      await push(messagesRef, msgData);
-      textInput.value = "";
-      stopTyping();
-    } catch (err) {
-      console.error("Error sending message:", err);
     }
   }
 
-  // --- Render messages ---
-  function createMessageElement(data, key) {
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "message" + (data.userId === userId ? " you" : "");
-    msgDiv.tabIndex = 0;
-    msgDiv.dataset.key = key;
-
-    const avatarImg = document.createElement("img");
-    avatarImg.className = "avatar";
-    avatarImg.src = data.avatar || avatars[0];
-    avatarImg.alt = `${data.username}'s avatar`;
-
-    // presence dot - online/offline
-    const userPresence = presenceStatus[data.userId];
-    avatarImg.classList.remove("presence-online", "presence-offline");
-    avatarImg.classList.add(userPresence === "online" ? "presence-online" : "presence-offline");
-
-    msgDiv.appendChild(avatarImg);
-
-    const contentDiv = document.createElement("div");
-    contentDiv.className = "message-content";
-
-    const senderDiv = document.createElement("div");
-    senderDiv.className = "sender";
-    senderDiv.textContent = data.username;
-    contentDiv.appendChild(senderDiv);
-
-    const bubbleDiv = document.createElement("div");
-    bubbleDiv.className = "bubble";
-    bubbleDiv.textContent = data.text;
-    if (data.isFile) {
-      bubbleDiv.style.fontStyle = "italic";
-      bubbleDiv.textContent = "[File] " + data.text;
-    }
-    contentDiv.appendChild(bubbleDiv);
-
-    // Timestamp
-    const infoDiv = document.createElement("div");
-    infoDiv.className = "info";
-    const timeSpan = document.createElement("span");
-    const date = new Date(data.timestamp);
-    timeSpan.textContent = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    infoDiv.appendChild(timeSpan);
-
-    // Edit/Delete actions if your own message
-    if (data.userId === userId) {
-      const actionsDiv = document.createElement("div");
-      actionsDiv.className = "actions";
-      const delBtn = document.createElement("button");
-      delBtn.title = "Delete message";
-      delBtn.innerHTML = "🗑️";
-      delBtn.onclick = () => {
-        if (confirm("Delete this message?")) {
-          remove(ref(db, "messages/" + key));
-        }
-      };
-      actionsDiv.appendChild(delBtn);
-      infoDiv.appendChild(actionsDiv);
-    }
-
-    contentDiv.appendChild(infoDiv);
-
-    msgDiv.appendChild(contentDiv);
-
-    return msgDiv;
-  }
-
-  function refreshAllMessages() {
-    // Re-render all messages to update avatars or presence dots
-    messagesDiv.innerHTML = "";
-    for (const [key, data] of Object.entries(allMessages)) {
-      const msgElem = createMessageElement(data, key);
-      messagesDiv.appendChild(msgElem);
-    }
-    scrollToBottom();
-  }
-
-  // --- Message handling ---
-  const allMessages = {};
-
-  onChildAdded(messagesRef, snapshot => {
-    const data = snapshot.val();
-    const key = snapshot.key;
-    allMessages[key] = data;
-    const msgElem = createMessageElement(data, key);
-    messagesDiv.appendChild(msgElem);
-    scrollToBottom();
-  });
-
-  // --- Scroll to bottom ---
-  function scrollToBottom() {
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  }
-
-  // --- Typing indicator ---
-
-  // Save typing statuses as userId: username in typingRef
-  textInput.addEventListener("input", () => {
-    triggerTyping();
-  });
-
-  function triggerTyping() {
-    if (!username) return;
-    if (isTyping) {
-      clearTimeout(typingTimeout);
-    } else {
-      isTyping = true;
-      set(ref(db, "typing/" + userId), username).catch(() => {});
-    }
-    typingTimeout = setTimeout(() => {
-      stopTyping();
-    }, 2000);
-  }
-
-  function stopTyping() {
-    isTyping = false;
-    remove(ref(db, "typing/" + userId)).catch(() => {});
-  }
-
-  // Listen for typing changes, show a typing bubble per typing user except self
-  onValue(typingRef, (snapshot) => {
-    const val = snapshot.val() || {};
-    const userTypingUsers = new Set();
-
-    Object.entries(val).forEach(([id, name]) => {
-      if (id !== userId && typeof name === "string") {
-        userTypingUsers.add(name);
-      }
-    });
-
-    renderTypingBubbles(userTypingUsers);
-  });
-
-  function renderTypingBubbles(usernames) {
-    typingIndicatorsContainer.innerHTML = "";
-
-    usernames.forEach(name => {
-      const bubble = document.createElement("div");
-      bubble.className = "typing-bubble";
-      bubble.setAttribute("aria-live", "polite");
-      bubble.setAttribute("role", "status");
-      bubble.innerHTML = `
-        👤 <strong>${escapeHTML(name)}</strong> is typing
-        <span class="dots">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        </span>`;
-      typingIndicatorsContainer.appendChild(bubble);
-    });
-  }
-
-  // --- Presence system ---
-  const presenceStatus = {};
-
-  connectedRef.onValue((snap) => {
-    if (snap.val() === true) {
-      const userPresenceRef = ref(db, `presence/${userId}`);
-      set(userPresenceRef, "online");
-      onDisconnect(userPresenceRef).set("offline");
-    }
-  });
-
-  // Listen for presence changes
-  onValue(ref(db, "presence"), (snap) => {
-    const val = snap.val() || {};
-    Object.entries(val).forEach(([id, status]) => {
-      presenceStatus[id] = status;
-    });
-    // Update presence dots on all messages
-    refreshAllMessages();
-  });
-
-  // --- Escape HTML utility ---
-  function escapeHTML(str) {
-    return str.replace(/[&<>"']/g, (m) => {
-      switch (m) {
-        case "&": return "&amp;";
-        case "<": return "&lt;";
-        case ">": return "&gt;";
-        case '"': return "&quot;";
-        case "'": return "&#39;";
-      }
-    });
-  }
-
-  // --- Initialization ---
-  function init() {
-    if (!username) {
-      showProfileModal();
-    } else {
-      updatePresence(true);
-    }
-    refreshAllMessages();
-  }
-
-  // --- Update presence online status ---
-  function updatePresence(isOnline) {
-    if (!userId) return;
-    set(ref(db, `presence/${userId}`), isOnline ? "online" : "offline");
-  }
-
-  window.addEventListener("beforeunload", () => {
-    updatePresence(false);
+  // Event listeners
+  sendBtn.addEventListener("click", () => {
+    sendMessage(textInput.value);
+    textInput.value = "";
     stopTyping();
   });
 
-  // --- Keyboard accessibility for modal ---
-  modalOverlay.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
-      modalOverlay.style.display = "none";
+  textInput.addEventListener("input", () => {
+    if (textInput.value.length > 0) {
+      startTyping();
+    } else {
+      stopTyping();
     }
   });
 
-  avatarPickerOverlay.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
+  textInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+
+  fileBtn.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size limit is 5MB");
+      fileInput.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      sendMessage("", e.target.result, file.type);
+      fileInput.value = "";
+    };
+    reader.readAsDataURL(file);
+  });
+
+  emojiBtn.addEventListener("click", toggleEmojiPicker);
+
+  nightModeBtn.addEventListener("click", () => {
+    const enabled = !document.body.classList.contains("night");
+    setNightMode(enabled);
+  });
+
+  changeUserBtn.addEventListener("click", () => {
+    showProfileModal();
+  });
+
+  saveProfileBtn.addEventListener("click", saveProfile);
+
+  modalOverlay.addEventListener("click", (e) => {
+    if (e.target === modalOverlay) {
+      hideProfileModal();
+    }
+  });
+
+  avatarPickerBtn.addEventListener("click", openAvatarPicker);
+
+  avatarPickerOverlay.addEventListener("click", (e) => {
+    if (e.target === avatarPickerOverlay) {
       closeAvatarPicker();
     }
   });
 
-  // --- Start ---
+  // Initialize app
+  function init() {
+    // Load user data from localStorage
+    const userData = loadUserFromLocal();
+    if (userData && userData.username) {
+      currentUser = { username: userData.username };
+      userId = generateUserId();
+      selectedAvatarUrl = userData.avatar || assignAvatar(currentUser.username);
+      loadMessages();
+      listenMessages();
+      listenTyping();
+      setupPresence();
+      textInput.focus();
+    } else {
+      showProfileModal();
+    }
+    // Load night mode
+    setNightMode(loadNightMode());
+  }
+
   init();
+
 </script>
 
 </body>
