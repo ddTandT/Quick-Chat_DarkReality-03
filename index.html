@@ -332,6 +332,7 @@
     remove, onValue, onDisconnect
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+  // Firebase config (replace with your own!)
   const firebaseConfig = {
     apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
     authDomain: "live-chat-app-5ea98.firebaseapp.com",
@@ -367,6 +368,7 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
 
+  // Male avatars only
   const maleAvatars = [
     "https://randomuser.me/api/portraits/men/1.jpg",
     "https://randomuser.me/api/portraits/men/2.jpg",
@@ -403,7 +405,7 @@
     "💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾"
   ];
 
-  // State
+  // State variables
   let currentUser = null;
   let userId = null;
   let typingTimeout = null;
@@ -414,7 +416,7 @@
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
 
-  // Util functions
+  // Utility functions
   function saveUserToLocal(user) {
     localStorage.setItem("quickchat-user", JSON.stringify(user));
   }
@@ -446,302 +448,270 @@
   }
   function formatLastSeen(timestamp) {
     if (!timestamp) return "Last seen unknown";
-    const diffSec = (Date.now() - timestamp) / 1000;
+    const diffSec = Math.floor((Date.now() - timestamp) / 1000);
     if (diffSec < 60) return "Last seen just now";
-    if (diffSec < 3600) return `Last seen ${Math.floor(diffSec/60)} minutes ago`;
-    if (diffSec < 86400) return `Last seen ${Math.floor(diffSec/3600)} hours ago`;
+    if (diffSec < 3600) return `Last seen ${Math.floor(diffSec / 60)} min ago`;
+    if (diffSec < 86400) return `Last seen ${Math.floor(diffSec / 3600)} hr ago`;
     return `Last seen on ${new Date(timestamp).toLocaleDateString()}`;
   }
-
-  // Avatar assign by username
-  function assignAvatar(username) {
-    if (!username) return maleAvatars[0];
-    let hash = 0;
-    for (let i=0; i<username.length; i++) {
-      hash = username.charCodeAt(i) + ((hash << 5) - hash);
-      hash |= 0;
-    }
-    const index = Math.abs(hash) % maleAvatars.length;
-    return maleAvatars[index];
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
-  // Add message to DOM
-  function addMessageToDOM(msg) {
+  // Avatar assignment
+  function assignAvatar(username) {
+    const dateStr = new Date().toISOString().slice(0,10);
+    const seed = username + dateStr;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    hash = Math.abs(hash);
+    const idx = hash % maleAvatars.length;
+    return maleAvatars[idx];
+  }
+
+  // Render a message
+  function renderMessage(msg) {
+    const isOwn = msg.userId === userId;
     const div = document.createElement("div");
-    div.classList.add("message");
-    if (msg.userId === userId) div.classList.add("you");
+    div.className = "message" + (isOwn ? " you" : "");
+    div.setAttribute("tabindex", "0");
+    div.dataset.messageId = msg.id;
 
-    const avatar = document.createElement("img");
-    avatar.src = msg.avatar || assignAvatar(msg.username);
-    avatar.alt = msg.username + " avatar";
-    avatar.classList.add("avatar");
+    // Avatar + presence dot
+    const avatarDiv = document.createElement("div");
+    avatarDiv.className = "avatar";
+    const avatarImg = document.createElement("img");
+    avatarImg.src = msg.avatar || assignAvatar(msg.username);
+    avatarImg.alt = msg.username + "'s avatar";
+    avatarImg.width = 40;
+    avatarImg.height = 40;
+    avatarDiv.appendChild(avatarImg);
 
-    // Presence dot
-    if (presenceMap.get(msg.userId) === true) {
-      avatar.classList.add("presence-online");
-      avatar.title = msg.username + " is online";
+    // Presence dot from presenceMap
+    const presence = presenceMap.get(msg.userId);
+    if (presence === "online") {
+      avatarDiv.classList.add("presence-online");
     } else {
-      avatar.classList.add("presence-offline");
-      avatar.title = formatLastSeen(presenceMap.get(msg.userId + "-lastseen"));
+      avatarDiv.classList.add("presence-offline");
     }
 
-    const content = document.createElement("div");
-    content.classList.add("message-content");
+    // Message content
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "message-content";
 
-    const sender = document.createElement("div");
-    sender.classList.add("sender");
-    sender.textContent = msg.username;
-    content.appendChild(sender);
+    // Sender name
+    const senderDiv = document.createElement("div");
+    senderDiv.className = "sender";
+    senderDiv.textContent = msg.username;
+    contentDiv.appendChild(senderDiv);
 
-    const bubble = document.createElement("div");
-    bubble.classList.add("bubble");
-    bubble.textContent = msg.text;
-    content.appendChild(bubble);
+    // Message bubble
+    const bubbleDiv = document.createElement("div");
+    bubbleDiv.className = "bubble";
+    if (msg.type === "file" && msg.fileUrl) {
+      if (msg.fileType && msg.fileType.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = msg.fileUrl;
+        img.alt = "Image from " + msg.username;
+        img.style.maxWidth = "200px";
+        img.style.borderRadius = "8px";
+        bubbleDiv.appendChild(img);
+      } else {
+        const a = document.createElement("a");
+        a.href = msg.fileUrl;
+        a.textContent = msg.fileName || "Download file";
+        a.target = "_blank";
+        bubbleDiv.appendChild(a);
+      }
+    } else {
+      bubbleDiv.innerHTML = escapeHtml(msg.text || "");
+    }
+    contentDiv.appendChild(bubbleDiv);
 
-    div.appendChild(avatar);
-    div.appendChild(content);
+    // Info (time and actions)
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "info";
 
-    messagesDiv.appendChild(div);
+    const timeSpan = document.createElement("span");
+    timeSpan.textContent = formatTime(new Date(msg.timestamp || Date.now()));
+    infoDiv.appendChild(timeSpan);
+
+    if (isOwn) {
+      const actionsSpan = document.createElement("span");
+      actionsSpan.className = "actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.title = "Edit message";
+      editBtn.innerHTML = "✏️";
+      editBtn.addEventListener("click", () => editMessage(msg));
+      actionsSpan.appendChild(editBtn);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.title = "Delete message";
+      deleteBtn.innerHTML = "🗑️";
+      deleteBtn.addEventListener("click", () => deleteMessage(msg));
+      actionsSpan.appendChild(deleteBtn);
+
+      infoDiv.appendChild(actionsSpan);
+    }
+
+    contentDiv.appendChild(infoDiv);
+
+    div.appendChild(avatarDiv);
+    div.appendChild(contentDiv);
+
+    return div;
+  }
+
+  // Add message to UI and cache
+  function addMessage(msg) {
+    if (messagesCache.find(m => m.id === msg.id)) return; // avoid duplicates
+    messagesCache.push(msg);
+    const msgElem = renderMessage(msg);
+    messagesDiv.appendChild(msgElem);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
-  // Typing indicator update UI
-  function updateTypingIndicator() {
-    if (userTypingUsers.size === 0) {
-      typingIndicator.textContent = "";
-    } else if (userTypingUsers.size === 1) {
-      typingIndicator.textContent = [...userTypingUsers][0] + " is typing...";
-    } else {
-      typingIndicator.textContent = "Multiple people are typing...";
-    }
-  }
-
-  // Typing status send on user input
-  function startTyping() {
-    if (!currentUser) return;
-    if (!isTyping) {
-      isTyping = true;
-      setTypingStatus(true);
-    }
-    lastTypingTime = Date.now();
-
-    if (typingTimeout) clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      const timeDiff = Date.now() - lastTypingTime;
-      if (timeDiff >= 3000 && isTyping) {
-        isTyping = false;
-        setTypingStatus(false);
-      }
-    }, 3500);
-  }
-
-  function setTypingStatus(isTypingNow) {
-    if (!userId) return;
-    if (isTypingNow) {
-      set(ref(db, "typing/" + userId), currentUser.username);
-    } else {
-      remove(ref(db, "typing/" + userId));
-    }
-  }
-
-  // Listen for typing data from others
-  function listenTyping() {
-    onValue(typingRef, (snapshot) => {
-      if (!userId) return;
-
-      const val = snapshot.val() || {};
-      userTypingUsers.clear();
-
-      Object.entries(val).forEach(([id, username]) => {
-        if (id !== userId && typeof username === "string") {
-          userTypingUsers.add(username);
-        }
-      });
-
-      updateTypingIndicator();
-    });
-  }
+  // Listen for new messages
+  onChildAdded(messagesRef, (data) => {
+    const msg = data.val();
+    msg.id = data.key;
+    addMessage(msg);
+  });
 
   // Send a new message
-  function sendMessage(text) {
-    if (!currentUser || !text.trim()) return;
+  function sendMessage(text, file) {
+    if (!text && !file) return;
     const msg = {
       userId,
       username: currentUser.username,
-      text: text.trim(),
-      avatar: selectedAvatarUrl,
-      timestamp: Date.now()
+      avatar: selectedAvatarUrl || assignAvatar(currentUser.username),
+      text: text || "",
+      timestamp: Date.now(),
     };
+    if (file) {
+      msg.type = "file";
+      msg.fileUrl = file.url;
+      msg.fileName = file.name;
+      msg.fileType = file.type;
+    } else {
+      msg.type = "text";
+    }
     push(messagesRef, msg);
   }
 
-  // Load all messages once on init
-  function loadMessages() {
+  // Edit message
+  function editMessage(msg) {
+    const newText = prompt("Edit your message:", msg.text || "");
+    if (newText === null) return;
+    const msgRef = ref(db, "messages/" + msg.id);
+    set(msgRef, {
+      ...msg,
+      text: newText,
+      timestamp: Date.now()
+    });
+  }
+
+  // Delete message
+  function deleteMessage(msg) {
+    if (!confirm("Delete this message?")) return;
+    const msgRef = ref(db, "messages/" + msg.id);
+    remove(msgRef);
+    // Remove from UI and cache
+    messagesCache = messagesCache.filter(m => m.id !== msg.id);
+    const msgElem = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
+    if (msgElem) messagesDiv.removeChild(msgElem);
+  }
+
+  // Handle message updates
+  onValue(messagesRef, (snapshot) => {
+    const allMsgs = [];
+    snapshot.forEach(child => {
+      const m = child.val();
+      m.id = child.key;
+      allMsgs.push(m);
+    });
+    messagesCache = allMsgs;
     messagesDiv.innerHTML = "";
-    get(messagesRef).then(snapshot => {
-      if (!snapshot.exists()) return;
-      messagesCache = [];
-      snapshot.forEach(child => {
-        messagesCache.push(child.val());
-      });
-      messagesCache.sort((a,b) => a.timestamp - b.timestamp);
-      messagesCache.forEach(addMessageToDOM);
+    allMsgs.forEach(m => {
+      messagesDiv.appendChild(renderMessage(m));
     });
-  }
+  });
 
-  // Listen for new messages added realtime
-  function listenMessages() {
-    onChildAdded(messagesRef, (data) => {
-      const msg = data.val();
-      if (!messagesCache.some(m => m.timestamp === msg.timestamp && m.userId === msg.userId)) {
-        messagesCache.push(msg);
-        addMessageToDOM(msg);
-      }
-    });
-  }
-
-  // Presence system setup & listener
-  function setupPresence() {
-    if (!userId) return;
-
-    const userPresenceRef = ref(db, "presence/" + userId);
-    const userLastSeenRef = ref(db, "presence/" + userId + "-lastseen");
-
-    onValue(connectedRef, (snap) => {
-      if (snap.val() === true) {
-        set(userPresenceRef, true);
-        onDisconnect(userPresenceRef).remove();
-        onDisconnect(userLastSeenRef).set(Date.now());
-      }
-    });
-
-    onValue(presenceRef, (snapshot) => {
-      const val = snapshot.val() || {};
-      presenceMap.clear();
-      Object.entries(val).forEach(([key, value]) => {
-        if (key.endsWith("-lastseen")) {
-          const userKey = key.slice(0, -9);
-          presenceMap.set(userKey + "-lastseen", value);
-        } else {
-          presenceMap.set(key, value === true);
-        }
-      });
-      // Update presence dots on avatars
-      Array.from(messagesDiv.querySelectorAll(".message")).forEach((msgDiv) => {
-        const avatarImg = msgDiv.querySelector(".avatar");
-        if (!avatarImg) return;
-        const senderName = msgDiv.querySelector(".sender")?.textContent;
-        const userObj = messagesCache.find(m => m.username === senderName);
-        if (!userObj) return;
-        avatarImg.classList.remove("presence-online", "presence-offline");
-        if (presenceMap.get(userObj.userId)) {
-          avatarImg.classList.add("presence-online");
-          avatarImg.title = senderName + " is online";
-        } else {
-          avatarImg.classList.add("presence-offline");
-          avatarImg.title = formatLastSeen(presenceMap.get(userObj.userId + "-lastseen"));
-        }
-      });
-    });
-  }
-
-  // Show profile modal to set username
-  function showProfileModal() {
-    modalOverlay.style.display = "flex";
-    usernameInput.focus();
-  }
-  function hideProfileModal() {
-    modalOverlay.style.display = "none";
-  }
-
-  // Avatar picker modal
-  function showAvatarPicker() {
-    avatarPickerModal.innerHTML = '<h2 id="avatarPickerTitle">Choose Avatar</h2>';
-    maleAvatars.forEach(url => {
-      const img = document.createElement("img");
-      img.src = url;
-      img.classList.add("avatar-option");
-      if (url === selectedAvatarUrl) img.classList.add("selected");
-      img.tabIndex = 0;
-      img.alt = "Avatar option";
-      img.addEventListener("click", () => {
-        selectedAvatarUrl = url;
-        saveUserToLocal({ username: currentUser.username, avatar: selectedAvatarUrl });
-        avatarPickerOverlay.style.display = "none";
-      });
-      img.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          img.click();
-        }
-      });
-      avatarPickerModal.appendChild(img);
-    });
-    avatarPickerOverlay.style.display = "flex";
-    avatarPickerModal.focus();
-  }
-  function hideAvatarPicker() {
-    avatarPickerOverlay.style.display = "none";
-  }
-
-  // Emoji picker toggling
+  // Emoji picker
   function toggleEmojiPicker() {
     if (emojiPicker.style.display === "flex") {
       emojiPicker.style.display = "none";
     } else {
       emojiPicker.style.display = "flex";
-      emojiPicker.innerHTML = "";
-      emojis.forEach(e => {
-        const span = document.createElement("span");
-        span.textContent = e;
-        span.tabIndex = 0;
-        span.addEventListener("click", () => {
-          insertAtCursor(textInput, e);
-          textInput.focus();
-          emojiPicker.style.display = "none";
-        });
-        span.addEventListener("keydown", (ev) => {
-          if (ev.key === "Enter" || ev.key === " ") {
-            ev.preventDefault();
-            span.click();
-          }
-        });
-        emojiPicker.appendChild(span);
+      emojiPicker.focus();
+    }
+  }
+
+  emojis.forEach(e => {
+    const span = document.createElement("span");
+    span.textContent = e;
+    span.setAttribute("tabindex", "0");
+    span.addEventListener("click", () => {
+      textInput.value += e;
+      emojiPicker.style.display = "none";
+      textInput.focus();
+    });
+    emojiPicker.appendChild(span);
+  });
+
+  emojiBtn.addEventListener("click", toggleEmojiPicker);
+
+  // File sending
+  fileBtn.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      sendMessage("", {
+        url: e.target.result,
+        name: file.name,
+        type: file.type
+      });
+    };
+    if (file.type.startsWith("image/")) {
+      reader.readAsDataURL(file);
+    } else {
+      alert("Only images are supported for preview. Sending file as is.");
+      sendMessage("", {
+        url: "",
+        name: file.name,
+        type: file.type
       });
     }
-  }
+    fileInput.value = "";
+  });
 
-  function insertAtCursor(input, textToInsert) {
-    const start = input.selectionStart;
-    const end = input.selectionEnd;
-    const text = input.value;
-    input.value = text.substring(0, start) + textToInsert + text.substring(end);
-    input.selectionStart = input.selectionEnd = start + textToInsert.length;
-  }
+  // Send message button and Enter key
+  sendBtn.addEventListener("click", () => {
+    const val = textInput.value.trim();
+    if (!val) return;
+    sendMessage(val);
+    textInput.value = "";
+  });
 
-  // Save profile modal info
-  function saveProfile() {
-    const val = usernameInput.value.trim();
-    if (val.length < 1) {
-      alert("Please enter a username");
-      usernameInput.focus();
-      return;
+  textInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendBtn.click();
     }
-    currentUser = { username: val };
-    userId = generateUserId();
-    selectedAvatarUrl = assignAvatar(currentUser.username);
-    saveUserToLocal({ username: currentUser.username, avatar: selectedAvatarUrl });
-    hideProfileModal();
-
-    loadMessages();
-    listenMessages();
-    listenTyping();
-    setupPresence();
-    textInput.focus();
-  }
+  });
 
   // Night mode toggle
-  function setNightMode(enabled) {
+  nightModeBtn.addEventListener("click", () => {
+    const enabled = !document.body.classList.contains("night");
     if (enabled) {
       document.body.classList.add("night");
       nightModeBtn.textContent = "☀️";
@@ -750,94 +720,200 @@
       nightModeBtn.textContent = "🌙";
     }
     saveNightMode(enabled);
+  });
+
+  // Load night mode preference
+  if (loadNightMode()) {
+    document.body.classList.add("night");
+    nightModeBtn.textContent = "☀️";
   }
 
-  // Initialization
-  function init() {
-    const userData = loadUserFromLocal();
-    if (userData && userData.username) {
-      currentUser = { username: userData.username };
-      userId = generateUserId();
-      selectedAvatarUrl = userData.avatar || assignAvatar(currentUser.username);
-      loadMessages();
-      listenMessages();
-      listenTyping();
-      setupPresence();
-      textInput.focus();
-    } else {
-      showProfileModal();
-    }
-    setNightMode(loadNightMode());
+  // User profile management
+  function showProfileModal() {
+    modalOverlay.style.display = "flex";
+    usernameInput.value = currentUser ? currentUser.username : "";
+    usernameInput.focus();
   }
-
-  // Event listeners
-
-  sendBtn.addEventListener("click", () => {
-    sendMessage(textInput.value);
-    textInput.value = "";
-    setTypingStatus(false);
-    isTyping = false;
-  });
-
-  textInput.addEventListener("input", () => {
-    startTyping();
-  });
-
-  textInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendBtn.click();
-    }
-  });
-
-  fileBtn.addEventListener("click", () => fileInput.click());
-
-  fileInput.addEventListener("change", () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB");
-      fileInput.value = "";
+  function hideProfileModal() {
+    modalOverlay.style.display = "none";
+  }
+  saveProfileBtn.addEventListener("click", () => {
+    const val = usernameInput.value.trim();
+    if (!val) {
+      alert("Username cannot be empty");
+      usernameInput.focus();
       return;
     }
-    sendMessage(`[File sent: ${file.name}]`);
-    fileInput.value = "";
+    currentUser = { username: val };
+    userId = generateUserId();
+    selectedAvatarUrl = assignAvatar(val);
+    saveUserToLocal(currentUser);
+    hideProfileModal();
+    setupPresence();
   });
+  changeUserBtn.addEventListener("click", showProfileModal);
 
-  emojiBtn.addEventListener("click", () => toggleEmojiPicker());
-
-  document.addEventListener("click", (e) => {
-    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-      emojiPicker.style.display = "none";
-    }
-    if (!avatarPickerModal.contains(e.target) && e.target !== avatarPickerBtn) {
-      avatarPickerOverlay.style.display = "none";
-    }
-  });
-
-  saveProfileBtn.addEventListener("click", saveProfile);
-
-  usernameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") saveProfile();
-  });
-
-  changeUserBtn.addEventListener("click", () => showProfileModal());
-
-  avatarPickerBtn.addEventListener("click", () => {
-    if (!currentUser) return alert("Set username first");
-    showAvatarPicker();
-  });
-
+  // Avatar picker modal
+  function openAvatarPicker() {
+    avatarPickerModal.innerHTML = "<h2 id='avatarPickerTitle'>Select Avatar</h2>";
+    maleAvatars.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.className = "avatar-option";
+      if (url === selectedAvatarUrl) img.classList.add("selected");
+      img.tabIndex = 0;
+      img.alt = "Avatar option";
+      img.addEventListener("click", () => {
+        selectedAvatarUrl = url;
+        updateAvatarSelection();
+        closeAvatarPicker();
+      });
+      img.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          selectedAvatarUrl = url;
+          updateAvatarSelection();
+          closeAvatarPicker();
+        }
+      });
+      avatarPickerModal.appendChild(img);
+    });
+    avatarPickerOverlay.style.display = "flex";
+    avatarPickerModal.focus();
+  }
+  function closeAvatarPicker() {
+    avatarPickerOverlay.style.display = "none";
+    saveUserToLocal({ ...currentUser, avatar: selectedAvatarUrl });
+  }
+  function updateAvatarSelection() {
+    const imgs = avatarPickerModal.querySelectorAll(".avatar-option");
+    imgs.forEach(img => {
+      if (img.src === selectedAvatarUrl) img.classList.add("selected");
+      else img.classList.remove("selected");
+    });
+  }
+  avatarPickerBtn.addEventListener("click", openAvatarPicker);
   avatarPickerOverlay.addEventListener("click", e => {
-    if (e.target === avatarPickerOverlay) hideAvatarPicker();
+    if (e.target === avatarPickerOverlay) closeAvatarPicker();
   });
 
   modalOverlay.addEventListener("click", e => {
-    // Prevent closing modal on outside click to force username
+    if (e.target === modalOverlay) hideProfileModal();
   });
 
-  init();
+  // Presence & online/offline
+  function setupPresence() {
+    if (!userId) return;
+    const userPresenceRef = ref(db, `presence/${userId}`);
 
+    onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        set(userPresenceRef, { state: "online", lastChanged: Date.now() });
+        onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() });
+      }
+    });
+
+    // Listen to presence changes
+    onValue(presenceRef, (snapshot) => {
+      presenceMap.clear();
+      snapshot.forEach(child => {
+        const p = child.val();
+        presenceMap.set(child.key, p.state);
+      });
+      renderAllMessagesPresence();
+    });
+  }
+
+  function renderAllMessagesPresence() {
+    document.querySelectorAll(".message").forEach(msgElem => {
+      const uid = messagesCache.find(m => m.id === msgElem.dataset.messageId)?.userId;
+      if (!uid) return;
+      const avatarDiv = msgElem.querySelector(".avatar");
+      if (!avatarDiv) return;
+      avatarDiv.classList.remove("presence-online", "presence-offline");
+      const p = presenceMap.get(uid);
+      if (p === "online") avatarDiv.classList.add("presence-online");
+      else avatarDiv.classList.add("presence-offline");
+    });
+  }
+
+  // Typing indicator logic (fixed - shows only others typing)
+  function updateTypingStatus(typing) {
+    if (!userId) return;
+    const userTypingRef = ref(db, `typing/${userId}`);
+    if (typing) {
+      set(userTypingRef, true);
+      if (typingTimeout) clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        set(userTypingRef, null);
+      }, 3000);
+    } else {
+      set(userTypingRef, null);
+    }
+  }
+
+  // Track input for typing
+  textInput.addEventListener("input", () => {
+    if (!userId) return;
+    if (!isTyping) {
+      isTyping = true;
+      updateTypingStatus(true);
+    }
+    lastTypingTime = Date.now();
+
+    if (typingTimeout) clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      const timeDiff = Date.now() - lastTypingTime;
+      if (timeDiff >= 3000) {
+        isTyping = false;
+        updateTypingStatus(false);
+      }
+    }, 3000);
+  });
+
+  // Listen to typing status of all users except self
+  onValue(typingRef, (snapshot) => {
+    const typingUsers = [];
+    snapshot.forEach(child => {
+      if (child.key !== userId && child.val()) {
+        typingUsers.push(child.key);
+      }
+    });
+
+    if (typingUsers.length === 0) {
+      typingIndicator.textContent = "";
+    } else {
+      // Show usernames typing
+      const namesTyping = [];
+      typingUsers.forEach(uid => {
+        const msgUser = messagesCache.find(m => m.userId === uid);
+        if (msgUser && msgUser.username) namesTyping.push(msgUser.username);
+      });
+      if (namesTyping.length === 1) {
+        typingIndicator.textContent = `${namesTyping[0]} is typing...`;
+      } else if (namesTyping.length === 2) {
+        typingIndicator.textContent = `${namesTyping[0]} and ${namesTyping[1]} are typing...`;
+      } else {
+        typingIndicator.textContent = `${namesTyping[0]}, ${namesTyping[1]} and others are typing...`;
+      }
+    }
+  });
+
+  // Initialization
+  function init() {
+    currentUser = loadUserFromLocal();
+    userId = generateUserId();
+
+    if (!currentUser || !currentUser.username) {
+      showProfileModal();
+    } else {
+      selectedAvatarUrl = currentUser.avatar || assignAvatar(currentUser.username);
+      setupPresence();
+    }
+  }
+
+  init();
 </script>
+
 </body>
 </html>
