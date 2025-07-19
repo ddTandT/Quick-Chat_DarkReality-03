@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dark Chat</title>
+<title>Quick Chat</title>
 <style>
   /* Reset & basics */
   body {
@@ -191,15 +191,13 @@
     background: #fff;
     border: 1px solid #ccc;
     max-width: 300px;
-    max-height: 200px;
+    max-height: 150px;
     overflow-y: auto;
     display: none;
     flex-wrap: wrap;
     padding: 5px;
     border-radius: 6px;
     z-index: 10;
-    display: flex; /* Ensure emojis wrap */
-    gap: 6px; /* Optional: better spacing */
   }
   body.night #emojiPicker {
     background: #333;
@@ -207,17 +205,17 @@
   }
   #emojiPicker span {
     cursor: pointer;
-    font-size: 32px;
+    font-size: 20px;
     margin: 2px 4px;
     user-select: none;
-    line-height: 1.2;
   }
   #emojiPicker span:hover, #emojiPicker span:focus {
     background: #0078d7;
     color: white;
-    border-radius: 6px;
+    border-radius: 4px;
     outline: none;
   }
+
   /* Modal for profile */
   #modalOverlay, #avatarPickerOverlay {
     position: fixed;
@@ -292,7 +290,7 @@
 <body>
 
 <header>
-  <h1>Dark Chat</h1>
+  <h1>Quick Chat</h1>
   <div>
     <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">Avatar</button>
     <button id="changeUserBtn" title="Change Username" aria-label="Change Username">Change User</button>
@@ -391,81 +389,20 @@
     "https://randomuser.me/api/portraits/men/17.jpg",
     "https://randomuser.me/api/portraits/men/18.jpg",
     "https://randomuser.me/api/portraits/men/19.jpg",
-    "https://randomuser.me/api/portraits/men/20.jpg",
-    "https://randomuser.me/api/portraits/men/21.jpg",
-    "https://randomuser.me/api/portraits/men/22.jpg",
-    "https://randomuser.me/api/portraits/men/23.jpg",
-    "https://randomuser.me/api/portraits/men/24.jpg",
-    "https://randomuser.me/api/portraits/men/25.jpg",
-    "https://randomuser.me/api/portraits/men/26.jpg",
-    "https://randomuser.me/api/portraits/men/27.jpg",
-    "https://randomuser.me/api/portraits/men/28.jpg",
-    "https://randomuser.me/api/portraits/men/29.jpg",
-    "https://randomuser.me/api/portraits/men/30.jpg",
-    "https://randomuser.me/api/portraits/men/31.jpg",
-    "https://randomuser.me/api/portraits/men/32.jpg",
-    "https://randomuser.me/api/portraits/men/33.jpg",
-    "https://randomuser.me/api/portraits/men/34.jpg",
-    "https://randomuser.me/api/portraits/men/35.jpg",
-    "https://randomuser.me/api/portraits/men/36.jpg",
-    "https://randomuser.me/api/portraits/men/37.jpg",
-    "https://randomuser.me/api/portraits/men/38.jpg",
-    "https://randomuser.me/api/portraits/men/39.jpg",
-    "https://randomuser.me/api/portraits/men/40.jpg"
+    "https://randomuser.me/api/portraits/men/20.jpg"
   ];
 
   const emojis = [
-   // Smileys & Emotion
-  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
-  "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
-  "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳",
-  "🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄",
-  "😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴",
-  "😌","😔","😕","🙃","😢","😭","😤","😠","😡","🤬",
-  "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤤",
-  "😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑",
-  "🤠","😈","👿","👹","👺","💀","👻","👽","🤖","💩",
-  "😺","😸","😹","😻","😼","😽","🙀","😿","😾",
-
-  // People & Body
-  "👶","🧒","👦","👧","🧑","👨","👩","🧓","👴","👵",
-  "🤴","👸","👳‍♂️","👳‍♀️","🧕","👮‍♂️","👮‍♀️","👷‍♂️","👷‍♀️","💂‍♂️",
-  "🕵️‍♂️","🕵️‍♀️","👩‍⚕️","👨‍⚕️","👩‍🍳","👨‍🍳","👩‍🎓","👨‍🎓","👩‍🏫","👨‍🏫",
-
-  // Hand gestures
-  "👋","🤚","🖐️","✋","🖖","👌","🤌","🤏","✌️","🤞",
-  "🤟","🤘","🤙","👈","👉","👆","👇","☝️","👍","👎",
-  "✊","👊","🤛","🤜","👏","🙌","👐","🤲","🙏","✍️",
-
-  // Animals & Nature
-  "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯",
-  "🦁","🐮","🐷","🐽","🐸","🐵","🙈","🙉","🙊","🐒",
-  "🐔","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉","🦇",
-
-  // Food & Drink
-  "🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐",
-  "🥝","🍒","🍑","🥭","🍍","🥥","🥑","🍆","🥔","🥕",
-  "🌽","🌶️","🫑","🥒","🥬","🥦","🧄","🧅","🍄","🥜",
-  "🌰","🍞","🥐","🥖","🥨","🥯","🥞","🧇","🧀","🍖",
-  "🍗","🥩","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯",
-
-  // Activities
-  "⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱",
-  "🏓","🏸","🥅","🏒","🏑","🥍","🏏","🪃","🥊","🥋",
-
-  // Travel & Places
-  "🚗","🚕","🚙","🚌","🚎","🏎️","🚓","🚑","🚒","🚐",
-  "🚚","🚛","🚜","🛺","🚲","🛴","🛵","🏍️","🛶","⛵",
-  "🚤","🛳️","⛴️","🚢","✈️","🛩️","🚁","🛰️","🚀","🛸",
-
-  // Objects
-  "⌚","📱","📲","💻","🖥️","🖨️","🖱️","🖲️","🕹️","💽",
-  "💾","💿","📀","📷","📸","📹","🎥","📞","☎️","📟",
-
-  // Symbols
-  "❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔",
-  "❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️",
-  "✝️","☪️","🕉️","☸️","✡️","🔯","🕎","☯️","☦️","🛐"
+    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
+    "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
+    "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳",
+    "🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄",
+    "😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴",
+    "😌","😔","😕","🙃","😢","😭","😤","😠","😡","🤬",
+    "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤤",
+    "😴","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+    "🤑","🤠","😈","👿","👹","👺","💀","👻","👽","🤖",
+    "💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾"
   ];
 
   // State variables
@@ -543,16 +480,11 @@
       usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar });
     }
   }
-  function isEmojiOnly(text) {
-  const trimmed = text.trim();
-  return /^[\p{Emoji}\s]+$/u.test(trimmed);
-  }
 
   // Render message
   function renderMessage(msg) {
     const div = document.createElement("div");
-    const isEmoji = isEmojiOnly(msg.text);
-    div.className = "message " + (msg.userId === userId ? "you" : "") + (isEmoji ? " emoji-only" : "");
+    div.className = "message " + (msg.userId === userId ? "you" : "");
     div.setAttribute("tabindex", "0");
     div.setAttribute("role", "article");
     div.setAttribute("aria-label", `${msg.username} said: ${msg.text}`);
@@ -615,6 +547,7 @@
 
     div.appendChild(avatarWrapper);
     div.appendChild(content);
+
     return div;
   }
 
