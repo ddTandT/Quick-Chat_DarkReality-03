@@ -218,6 +218,10 @@
     border-radius: 6px;
     outline: none;
   }
+  function isEmojiOnly(text) {
+  const trimmed = text.trim();
+  return /^[\p{Emoji}\s]+$/u.test(trimmed);
+  }
 
   /* Modal for profile */
   #modalOverlay, #avatarPickerOverlay {
