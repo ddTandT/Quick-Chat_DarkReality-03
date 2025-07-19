@@ -218,11 +218,6 @@
     border-radius: 6px;
     outline: none;
   }
-  function isEmojiOnly(text) {
-  const trimmed = text.trim();
-  return /^[\p{Emoji}\s]+$/u.test(trimmed);
-  }
-
   /* Modal for profile */
   #modalOverlay, #avatarPickerOverlay {
     position: fixed;
@@ -548,11 +543,16 @@
       usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar });
     }
   }
+  function isEmojiOnly(text) {
+  const trimmed = text.trim();
+  return /^[\p{Emoji}\s]+$/u.test(trimmed);
+  }
 
   // Render message
   function renderMessage(msg) {
     const div = document.createElement("div");
-    div.className = "message " + (msg.userId === userId ? "you" : "");
+    const isEmoji = isEmojiOnly(msg.text);
+    div.className = "message " + (msg.userId === userId ? "you" : "") + (isEmoji ? " emoji-only" : "");
     div.setAttribute("tabindex", "0");
     div.setAttribute("role", "article");
     div.setAttribute("aria-label", `${msg.username} said: ${msg.text}`);
