@@ -615,6 +615,15 @@
 
     div.appendChild(avatarWrapper);
     div.appendChild(content);
+    div.innerHTML = `
+    <div class="message-header">
+      <img src="${getAvatarUrl(msg.userId)}" class="avatar" alt="Avatar">
+      <span class="username">${escapeHtml(msg.username || 'Unknown')}</span>
+    </div>
+    <div class="message-content">
+      <span>${escapeHtml(msg.text)}</span>
+    </div>
+  `;
 
     return div;
   }
