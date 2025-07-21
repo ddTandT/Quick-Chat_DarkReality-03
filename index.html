@@ -143,9 +143,6 @@
   .actions button:hover {
     color: #ff4444;
   }
-  .actions button.edit-btn::before {
-    content: "✏️";
-  }
   .actions button.delete-btn::before {
     content: "🗑️";
   }
@@ -231,23 +228,36 @@
     border-radius: 4px;
     outline: none;
   }
-  /* Reply styling */
+  /* Reply styling (Facebook Messenger style) */
   .reply-quote {
-    background: rgba(200, 200, 200, 0.4);
-    border-left: 3px solid #aaa;
-    padding: 5px 10px;
-    margin-bottom: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #0078d7;
+    padding: 6px 8px;
+    margin-bottom: 8px;
     font-size: 0.85em;
-    color: #333;
+    color: #ddd;
     border-radius: 4px;
+    position: relative;
   }
   body.night .reply-quote {
-    background: rgba(100, 100, 100, 0.4);
-    border-left-color: #888;
-    color: #ccc;
+    background: rgba(0, 0, 0, 0.3);
+    border-left-color: #005a9e;
+  }
+  .reply-quote::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 10px;
+    width: 50px;
+    height: 1px;
+    background: #0078d7;
+  }
+  body.night .reply-quote::before {
+    background: #005a9e;
   }
   .reply-quote .quote-sender {
     font-weight: bold;
+    margin-bottom: 2px;
   }
   .reactions {
     display: flex;
@@ -293,7 +303,7 @@
   #modalContent h2 {
     margin-top: 0;
   }
-  #usernameInput, #editInput {
+  #usernameInput {
     width: 100%;
     padding: 8px;
     font-size: 1em;
@@ -301,7 +311,7 @@
     border-radius: 4px;
     border: 1px solid #ccc;
   }
-  body.night #usernameInput, body.night #editInput {
+  body.night #usernameInput {
     background: #555;
     border: 1px solid #666;
     color: white;
@@ -310,7 +320,7 @@
     display: flex;
     gap: 10px;
   }
-  #saveProfileBtn, #saveEditBtn, #cancelEditBtn {
+  #saveProfileBtn {
     width: 100%;
     padding: 10px;
     font-weight: bold;
@@ -372,18 +382,6 @@
   </div>
 </div>
 
-<!-- Edit Message Modal -->
-<div id="editModalOverlay" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
-  <div id="editModalContent" tabindex="0">
-    <h2 id="editModalTitle">Edit Message</h2>
-    <input type="text" id="editInput" aria-required="true" aria-describedby="editModalTitle" />
-    <div class="btn-group">
-      <button id="saveEditBtn">Save</button>
-      <button id="cancelEditBtn">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <!-- Avatar Picker Modal -->
 <div id="avatarPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
   <div id="avatarPickerModal" tabindex="0"></div>
@@ -435,10 +433,6 @@
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
-  const editModalOverlay = document.getElementById("editModalOverlay");
-  const editInput = document.getElementById("editInput");
-  const saveEditBtn = document.getElementById("saveEditBtn");
-  const cancelEditBtn = document.getElementById("cancelEditBtn");
 
   // Male avatars only
   const maleAvatars = [
@@ -555,7 +549,6 @@
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
   let replyToMessage = null;
-  let editingMessageId = null;
 
   // Map of all known users { userId -> { username, avatar } }
   const usersMap = new Map();
@@ -590,11 +583,11 @@
   function escapeHTML(str) {
     if (!str) return "";
     return str.replace(/[&<>"']/g, (m) => ({
-      '&': "&",
-      '<': "<",
-      '>': ">",
-      '"': """,
-      "'": "'"
+      '&': "&amp;",
+      '<': "&lt;",
+      '>': "&gt;",
+      '"': "&quot;",
+      "'": "&apos;"
     })[m]);
   }
   function formatTime(ts) {
@@ -663,7 +656,7 @@
     const bubble = document.createElement("div");
     bubble.className = "bubble";
 
-    // Reply quote
+    // Reply quote (Facebook Messenger style)
     if (msg.replyTo) {
       const replyData = messagesCache.find(m => m.id === msg.replyTo);
       if (replyData) {
@@ -710,17 +703,10 @@
     timeSpan.textContent = formatTime(msg.timestamp);
     info.appendChild(timeSpan);
 
-    // Actions (edit, delete, reply, react)
+    // Actions (delete, reply, react)
     const actions = document.createElement("div");
     actions.className = "actions";
     if (msg.userId === userId) {
-      const editBtn = document.createElement("button");
-      editBtn.className = "edit-btn";
-      editBtn.setAttribute("aria-label", "Edit message");
-      editBtn.title = "Edit";
-      editBtn.addEventListener("click", () => editMessage(msg.id, msg.text));
-      actions.appendChild(editBtn);
-
       const deleteBtn = document.createElement("button");
       deleteBtn.className = "delete-btn";
       deleteBtn.setAttribute("aria-label", "Delete message");
@@ -809,30 +795,6 @@
       stopTyping();
     } catch (error) {
       alert("Failed to send message: " + error.message);
-    }
-  }
-
-  // Edit message
-  function editMessage(messageId, text) {
-    const msg = messagesCache.find(m => m.id === messageId);
-    if (!msg || msg.userId !== userId) return;
-    editInput.value = text || "";
-    editingMessageId = messageId;
-    editModalOverlay.style.display = "flex";
-    editInput.focus();
-  }
-
-  async function saveEdit() {
-    const newText = editInput.value.trim();
-    if (!newText || !editingMessageId) return;
-    const msgRef = ref(db, `messages/${editingMessageId}`);
-    try {
-      await update(msgRef, { text: newText, timestamp: Date.now() });
-      editModalOverlay.style.display = "none";
-      editingMessageId = null;
-      editInput.value = "";
-    } catch (error) {
-      alert("Failed to edit message: " + error.message);
     }
   }
 
@@ -1083,21 +1045,6 @@
     }
   });
 
-  // Edit modal handlers
-  saveEditBtn.addEventListener("click", saveEdit);
-  cancelEditBtn.addEventListener("click", () => {
-    editModalOverlay.style.display = "none";
-    editingMessageId = null;
-    editInput.value = "";
-  });
-  editModalOverlay.addEventListener("click", (e) => {
-    if (e.target === editModalOverlay) {
-      editModalOverlay.style.display = "none";
-      editingMessageId = null;
-      editInput.value = "";
-    }
-  });
-
   // Night mode toggle
   nightModeBtn.addEventListener("click", () => {
     const night = document.body.classList.toggle("night");
@@ -1183,10 +1130,6 @@
   function initUser() {
     currentUser = loadUserFromLocal();
     userId = generateUserId();
-    // Explicitly reset edit modal state
-    editModalOverlay.style.display = "none";
-    editingMessageId = null;
-    editInput.value = "";
     if (!currentUser || !currentUser.username) {
       openProfileModal();
     } else {
