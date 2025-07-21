@@ -347,6 +347,25 @@
     border-color: #005a9e;
     outline: none;
   }
+  /* Cancel reply button */
+  #cancelReplyBtn {
+    background: #ff4444;
+    padding: 8px;
+    font-size: 0.9em;
+  }
+  #cancelReplyBtn:hover {
+    background: #cc3333;
+  }
+  #replyIndicator {
+    display: none;
+    font-size: 0.9em;
+    color: #555;
+    margin-right: 5px;
+    white-space: nowrap;
+  }
+  body.night #replyIndicator {
+    color: #bbb;
+  }
 </style>
 </head>
 <body>
@@ -367,6 +386,8 @@
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
   <input type="file" id="fileInput" aria-label="File input" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
+  <span id="replyIndicator" aria-live="polite"></span>
+  <button id="cancelReplyBtn" style="display: none;" title="Cancel Reply" aria-label="Cancel Reply">✖</button>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
   <button id="sendBtn" title="Send Message" aria-label="Send Message">Send</button>
 </footer>
@@ -397,9 +418,9 @@
     getStorage, ref as storageRef, uploadBytes, getDownloadURL
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-  // Firebase config (replace with your own!)
+  // Firebase config
   const firebaseConfig = {
-    apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
+    apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJw-q9DOqbl0",
     authDomain: "live-chat-app-5ea98.firebaseapp.com",
     databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
     projectId: "live-chat-app-5ea98",
@@ -433,6 +454,8 @@
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
+  const replyIndicator = document.getElementById("replyIndicator");
+  const cancelReplyBtn = document.getElementById("cancelReplyBtn");
 
   // Male avatars only
   const maleAvatars = [
@@ -583,11 +606,11 @@
   function escapeHTML(str) {
     if (!str) return "";
     return str.replace(/[&<>"']/g, (m) => ({
-      '&': "&amp;",
-      '<': "&lt;",
-      '>': "&gt;",
-      '"': "&quot;",
-      "'": "&apos;"
+      '&': "&",
+      '<': "<",
+      '>': ">",
+      '"': """,
+      "'": "'"
     })[m]);
   }
   function formatTime(ts) {
@@ -791,8 +814,7 @@
     try {
       await push(messagesRef, msg);
       textInput.value = "";
-      replyToMessage = null;
-      stopTyping();
+      cancelReply();
     } catch (error) {
       alert("Failed to send message: " + error.message);
     }
@@ -815,7 +837,19 @@
   function setReplyTo(msg) {
     replyToMessage = msg;
     textInput.placeholder = `Replying to ${msg.username}...`;
+    replyIndicator.textContent = `Replying to ${msg.username}: ${msg.text || msg.fileName || "File"}`.slice(0, 50) + (msg.text?.length > 50 ? "..." : "");
+    replyIndicator.style.display = "inline";
+    cancelReplyBtn.style.display = "inline-block";
     textInput.focus();
+  }
+
+  function cancelReply() {
+    replyToMessage = null;
+    textInput.placeholder = "Type a message...";
+    replyIndicator.textContent = "";
+    replyIndicator.style.display = "none";
+    cancelReplyBtn.style.display = "none";
+    if (isTyping) stopTyping();
   }
 
   // Reactions
@@ -881,10 +915,6 @@
     if (typingTimeout) {
       clearTimeout(typingTimeout);
       typingTimeout = null;
-    }
-    if (replyToMessage) {
-      textInput.placeholder = "Type a message...";
-      replyToMessage = null;
     }
   }
 
@@ -987,6 +1017,11 @@
     } else {
       startTyping();
     }
+  });
+
+  // Cancel reply button
+  cancelReplyBtn.addEventListener("click", () => {
+    cancelReply();
   });
 
   // File sending with Firebase Storage
