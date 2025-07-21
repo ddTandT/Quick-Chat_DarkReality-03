@@ -215,13 +215,23 @@
     border-radius: 4px;
     outline: none;
   }
-
-  /* Modal for profile */
-  #modalOverlay, #avatarPickerOverlay {
+  #emojiPicker img {
+    cursor: pointer;
+    width: 80px;
+    height: 80px;
+    margin: 2px 4px;
+    border-radius: 4px;
+    user-select: none;
+  }
+  #emojiPicker img:hover, #emojiPicker img:focus {
+    background: #0078d7;
+    outline: 2px solid #0078d7;
+  }
+  #modalOverlay, #avatarPickerOverlay, #editModalOverlay {
     position: fixed;
     top: 0;
     left: 0;
-    right:0;
+    right: 0;
     bottom: 0;
     background: rgba(0,0,0,0.6);
     display: none;
@@ -229,7 +239,7 @@
     align-items: center;
     z-index: 1000;
   }
-  #modalContent, #avatarPickerModal {
+  #modalContent, #avatarPickerModal, #editModalContent {
     background: white;
     padding: 20px;
     border-radius: 8px;
@@ -238,7 +248,7 @@
     box-sizing: border-box;
     outline: none;
   }
-  body.night #modalContent, body.night #avatarPickerModal {
+  body.night #modalContent, body.night #avatarPickerModal, body.night #editModalContent {
     background: #444;
     color: white;
   }
@@ -263,7 +273,6 @@
     padding: 10px;
     font-weight: bold;
   }
-  /* Avatar picker */
   #avatarPickerModal h2 {
     margin: 0 0 10px 0;
     user-select: none;
@@ -285,6 +294,107 @@
     border-color: #005a9e;
     outline: none;
   }
+  /* Styles for existing features */
+  .reactions {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+  }
+  .reaction {
+    font-size: 0.8em;
+    padding: 2px 6px;
+    background: #f0f0f0;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  body.night .reaction {
+    background: #555;
+    color: white;
+  }
+  .reaction:hover {
+    background: #d0d0d0;
+  }
+  body.night .reaction:hover {
+    background: #666;
+  }
+  .reaction.active {
+    background: #0078d7;
+    color: white;
+  }
+  body.night .reaction.active {
+    background: #005a9e;
+  }
+  .read-receipt {
+    font-size: 0.7em;
+    color: #28a745;
+    margin-left: 10px;
+  }
+  body.night .read-receipt {
+    color: #4caf50;
+  }
+  .disappearing {
+    position: relative;
+  }
+  .disappearing::before {
+    content: "🕒";
+    position: absolute;
+    top: -10px;
+    left: -15px;
+    font-size: 0.8em;
+    color: #ccc;
+  }
+  body.night .disappearing::before {
+    color: #888;
+  }
+  .edited-label {
+    font-size: 0.7em;
+    color: #ccc;
+    margin-left: 5px;
+  }
+  body.night .edited-label {
+    color: #888;
+  }
+  #hdToggle, #stickerBtn, #emojiSizeToggle {
+    background: #f0f0f0;
+    color: #0078d7;
+    padding: 6px 10px;
+    font-size: 0.9em;
+  }
+  body.night #hdToggle, body.night #stickerBtn, body.night #emojiSizeToggle {
+    background: #444;
+    color: #66b0ff;
+  }
+  #hdToggle.active, #stickerBtn.active, #emojiSizeToggle.active {
+    background: #0078d7;
+    color: white;
+  }
+  body.night #hdToggle.active, body.night #stickerBtn.active, body.night #emojiSizeToggle.active {
+    background: #005a9e;
+  }
+  #editModalContent h2 {
+    margin-top: 0;
+  }
+  #editInput {
+    width: 100%;
+    padding: 8px;
+    font-size: 1em;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  body.night #editInput {
+    background: #555;
+    border: 1px solid #666;
+    color: white;
+  }
+  .large-emoji {
+    font-size: 40px;
+    padding: 4px;
+  }
+  .sticker {
+    max-width: 120px;
+    border-radius: 8px;
+  }
 </style>
 </head>
 <body>
@@ -303,13 +413,17 @@
 
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
-  <input type="file" id="fileInput" aria-label="File input" />
+  <input type="file" id="fileInput" aria-label="File input" accept="image/*" />
+  <button id="hdToggle" title="Toggle HD Photos" aria-label="Toggle HD Photos">HD</button>
+  <button id="disappearToggle" title="Toggle Disappearing Messages" aria-label="Toggle Disappearing Messages">🕒</button>
+  <button id="stickerBtn" title="Sticker Picker" aria-label="Sticker Picker">🎨</button>
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
+  <button id="emojiSizeToggle" title="Toggle Large Emojis" aria-label="Toggle Large Emojis">🔍</button>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
   <button id="sendBtn" title="Send Message" aria-label="Send Message">Send</button>
 </footer>
 
-<div id="emojiPicker" role="listbox" aria-label="Emoji picker"></div>
+<div id="emojiPicker" role="listbox" aria-label="Emoji and sticker picker"></div>
 
 <!-- Profile Modal -->
 <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -325,14 +439,23 @@
   <div id="avatarPickerModal" tabindex="0"></div>
 </div>
 
+<!-- Edit Message Modal -->
+<div id="editModalOverlay" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+  <div id="editModalContent" tabindex="0">
+    <h2 id="editModalTitle">Edit Message</h2>
+    <input type="text" id="editInput" aria-required="true" aria-describedby="editModalTitle" />
+    <button id="saveEditBtn">Save</button>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import {
     getDatabase, ref, push, onChildAdded, get, set,
-    remove, onValue, onDisconnect
+    remove, onValue, onDisconnect, update
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-  // Firebase config (replace with your own!)
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
     authDomain: "live-chat-app-5ea98.firebaseapp.com",
@@ -349,6 +472,10 @@
   const typingRef = ref(db, "typing");
   const presenceRef = ref(db, "presence");
   const connectedRef = ref(db, ".info/connected");
+  const reactionsRef = ref(db, "reactions");
+  const readReceiptsRef = ref(db, "read_receipts");
+  const editHistoryRef = ref(db, "edit_history");
+  const disappearingMessagesRef = ref(db, "disappearing_messages");
 
   // DOM elements
   const textInput = document.getElementById("text");
@@ -356,6 +483,8 @@
   const fileInput = document.getElementById("fileInput");
   const fileBtn = document.getElementById("fileBtn");
   const emojiBtn = document.getElementById("emojiBtn");
+  const stickerBtn = document.getElementById("stickerBtn");
+  const emojiSizeToggle = document.getElementById("emojiSizeToggle");
   const emojiPicker = document.getElementById("emojiPicker");
   const messagesDiv = document.getElementById("messages");
   const nightModeBtn = document.getElementById("nightModeBtn");
@@ -367,8 +496,13 @@
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
+  const hdToggle = document.getElementById("hdToggle");
+  const disappearToggle = document.getElementById("disappearToggle");
+  const editModalOverlay = document.getElementById("editModalOverlay");
+  const editInput = document.getElementById("editInput");
+  const saveEditBtn = document.getElementById("saveEditBtn");
 
-  // Male avatars only
+  // Male avatars
   const maleAvatars = [
     "https://randomuser.me/api/portraits/men/1.jpg",
     "https://randomuser.me/api/portraits/men/2.jpg",
@@ -402,87 +536,87 @@
     "https://randomuser.me/api/portraits/men/30.jpg"
   ];
 
+  // Stickers (placeholder URLs from a free sticker API)
+  const stickers = [
+    "https://stickers-api.example.com/sticker1.png",
+    "https://stickers-api.example.com/sticker2.png",
+    "https://stickers-api.example.com/sticker3.png",
+    "https://stickers-api.example.com/sticker4.png",
+    "https://stickers-api.example.com/sticker5.png",
+    "https://stickers-api.example.com/sticker6.png",
+    "https://stickers-api.example.com/sticker7.png",
+    "https://stickers-api.example.com/sticker8.png"
+  ];
+
+  // Emojis
+  const reactionEmojis = ["👍", "❤️", "😂", "😮"];
   const emojis = [
     "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
-  "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
-  "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳",
-  "🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄",
-  "😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴",
-  "😌","😔","😕","🙃","😢","😭","😤","😠","😡","🤬",
-  "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤤",
-  "😴","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
-  "🤑","🤠","😈","👿","👹","👺","💀","👻","👽","🤖",
-  "💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾",
-
-  // Hands & Gestures
-  "👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞",
-  "🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝","👍",
-  "👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝",
-  "🙏","✍","💅","🤳","💪","🦾","🦵","🦿","🦶",
-
-  // People & Body
-  "👶","🧒","👦","👧","🧑","👱‍♂️","👱‍♀️","👨","👩","🧔",
-  "👨‍🦰","👩‍🦰","👨‍🦱","👩‍🦱","👨‍🦳","👩‍🦳","👨‍🦲","👩‍🦲",
-  "🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏",
-  "🙇","🤦","🤷","👨‍⚕️","👩‍⚕️","👨‍🎓","👩‍🎓","👨‍🏫","👩‍🏫","👨‍⚖️",
-  "👩‍⚖️","👨‍🌾","👩‍🌾","👨‍🍳","👩‍🍳","👨‍🔧","👩‍🔧","👨‍🏭","👩‍🏭",
-  "👨‍💼","👩‍💼","👨‍🔬","👩‍🔬","👨‍🎤","👩‍🎤","👨‍🎨","👩‍🎨","👨‍✈️","👩‍✈️",
-  "👨‍🚀","👩‍🚀","👨‍🚒","👩‍🚒","👮","🕵️‍♂️","🕵️‍♀️","💂‍♂️","💂‍♀️","👷‍♂️",
-  "👷‍♀️","🤴","👸","👳‍♂️","👳‍♀️","👲","🧕","🤵","👰","🤰",
-  "🤱","👼","🎅","🤶","🦸‍♂️","🦸‍♀️","🦹‍♂️","🦹‍♀️","🧙‍♂️","🧙‍♀️",
-  "🧚‍♂️","🧚‍♀️","🧛‍♂️","🧛‍♀️","🧜‍♂️","🧜‍♀️","🧝‍♂️","🧝‍♀️","🧞‍♂️","🧞‍♀️",
-  "🧟‍♂️","🧟‍♀️","💆‍♂️","💆‍♀️","💇‍♂️","💇‍♀️","🚶‍♂️","🚶‍♀️","🏃‍♂️","🏃‍♀️",
-
-  // Animals & Nature
-  "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐻‍❄️","🐨",
-  "🐯","🦁","🐮","🐷","🐽","🐸","🐵","🙈","🙉","🙊",
-  "🐒","🐔","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉",
-  "🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐚",
-  "🐞","🐜","🦟","🦗","🕷","🕸","🐢","🐍","🦎","🐙",
-  "🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋",
-  "🦈","🐊","🐅","🐆","🦓","🦍","🦧","🐘","🦛","🦏",
-  "🐪","🐫","🦒","🐃","🐂","🐄","🐎","🐖","🐐","🐏",
-  "🐑","🐕","🐩","🐈","🐓","🦃","🦚","🦜","🦢","🦩",
-  "🕊","🐇","🦝","🦨","🦡","🦦","🦥","🐁","🐀","🐿",
-  "🦔",
-
-  // Food & Drink
-  "🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐",
-  "🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑",
-  "🥦","🥬","🥒","🌶","🫑","🌽","🥕","🫒","🥔","🍠",
-  "🥐","🍞","🥖","🥨","🥯","🥞","🧇","🧀","🍖","🍗",
-  "🥩","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🫔",
-  "🥙","🧆","🥚","🍳","🥘","🍲","🥗","🍿","🧈","🧃",
-  "🥤","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🍾","🧉",
-
-  // Travel & Places
-  "🚗","🚕","🚙","🚌","🚎","🏎","🚓","🚑","🚒","🚐",
-  "🛻","🚚","🚛","🚜","🛵","🏍","🛺","🚲","🛴","🛹",
-  "🛼","🚨","🚔","🚍","🚘","🚖","🚡","🚠","🚟","🚃",
-  "🚋","🚞","🚝","🚄","🚅","🚈","🚂","🚆","🚇","🚊",
-  "🚉","✈️","🛫","🛬","🛩","💺","🚀","🛸","🚁","🛶",
-  "⛵","🚤","🛥","🛳","⛴","🚢",
-
-  // Objects & Symbols
-  "⌚","📱","📲","💻","⌨️","🖥","🖨","🖱","🖲","🕹",
-  "🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥",
-  "📽","🎞","📞","☎️","📟","📠","📺","📻","🎙","🎚",
-  "🎛","⏱","⏲","⏰","🕰","⌛","⏳","📡","🔋","🔌",
-  "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘","📙",
-  "📚","📓","📒","📃","📜","📄","📰","🗞","📑","🔖",
-  "🏷","💰","💴","💵","💶","💷","💸","💳","🧾","💹",
-  "✉️","📧","📨","📩","📤","📥","📦","📫","📪","📬",
-  "📭","📮","🗳","✏️","🖊","🖋","🖌","🖍","📝","📅",
-  "📆","🗓","📇","📈","📉","📊","📋","📌","📍","📎",
-  "🖇","📏","📐","✂️","🗃","🗂","🗒","🗓","📁","📂",
-  "🗑","🔒","🔓","🔏","🔐","🔑","🗝","🔨","🪓","⛏",
-  "⚒","🛠","🗡","⚔","🔫","🛡","🚬","⚰","🪦","⚱",
-  "🏺","🔮","📿","🧿","💈","⚗","🧪","🧫","🧬","🔬",
-  "🔭","📡","💣","🧨","🪓","🔧","🪛","🔩","⚙","🦯",
-
-  // Flags (some examples)
-  "🇺🇸","🇬🇧","🇨🇦","🇦🇺","🇫🇷","🇩🇪","🇮🇳","🇯🇵","🇰🇷","🇧🇷",
-  "🇿🇦","🇲🇽","🇨🇳","🇷🇺","🇮🇹","🇪🇸","🇳🇱","🇸🇪","🇳🇴","🇫🇮"
+    "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
+    "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳",
+    "🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄",
+    "😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴",
+    "😌","😔","😕","🙃","😢","😭","😤","😠","😡","🤬",
+    "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤤",
+    "😴","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+    "🤑","🤠","😈","👿","👹","👺","💀","👻","👽","🤖",
+    "💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾",
+    "👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞",
+    "🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝","👍",
+    "👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝",
+    "🙏","✍","💅","🤳","💪","🦾","🦵","🦿","🦶",
+    "👶","🧒","👦","👧","🧑","👱‍♂️","👱‍♀️","👨","👩","🧔",
+    "👨‍🦰","👩‍🦰","👨‍🦱","👩‍🦱","👨‍🦳","👩‍🦳","👨‍🦲","👩‍🦲",
+    "🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏",
+    "🙇","🤦","🤷","👨‍⚕️","👩‍⚕️","👨‍🎓","👩‍🎓","👨‍🏫","👩‍🏫","👨‍⚖️",
+    "👩‍⚖️","👨‍🌾","👩‍🌾","👨‍🍳","👩‍🍳","👨‍🔧","👩‍🔧","👨‍🏭","👩‍🏭",
+    "👨‍💼","👩‍💼","👨‍🔬","👩‍🔬","👨‍🎤","👩‍🎤","👨‍🎨","👩‍🎨","👨‍✈️","👩‍✈️",
+    "👨‍🚀","👩‍🚀","👨‍🚒","👩‍🚒","👮","🕵️‍♂️","🕵️‍♀️","💂‍♂️","💂‍♀️","👷‍♂️",
+    "👷‍♀️","🤴","👸","👳‍♂️","👳‍♀️","👲","🧕","🤵","👰","🤰",
+    "🤱","👼","🎅","🤶","🦸‍♂️","🦸‍♀️","🦹‍♂️","🦹‍♀️","🧙‍♂️","🧙‍♀️",
+    "🧚‍♂️","🧚‍♀️","🧛‍♂️","🧛‍♀️","🧜‍♂️","🧜‍♀️","🧝‍♂️","🧝‍♀️","🧞‍♂️","🧞‍♀️",
+    "🧟‍♂️","🧟‍♀️","💆‍♂️","💆‍♀️","💇‍♂️","💇‍♀️","🚶‍♂️","🚶‍♀️","🏃‍♂️","🏃‍♀️",
+    "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐻‍❄️","🐨",
+    "🐯","🦁","🐮","🐷","🐽","🐸","🐵","🙈","🙉","🙊",
+    "🐒","🐔","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉",
+    "🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐚",
+    "🐞","🐜","🦟","🦗","🕷","🕸","🐢","🐍","🦎","🐙",
+    "🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋",
+    "🦈","🐊","🐅","🐆","🦓","🦍","🦧","🐘","🦛","🦏",
+    "🐪","🐫","🦒","🐃","🐂","🐄","🐎","🐖","🐐","🐏",
+    "🐑","🐕","🐩","🐈","🐓","🦃","🦚","🦜","🦢","🦩",
+    "🕊","🐇","🦝","🦨","🦡","🦦","🦥","🐁","🐀","🐿",
+    "🦔",
+    "🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐",
+    "🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑",
+    "🥦","🥬","🥒","🌶","🫑","🌽","🥕","🫒","🥔","🍠",
+    "🥐","🍞","🥖","🥨","🥯","🥞","🧇","🧀","🍖","🍗",
+    "🥩","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🫔",
+    "🥙","🧆","🥚","🍳","🥘","🍲","🥗","🍿","🧈","🧃",
+    "🥤","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🍾","🧉",
+    "🚗","🚕","🚙","🚌","🚎","🏎","🚓","🚑","🚒","🚐",
+    "🛻","🚚","🚛","🚜","🛵","🏍","🛺","🚲","🛴","🛹",
+    "🛼","🚨","🚔","🚍","🚘","🚖","🚡","🚠","🚟","🚃",
+    "🚋","🚞","🚝","🚄","🚅","🚈","🚂","🚆","🚇","🚊",
+    "🚉","✈️","🛫","🛬","🛩","💺","🚀","🛸","🚁","🛶",
+    "⛵","🚤","🛥","🛳","⛴","🚢",
+    "⌚","📱","📲","💻","⌨️","🖥","🖨","🖱","🖲","🕹",
+    "🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥",
+    "📽","🎞","📞","☎️","📟","📠","📺","📻","🎙","🎚",
+    "🎛","⏱","⏲","⏰","🕰","⌛","⏳","📡","🔋","🔌",
+    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘","📙",
+    "📚","📓","📒","📃","📜","📄","📰","🗞","📑","🔖",
+    "🏷","💰","💴","💵","💶","💷","💸","💳","🧾","💹",
+    "✉️","📧","📨","📩","📤","📥","📦","📫","📪","📬",
+    "📭","📮","🗳","✏️","🖊","🖋","🖌","🖍","📝","📅",
+    "📆","🗓","📇","📈","📉","📊","📋","📌","📍","📎",
+    "🖇","📏","📐","✂️","🗃","🗂","🗒","🗓","📁","📂",
+    "🗑","🔒","🔓","🔏","🔐","🔑","🗝","🔨","🪓","⛏",
+    "⚒","🛠","🗡","⚔","🔫","🛡","🚬","⚰","🪦","⚱",
+    "🏺","🔮","📿","🧿","💈","⚗","🧪","🧫","🧬","🔬",
+    "🔭","📡","💣","🧨","🪓","🔧","🪛","🔩","⚙","🦯",
+    "🇺🇸","🇬🇧","🇨🇦","🇦🇺","🇫🇷","🇩🇪","🇮🇳","🇯🇵","🇰🇷","🇧🇷",
+    "🇿🇦","🇲🇽","🇨🇳","🇷🇺","🇮🇹","🇪🇸","🇳🇱","🇸🇪","🇳🇴","🇫🇮"
   ];
 
   // State variables
@@ -494,9 +628,11 @@
   let messagesCache = [];
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
-
-  // Map of all known users { userId -> { username, avatar } }
   const usersMap = new Map();
+  let isHDEnabled = false;
+  let isDisappearEnabled = false;
+  let isLargeEmojiMode = false;
+  let isStickerMode = false;
 
   // Utility functions
   function saveUserToLocal(user) {
@@ -528,11 +664,11 @@
   function escapeHTML(str) {
     if (!str) return "";
     return str.replace(/[&<>"']/g, (m) => ({
-      '&': "&amp;",
-      '<': "&lt;",
-      '>': "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
+      '&': "&",
+      '<': "<",
+      '>': ">",
+      '"': """,
+      "'": "'"
     })[m]);
   }
   function formatTime(ts) {
@@ -540,7 +676,6 @@
     return d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
   }
   function getAvatarForUser(user) {
-    // If user.avatar is set, return that else assign one deterministically based on userId
     if (user.avatar) return user.avatar;
     const idx = hashCode(user.username + userId) % maleAvatars.length;
     return maleAvatars[Math.abs(idx)];
@@ -549,7 +684,7 @@
     let hash = 0;
     for(let i=0; i < str.length; i++) {
       hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0; // Convert to 32bit integer
+      hash |= 0;
     }
     return hash;
   }
@@ -561,13 +696,14 @@
     }
   }
 
-  // Render message
-  function renderMessage(msg) {
+  // Render message with reactions, read receipts, disappearing indicator, edited label, stickers, and large emojis
+  function renderMessage(msg, reactions = {}, readBy = [], isDisappearing = false, isEdited = false) {
     const div = document.createElement("div");
     div.className = "message " + (msg.userId === userId ? "you" : "");
     div.setAttribute("tabindex", "0");
     div.setAttribute("role", "article");
-    div.setAttribute("aria-label", `${msg.username} said: ${msg.text}`);
+    div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.stickerUrl || (msg.isLargeEmoji ? 'Large emoji' : '')}${isEdited ? ' (edited)' : ''}${isDisappearing ? ' (disappears after 24 hours)' : ''}`);
+    div.dataset.messageId = msg.id;
 
     // Avatar with presence dot
     const avatarWrapper = document.createElement("div");
@@ -593,18 +729,30 @@
     sender.textContent = msg.username;
     content.appendChild(sender);
 
-    // Bubble with text or file
+    // Bubble with text, file, sticker, or large emoji
     const bubble = document.createElement("div");
     bubble.className = "bubble";
+    if (isDisappearing) bubble.classList.add("disappearing");
 
-    // If message is a file URL (simple check)
-    if (msg.fileUrl) {
+    if (msg.stickerUrl) {
+      const stickerImg = document.createElement("img");
+      stickerImg.src = msg.stickerUrl;
+      stickerImg.className = "sticker";
+      stickerImg.alt = "Sticker";
+      bubble.appendChild(stickerImg);
+    } else if (msg.isLargeEmoji) {
+      const emojiSpan = document.createElement("span");
+      emojiSpan.className = "large-emoji";
+      emojiSpan.textContent = msg.text;
+      bubble.appendChild(emojiSpan);
+    } else if (msg.fileUrl) {
       const ext = msg.fileUrl.split('.').pop().toLowerCase();
       if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)) {
         const imgFile = document.createElement("img");
         imgFile.src = msg.fileUrl;
         imgFile.style.maxWidth = "100%";
         imgFile.style.borderRadius = "8px";
+        if (msg.isHD) imgFile.alt = "High-definition image";
         bubble.appendChild(imgFile);
       } else {
         const a = document.createElement("a");
@@ -619,10 +767,72 @@
     }
     content.appendChild(bubble);
 
-    // Info bar with timestamp
+    // Reactions
+    const reactionsDiv = document.createElement("div");
+    reactionsDiv.className = "reactions";
+    const reactionCounts = {};
+    Object.entries(reactions).forEach(([uid, emoji]) => {
+      reactionCounts[emoji] = (reactionCounts[emoji] || 0) + 1;
+    });
+    reactionEmojis.forEach(emoji => {
+      if (reactionCounts[emoji]) {
+        const reactionSpan = document.createElement("span");
+        reactionSpan.className = "reaction";
+        if (reactions[userId] === emoji) reactionSpan.classList.add("active");
+        reactionSpan.textContent = `${emoji} ${reactionCounts[emoji]}`;
+        reactionSpan.setAttribute("aria-label", `${emoji} reaction, ${reactionCounts[emoji]} users`);
+        reactionSpan.tabIndex = 0;
+        reactionSpan.addEventListener("click", () => toggleReaction(msg.id, emoji));
+        reactionSpan.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleReaction(msg.id, emoji);
+          }
+        });
+        reactionsDiv.appendChild(reactionSpan);
+      }
+    });
+    content.appendChild(reactionsDiv);
+
+    // Info bar with timestamp, read receipt, and edit button
     const info = document.createElement("div");
     info.className = "info";
-    info.textContent = formatTime(msg.timestamp);
+    const timeSpan = document.createElement("span");
+    timeSpan.textContent = formatTime(msg.timestamp);
+    if (isEdited) {
+      const editedLabel = document.createElement("span");
+      editedLabel.className = "edited-label";
+      editedLabel.textContent = "Edited";
+      timeSpan.appendChild(editedLabel);
+    }
+    info.appendChild(timeSpan);
+
+    // Add reaction picker and edit buttons
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const reactionBtn = document.createElement("button");
+    reactionBtn.textContent = "😀";
+    reactionBtn.setAttribute("aria-label", "Add reaction");
+    reactionBtn.addEventListener("click", () => showReactionPicker(msg.id, reactionBtn));
+    actions.appendChild(reactionBtn);
+
+    if (msg.userId === userId && !msg.fileUrl && !msg.stickerUrl && !msg.isLargeEmoji && (Date.now() - msg.timestamp) < 15 * 60 * 1000) {
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✎";
+      editBtn.setAttribute("aria-label", "Edit message");
+      editBtn.addEventListener("click", () => openEditModal(msg.id, msg.text));
+      actions.appendChild(editBtn);
+    }
+    info.appendChild(actions);
+
+    // Read receipt for messages sent by current user
+    if (msg.userId === userId && readBy.length > 0) {
+      const readSpan = document.createElement("span");
+      readSpan.className = "read-receipt";
+      readSpan.textContent = `Read by ${readBy.length}`;
+      readSpan.setAttribute("aria-label", `Read by ${readBy.length} users`);
+      info.appendChild(readSpan);
+    }
     content.appendChild(info);
 
     div.appendChild(avatarWrapper);
@@ -631,13 +841,117 @@
     return div;
   }
 
+  // Reaction picker
+  function showReactionPicker(messageId, button) {
+    const picker = document.createElement("div");
+    picker.className = "emojiPicker";
+    picker.style.position = "absolute";
+    picker.style.bottom = "30px";
+    picker.style.left = "0";
+    picker.style.background = document.body.classList.contains("night") ? "#333" : "#fff";
+    picker.style.border = "1px solid #ccc";
+    picker.style.padding = "5px";
+    picker.style.borderRadius = "6px";
+    picker.style.display = "flex";
+    picker.style.flexWrap = "wrap";
+    picker.style.maxWidth = "150px";
+    picker.style.zIndex = "10";
+
+    reactionEmojis.forEach(emoji => {
+      const span = document.createElement("span");
+      span.textContent = emoji;
+      span.style.cursor = "pointer";
+      span.style.fontSize = "20px";
+      span.style.margin = "2px 4px";
+      span.tabIndex = 0;
+      span.setAttribute("aria-label", `React with ${emoji}`);
+      span.addEventListener("click", () => {
+        toggleReaction(messageId, emoji);
+        picker.remove();
+      });
+      span.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleReaction(messageId, emoji);
+          picker.remove();
+        }
+      });
+      picker.appendChild(span);
+    });
+
+    button.parentNode.appendChild(picker);
+    document.addEventListener("click", (e) => {
+      if (!picker.contains(e.target) && e.target !== button) {
+        picker.remove();
+      }
+    }, { once: true });
+  }
+
+  // Toggle reaction
+  async function toggleReaction(messageId, emoji) {
+    const reactionPath = `reactions/${messageId}/${userId}`;
+    const reactionRef = ref(db, reactionPath);
+    const snapshot = await get(reactionRef);
+    if (snapshot.exists() && snapshot.val() === emoji) {
+      await remove(reactionRef);
+    } else {
+      await set(reactionRef, emoji);
+    }
+  }
+
+  // Mark message as read
+  async function markMessageAsRead(messageId) {
+    if (!userId) return;
+    await set(ref(db, `read_receipts/${messageId}/${userId}`), Date.now());
+  }
+
+  // Edit message
+  function openEditModal(messageId, currentText) {
+    editInput.value = currentText;
+    editModalOverlay.style.display = "flex";
+    editInput.focus();
+    saveEditBtn.onclick = async () => {
+      const newText = editInput.value.trim();
+      if (newText && newText !== currentText) {
+        await set(ref(db, `messages/${messageId}/text`), newText);
+        await set(ref(db, `edit_history/${messageId}/${Date.now()}`), {
+          oldText: currentText,
+          newText,
+          userId,
+          timestamp: Date.now()
+        });
+      }
+      editModalOverlay.style.display = "none";
+    };
+  }
+
+  editModalOverlay.addEventListener("click", (e) => {
+    if (e.target === editModalOverlay) editModalOverlay.style.display = "none";
+  });
+
+  // Clean up expired disappearing messages
+  async function cleanupDisappearingMessages() {
+    const snapshot = await get(disappearingMessagesRef);
+    if (!snapshot.exists()) return;
+    const now = Date.now();
+    const promises = [];
+    snapshot.forEach(child => {
+      const msgId = child.key;
+      const expiresAt = child.val().expiresAt;
+      if (now >= expiresAt) {
+        promises.push(remove(ref(db, `messages/${msgId}`)));
+        promises.push(remove(ref(db, `disappearing_messages/${msgId}`)));
+      }
+    });
+    await Promise.all(promises);
+  }
+
+  // Render all messages with presence, reactions, and read receipts
   function renderAllMessagesPresence() {
-    // Re-render presence dots on all messages
     Array.from(messagesDiv.children).forEach(div => {
       const avatarWrapper = div.querySelector(".avatar");
       if (!avatarWrapper) return;
       const userIdInMsg = Array.from(usersMap).find(([uid, u]) => {
-        // Match user by username from message div label (a hack)
         return div.getAttribute("aria-label")?.startsWith(u.username);
       })?.[0];
       if (!userIdInMsg) return;
@@ -648,27 +962,37 @@
   }
 
   // Add message to UI and cache
-  function addMessage(msg) {
+  async function addMessage(msg, reactions = {}, readBy = [], isDisappearing = false, isEdited = false) {
     cacheUserInfo(msg);
-    messagesCache.push(msg);
-    const dom = renderMessage(msg);
+    messagesCache.push({ ...msg, reactions, readBy, isDisappearing, isEdited });
+    const dom = renderMessage(msg, reactions, readBy, isDisappearing, isEdited);
     messagesDiv.appendChild(dom);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    if (msg.userId !== userId) {
+      await markMessageAsRead(msg.id);
+    }
   }
 
   // Send a message
-  async function sendMessage(text, fileUrl = null, fileName = null) {
-    if (!text && !fileUrl) return;
+  async function sendMessage(text, fileUrl = null, fileName = null, isHD = false, stickerUrl = null, isLargeEmoji = false) {
+    if (!text && !fileUrl && !stickerUrl && !isLargeEmoji) return;
     const msg = {
       text: text || "",
       fileUrl: fileUrl || null,
       fileName: fileName || null,
+      stickerUrl: stickerUrl || null,
+      isLargeEmoji: isLargeEmoji || false,
       timestamp: Date.now(),
       userId,
       username: currentUser.username,
-      avatar: selectedAvatarUrl
+      avatar: selectedAvatarUrl,
+      isHD: fileUrl ? isHD : false
     };
-    await push(messagesRef, msg);
+    const messageRef = await push(messagesRef, msg);
+    if (isDisappearEnabled && !fileUrl && !stickerUrl && !isLargeEmoji) {
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+      await set(ref(db, `disappearing_messages/${messageRef.key}`), { expiresAt });
+    }
     textInput.value = "";
     stopTyping();
   }
@@ -693,12 +1017,11 @@
     }
   }
 
-  // Listen to typing of others and show indicator
+  // Listen to typing of others
   onValue(typingRef, (snapshot) => {
     const typingUsers = [];
     snapshot.forEach(child => {
       if (child.key !== userId && child.val()) {
-        // Show only if user is online
         if (presenceMap.get(child.key) === "online") {
           typingUsers.push(child.key);
         }
@@ -723,23 +1046,100 @@
   });
 
   // Listen for new messages
-  onChildAdded(messagesRef, (data) => {
+  onChildAdded(messagesRef, async (data) => {
     const msg = data.val();
     msg.id = data.key;
-    addMessage(msg);
+    const reactionsSnap = await get(ref(db, `reactions/${msg.id}`));
+    const reactions = reactionsSnap.val() || {};
+    const readBySnap = await get(ref(db, `read_receipts/${msg.id}`));
+    const readBy = readBySnap.val() ? Object.keys(readBySnap.val()) : [];
+    const disappearSnap = await get(ref(db, `disappearing_messages/${msg.id}`));
+    const isDisappearing = disappearSnap.exists();
+    const editSnap = await get(ref(db, `edit_history/${msg.id}`));
+    const isEdited = editSnap.exists();
+    await addMessage(msg, reactions, readBy, isDisappearing, isEdited);
   });
 
-  // Load existing messages on page load
-  onValue(messagesRef, (snapshot) => {
+  // Load existing messages and metadata
+  onValue(messagesRef, async (snapshot) => {
     messagesCache = [];
     usersMap.clear();
     messagesDiv.innerHTML = "";
+    const promises = [];
     snapshot.forEach(child => {
       const m = child.val();
       m.id = child.key;
-      cacheUserInfo(m);
-      messagesCache.push(m);
-      messagesDiv.appendChild(renderMessage(m));
+      promises.push(
+        Promise.all([
+          get(ref(db, `reactions/${m.id}`)).then(snap => snap.val() || {}),
+          get(ref(db, `read_receipts/${m.id}`)).then(snap => snap.val() ? Object.keys(snap.val()) : []),
+          get(ref(db, `disappearing_messages/${m.id}`)).then(snap => snap.exists()),
+          get(ref(db, `edit_history/${m.id}`)).then(snap => snap.exists())
+        ]).then(([reactions, readBy, isDisappearing, isEdited]) => {
+          cacheUserInfo(m);
+          messagesCache.push({ ...m, reactions, readBy, isDisappearing, isEdited });
+          messagesDiv.appendChild(renderMessage(m, reactions, readBy, isDisappearing, isEdited));
+        })
+      );
+    });
+    await Promise.all(promises);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    messagesCache.forEach(msg => {
+      if (msg.userId !== userId) {
+        markMessageAsRead(msg.id);
+      }
+    });
+    await cleanupDisappearingMessages();
+  });
+
+  // Listen for reactions
+  onValue(reactionsRef, (snapshot) => {
+    messagesDiv.querySelectorAll(".message").forEach(div => {
+      const messageId = div.dataset.messageId;
+      const msg = messagesCache.find(m => m.id === messageId);
+      if (!msg) return;
+      const reactions = snapshot.val()?.[messageId] || {};
+      msg.reactions = reactions;
+      const newDiv = renderMessage(msg, reactions, msg.readBy, msg.isDisappearing, msg.isEdited);
+      div.replaceWith(newDiv);
+    });
+  });
+
+  // Listen for read receipts
+  onValue(readReceiptsRef, (snapshot) => {
+    messagesDiv.querySelectorAll(".message").forEach(div => {
+      const messageId = div.dataset.messageId;
+      const msg = messagesCache.find(m => m.id === messageId);
+      if (!msg || msg.userId !== userId) return;
+      const readBy = snapshot.val()?.[messageId] ? Object.keys(snapshot.val()[messageId]) : [];
+      msg.readBy = readBy;
+      const newDiv = renderMessage(msg, msg.reactions, readBy, msg.isDisappearing, msg.isEdited);
+      div.replaceWith(newDiv);
+    });
+  });
+
+  // Listen for disappearing messages
+  onValue(disappearingMessagesRef, (snapshot) => {
+    messagesDiv.querySelectorAll(".message").forEach(div => {
+      const messageId = div.dataset.messageId;
+      const msg = messagesCache.find(m => m.id === messageId);
+      if (!msg) return;
+      msg.isDisappearing = snapshot.val()?.[messageId] ? true : false;
+      const newDiv = renderMessage(msg, msg.reactions, msg.readBy, msg.isDisappearing, msg.isEdited);
+      div.replaceWith(newDiv);
+    });
+    cleanupDisappearingMessages();
+  });
+
+  // Listen for edited messages
+  onValue(editHistoryRef, (snapshot) => {
+    messagesDiv.querySelectorAll(".message").forEach(div => {
+      const messageId = div.dataset.messageId;
+      const msg = messagesCache.find(m => m.id === messageId);
+      if (!msg) return;
+      msg.isEdited = snapshot.val()?.[messageId] ? true : false;
+      const newDiv = renderMessage(msg, msg.reactions, msg.readBy, msg.isDisappearing, msg.isEdited);
+      div.replaceWith(newDiv);
     });
   });
 
@@ -753,8 +1153,6 @@
       if (snap.val() === true) {
         set(userPresenceRef, { state: "online", lastChanged: Date.now() });
         onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() });
-
-        // Remove typing flag on disconnect
         onDisconnect(userTypingRef).remove();
       }
     });
@@ -797,54 +1195,117 @@
     }
   });
 
-  // File sending
+  // File sending with HD toggle
   fileBtn.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async function() {
-      // Store file as base64 in message (small files only)
-      await sendMessage("", reader.result, file.name);
+      await sendMessage("", reader.result, file.name, isHDEnabled);
       fileInput.value = "";
     };
     reader.readAsDataURL(file);
   });
 
-  // Emoji picker
-  function populateEmojiPicker() {
+  // HD toggle
+  hdToggle.addEventListener("click", () => {
+    isHDEnabled = !isHDEnabled;
+    hdToggle.classList.toggle("active", isHDEnabled);
+    hdToggle.setAttribute("aria-pressed", isHDEnabled);
+  });
+
+  // Disappearing messages toggle
+  disappearToggle.addEventListener("click", () => {
+    isDisappearEnabled = !isDisappearEnabled;
+    disappearToggle.classList.toggle("active", isDisappearEnabled);
+    disappearToggle.setAttribute("aria-pressed", isDisappearEnabled);
+  });
+
+  // Emoji and sticker picker
+  function populatePicker() {
     emojiPicker.innerHTML = "";
-    emojis.forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.tabIndex = 0;
-      span.addEventListener("click", () => {
-        textInput.value += e;
-        textInput.focus();
-        emojiPicker.style.display = "none";
+    if (isStickerMode) {
+      stickers.forEach(url => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Sticker";
+        img.tabIndex = 0;
+        img.addEventListener("click", () => {
+          sendMessage("", null, null, false, url);
+          emojiPicker.style.display = "none";
+          stickerBtn.classList.remove("active");
+          isStickerMode = false;
+        });
+        img.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            img.click();
+          }
+        });
+        emojiPicker.appendChild(img);
       });
-      span.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter" || ev.key === " ") {
-          ev.preventDefault();
-          span.click();
-        }
+    } else {
+      emojis.forEach(e => {
+        const span = document.createElement("span");
+        span.textContent = e;
+        span.style.fontSize = isLargeEmojiMode ? "40px" : "20px";
+        span.tabIndex = 0;
+        span.addEventListener("click", () => {
+          if (isLargeEmojiMode) {
+            sendMessage(e, null, null, false, null, true);
+            emojiPicker.style.display = "none";
+            emojiBtn.classList.remove("active");
+            emojiSizeToggle.classList.remove("active");
+            isLargeEmojiMode = false;
+          } else {
+            textInput.value += e;
+            textInput.focus();
+            emojiPicker.style.display = "none";
+            emojiBtn.classList.remove("active");
+          }
+        });
+        span.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            span.click();
+          }
+        });
+        emojiPicker.appendChild(span);
       });
-      emojiPicker.appendChild(span);
-    });
+    }
   }
-  populateEmojiPicker();
 
   emojiBtn.addEventListener("click", () => {
-    if (emojiPicker.style.display === "flex") {
-      emojiPicker.style.display = "none";
-    } else {
-      emojiPicker.style.display = "flex";
+    isStickerMode = false;
+    stickerBtn.classList.remove("active");
+    populatePicker();
+    emojiBtn.classList.toggle("active");
+    emojiPicker.style.display = emojiBtn.classList.contains("active") ? "flex" : "none";
+  });
+
+  stickerBtn.addEventListener("click", () => {
+    isStickerMode = true;
+    emojiBtn.classList.remove("active");
+    populatePicker();
+    stickerBtn.classList.toggle("active");
+    emojiPicker.style.display = stickerBtn.classList.contains("active") ? "flex" : "none";
+  });
+
+  emojiSizeToggle.addEventListener("click", () => {
+    isLargeEmojiMode = !isLargeEmojiMode;
+    emojiSizeToggle.classList.toggle("active", isLargeEmojiMode);
+    emojiSizeToggle.setAttribute("aria-pressed", isLargeEmojiMode);
+    if (emojiBtn.classList.contains("active")) {
+      populatePicker();
     }
   });
 
   document.addEventListener("click", (e) => {
-    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn && e.target !== stickerBtn) {
       emojiPicker.style.display = "none";
+      emojiBtn.classList.remove("active");
+      stickerBtn.classList.remove("active");
     }
   });
 
@@ -854,7 +1315,6 @@
     saveNightMode(night);
   });
 
-  // Load night mode
   if (loadNightMode()) {
     document.body.classList.add("night");
   }
@@ -885,19 +1345,6 @@
   changeUserBtn.addEventListener("click", () => {
     openProfileModal();
   });
-
-  // On page load - check for user
-  function initUser() {
-    currentUser = loadUserFromLocal();
-    userId = generateUserId();
-    if (!currentUser || !currentUser.username) {
-      openProfileModal();
-    } else {
-      selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
-      currentUser.avatar = selectedAvatarUrl;
-      setupPresence();
-    }
-  }
 
   // Avatar Picker
   avatarPickerBtn.addEventListener("click", () => {
@@ -943,6 +1390,18 @@
   });
 
   // Initialize user
+  function initUser() {
+    currentUser = loadUserFromLocal();
+    userId = generateUserId();
+    if (!currentUser || !currentUser.username) {
+      openProfileModal();
+    } else {
+      selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
+      currentUser.avatar = selectedAvatarUrl;
+      setupPresence();
+    }
+  }
+
   initUser();
 
 </script>
