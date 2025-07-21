@@ -25,7 +25,7 @@
     padding: 10px 20px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items:gli center;
   }
   header h1 {
     margin: 0;
@@ -60,6 +60,7 @@
     display: flex;
     gap: 10px;
     outline: none;
+    position: relative;
   }
   .message.you {
     flex-direction: row-reverse;
@@ -109,6 +110,7 @@
     padding: 8px 12px;
     white-space: pre-wrap;
     word-break: break-word;
+    position: relative;
   }
   body.night .bubble {
     background: #005a9e;
@@ -119,7 +121,6 @@
   body.night .message.you .bubble {
     background: #19692c;
   }
-  /* Larger emojis in messages */
   .bubble .emoji {
     font-size: 1.5em;
     vertical-align: middle;
@@ -131,6 +132,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+  .actions {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .message:hover .actions, .message:focus-within .actions, .message.touched .actions {
+    opacity: 1;
   }
   .actions button {
     background: transparent;
@@ -228,7 +236,6 @@
     border-radius: 4px;
     outline: none;
   }
-  /* Reply styling (Facebook Messenger style) */
   .reply-quote {
     background: rgba(255, 255, 255, 0.1);
     border-left: 4px solid #0078d7;
@@ -262,8 +269,14 @@
   .reactions {
     display: flex;
     gap: 5px;
-    margin-top: 5px;
     font-size: 0.9em;
+    position: absolute;
+    right: 10px;
+    bottom: -20px;
+  }
+  .message.you .reactions {
+    right: auto;
+    left: 10px;
   }
   .reaction {
     background: rgba(255, 255, 255, 0.2);
@@ -274,7 +287,20 @@
   body.night .reaction {
     background: rgba(0, 0, 0, 0.2);
   }
-  /* Modal for profile */
+  .reaction-users {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 4px;
+    display: none;
+    z-index: 10;
+    max-width: 200px;
+  }
+  body.night .reaction-users {
+    background: #333;
+    border: 1px solid #555;
+  }
   #modalOverlay, #avatarPickerOverlay {
     position: fixed;
     top: 0;
@@ -325,7 +351,6 @@
     padding: 10px;
     font-weight: bold;
   }
-  /* Avatar picker */
   #avatarPickerModal h2 {
     margin: 0 0 10px 0;
     user-select: none;
@@ -347,29 +372,9 @@
     border-color: #005a9e;
     outline: none;
   }
-  /* Cancel reply button */
-  #cancelReplyBtn {
-    background: #ff4444;
-    padding: 8px;
-    font-size: 0.9em;
-  }
-  #cancelReplyBtn:hover {
-    background: #cc3333;
-  }
-  #replyIndicator {
-    display: none;
-    font-size: 0.9em;
-    color: #555;
-    margin-right: 5px;
-    white-space: nowrap;
-  }
-  body.night #replyIndicator {
-    color: #bbb;
-  }
 </style>
 </head>
 <body>
-
 <header>
   <h1>Quick Chat</h1>
   <div>
@@ -378,23 +383,16 @@
     <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
   </div>
 </header>
-
 <div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
 <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
-
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
   <input type="file" id="fileInput" aria-label="File input" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
-  <span id="replyIndicator" aria-live="polite"></span>
-  <button id="cancelReplyBtn" style="display: none;" title="Cancel Reply" aria-label="Cancel Reply">✖</button>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
   <button id="sendBtn" title="Send Message" aria-label="Send Message">Send</button>
 </footer>
-
 <div id="emojiPicker" role="listbox" aria-label="Emoji picker"></div>
-
-<!-- Profile Modal -->
 <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div id="modalContent" tabindex="0">
     <h2 id="modalTitle">Enter Username</h2>
@@ -402,12 +400,9 @@
     <button id="saveProfileBtn">Save</button>
   </div>
 </div>
-
-<!-- Avatar Picker Modal -->
 <div id="avatarPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
   <div id="avatarPickerModal" tabindex="0"></div>
 </div>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
@@ -418,9 +413,8 @@
     getStorage, ref as storageRef, uploadBytes, getDownloadURL
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-  // Firebase config
   const firebaseConfig = {
-    apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJw-q9DOqbl0",
+    apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
     authDomain: "live-chat-app-5ea98.firebaseapp.com",
     databaseURL: "https://live-chat-app-5ea98-default-rtdb.firebaseio.com",
     projectId: "live-chat-app-5ea98",
@@ -437,7 +431,6 @@
   const presenceRef = ref(db, "presence");
   const connectedRef = ref(db, ".info/connected");
 
-  // DOM elements
   const textInput = document.getElementById("text");
   const sendBtn = document.getElementById("sendBtn");
   const fileInput = document.getElementById("fileInput");
@@ -454,10 +447,7 @@
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
-  const replyIndicator = document.getElementById("replyIndicator");
-  const cancelReplyBtn = document.getElementById("cancelReplyBtn");
 
-  // Male avatars only
   const maleAvatars = [
     "https://randomuser.me/api/portraits/men/1.jpg",
     "https://randomuser.me/api/portraits/men/2.jpg",
@@ -519,7 +509,7 @@
     "🧟‍♂️","🧟‍♀️","💆‍♂️","💆‍♀️","💇‍♂️","💇‍♀️","🚶‍♂️","🚶‍♀️","🏃‍♂️","🏃‍♀️",
     "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐻‍❄️","🐨",
     "🐯","🦁","🐮","🐷","🐽","🐸","🐵","🙈","🙉","🙊",
-    "🐒","🐔","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉",
+    "🐒","🐎","🐧","🐦","🐤","🐣","🐥","🦆","🦅","🦉",
     "🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐚",
     "🐞","🐜","🦟","🦗","🕷","🕸","🐢","🐍","🦎","🐙",
     "🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋",
@@ -562,7 +552,6 @@
 
   const reactionEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
 
-  // State variables
   let currentUser = null;
   let userId = null;
   let typingTimeout = null;
@@ -572,11 +561,8 @@
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
   let replyToMessage = null;
-
-  // Map of all known users { userId -> { username, avatar } }
   const usersMap = new Map();
 
-  // Utility functions
   function saveUserToLocal(user) {
     localStorage.setItem("quickchat-user", JSON.stringify(user));
   }
@@ -635,14 +621,12 @@
     return text.replace(emojiRegex, '<span class="emoji">$&</span>');
   }
 
-  // Cache user info from messages
   function cacheUserInfo(msg) {
     if (msg && msg.userId && msg.username) {
       usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar });
     }
   }
 
-  // Render message
   function renderMessage(msg) {
     const div = document.createElement("div");
     div.className = "message " + (msg.userId === userId ? "you" : "");
@@ -651,7 +635,6 @@
     div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || "file"}`);
     div.dataset.messageId = msg.id;
 
-    // Avatar with presence dot
     const avatarWrapper = document.createElement("div");
     avatarWrapper.className = "avatar";
     const presence = presenceMap.get(msg.userId) === "online" ? "presence-online" : "presence-offline";
@@ -663,23 +646,20 @@
     img.width = 40;
     img.height = 40;
     img.style.borderRadius = "50%";
+    img.onerror = () => { img.src = "https://via.placeholder.com/40?text=User"; };
     avatarWrapper.appendChild(img);
 
-    // Message content
     const content = document.createElement("div");
     content.className = "message-content";
 
-    // Sender name
     const sender = document.createElement("div");
     sender.className = "sender";
     sender.textContent = msg.username;
     content.appendChild(sender);
 
-    // Bubble with text, file, or reply
     const bubble = document.createElement("div");
     bubble.className = "bubble";
 
-    // Reply quote (Facebook Messenger style)
     if (msg.replyTo) {
       const replyData = messagesCache.find(m => m.id === msg.replyTo);
       if (replyData) {
@@ -687,7 +667,7 @@
         replyQuote.className = "reply-quote";
         const replySender = document.createElement("div");
         replySender.className = "quote-sender";
-        replySender.textContent = replyData.username;
+        replySender.textContent = `Replying to ${replyData.username}`;
         replyQuote.appendChild(replySender);
         const replyText = document.createElement("div");
         replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
@@ -696,7 +676,6 @@
       }
     }
 
-    // Message content (text or file)
     if (msg.fileUrl) {
       const ext = msg.fileUrl.split('.').pop().toLowerCase();
       if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)) {
@@ -719,14 +698,12 @@
     }
     content.appendChild(bubble);
 
-    // Info bar with timestamp and actions
     const info = document.createElement("div");
     info.className = "info";
     const timeSpan = document.createElement("span");
     timeSpan.textContent = formatTime(msg.timestamp);
     info.appendChild(timeSpan);
 
-    // Actions (delete, reply, react)
     const actions = document.createElement("div");
     actions.className = "actions";
     if (msg.userId === userId) {
@@ -754,7 +731,6 @@
     info.appendChild(actions);
     content.appendChild(info);
 
-    // Reactions display
     const reactionsDiv = document.createElement("div");
     reactionsDiv.className = "reactions";
     if (msg.reactions) {
@@ -763,7 +739,7 @@
         reactionSpan.className = "reaction";
         reactionSpan.textContent = `${emoji} ${users.length}`;
         reactionSpan.setAttribute("aria-label", `${emoji} reaction, ${users.length} users`);
-        reactionSpan.addEventListener("click", () => addReaction(msg.id, emoji));
+        reactionSpan.addEventListener("click", () => showReactionUsers(msg.id, emoji, reactionSpan));
         reactionsDiv.appendChild(reactionSpan);
       });
     }
@@ -771,6 +747,11 @@
 
     div.appendChild(avatarWrapper);
     div.appendChild(content);
+
+    div.addEventListener("touchstart", () => {
+      div.classList.add("touched");
+      setTimeout(() => div.classList.remove("touched"), 2000);
+    });
 
     return div;
   }
@@ -789,16 +770,17 @@
     });
   }
 
-  // Add message to UI and cache
   function addMessage(msg) {
     cacheUserInfo(msg);
     messagesCache.push(msg);
     const dom = renderMessage(msg);
     messagesDiv.appendChild(dom);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    const isNearBottom = messagesDiv.scrollTop + messagesDiv.clientHeight >= messagesDiv.scrollHeight - 100;
+    if (isNearBottom) {
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
   }
 
-  // Send a message
   async function sendMessage(text, fileUrl = null, fileName = null) {
     if (!text && !fileUrl) return;
     const msg = {
@@ -814,45 +796,35 @@
     try {
       await push(messagesRef, msg);
       textInput.value = "";
-      cancelReply();
+      replyToMessage = null;
+      stopTyping();
     } catch (error) {
       alert("Failed to send message: " + error.message);
     }
   }
 
-  // Delete message
   async function deleteMessage(messageId) {
-    const msg = messagesCache.find(m => m.id === messageId);
-    if (!msg || msg.userId !== userId) return;
-    if (!confirm("Are you sure you want to delete this message?")) return;
-    const msgRef = ref(db, `messages/${messageId}`);
+    second const msgRef = ref(db, `messages/${messageId}`);
     try {
+      const snapshot = await get(msgRef);
+      const msg = snapshot.val();
+      if (!msg || msg.userId !== userId) {
+        alert("You can only delete your own messages.");
+        return;
+      }
+      if (!confirm("Are you sure you want to delete this message?")) return;
       await remove(msgRef);
     } catch (error) {
       alert("Failed to delete message: " + error.message);
     }
   }
 
-  // Reply to message
   function setReplyTo(msg) {
     replyToMessage = msg;
-    textInput.placeholder = `Replying to ${msg.username}...`;
-    replyIndicator.textContent = `Replying to ${msg.username}: ${msg.text || msg.fileName || "File"}`.slice(0, 50) + (msg.text?.length > 50 ? "..." : "");
-    replyIndicator.style.display = "inline";
-    cancelReplyBtn.style.display = "inline-block";
+    textInput.placeholder `\Replying to ${msg.username}: ${msg.text || msg.fileName || "File"}`.slice(0, 50) + "...";
     textInput.focus();
   }
 
-  function cancelReply() {
-    replyToMessage = null;
-    textInput.placeholder = "Type a message...";
-    replyIndicator.textContent = "";
-    replyIndicator.style.display = "none";
-    cancelReplyBtn.style.display = "none";
-    if (isTyping) stopTyping();
-  }
-
-  // Reactions
   function toggleReactionPicker(messageId, button) {
     let picker = button.parentElement.querySelector(".reaction-picker");
     if (picker) {
@@ -862,8 +834,9 @@
     picker = document.createElement("div");
     picker.className = "reaction-picker";
     picker.style.display = "flex";
-    picker.style.left = `${button.offsetLeft}px`;
-    picker.style.bottom = `${button.parentElement.offsetHeight + 10}px`;
+    picker.style.left = `${msg.userId === userId ? "auto" : button.offsetLeft}px`;
+    picker.style.right = `${msg.userId === userId ? button.offsetLeft + "px" : "auto"}`;
+    picker.style.bottom = `${button.parentElement.offsetHeight + 30}px`;
     reactionEmojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
@@ -885,20 +858,72 @@
   }
 
   async function addReaction(messageId, emoji) {
+    const msgRef = ref(db, `messages/${messageId}/reactions`);
+    try {
+      const snapshot = await get(msgRef);
+      const reactions = snapshot.val() || {};
+      const currentUserReaction = Object.keys(reactions).find(e => reactions[e].includes(userId));
+      if (currentUserReaction && currentUserReaction !== emoji) {
+        reactions[currentUserReaction] = reactions[currentUserReaction].filter(uid => uid !== userId);
+        if (reactions[currentUserReaction].length === 0) {
+          delete reactions[currentUserReaction];
+        }
+      }
+      if (!reactions[emoji]) {
+        reactions[emoji] = [];
+      }
+      if (!reactions[emoji].includes(userId)) {
+        reactions[emoji].push(userId);
+      } else {
+        reactions[emoji] = reactions[emoji].filter(uid => uid !== userId);
+        if (reactions[emoji].length === 0) {
+          delete reactions[emoji];
+        }
+      }
+      await set(msgRef, reactions);
+    } catch (error) {
+      alert("Failed to add or remove reaction: " + error.message);
+    }
+  }
+
+  async function showReactionUsers(messageId, emoji, reactionSpan) {
     const msgRef = ref(db, `messages/${messageId}/reactions/${emoji}`);
     try {
       const snapshot = await get(msgRef);
       const users = snapshot.val() || [];
-      if (!users.includes(userId)) {
-        users.push(userId);
-        await set(msgRef, users);
+      let usersList = document.querySelector(".reaction-users");
+      if (usersList) {
+        usersList.remove();
       }
+      usersList = document.createElement("div");
+      usersList.className = "reaction-users";
+      usersList.style.display = "block";
+      usersList.style.left = `${reactionSpan.offsetLeft}px`;
+      usersList.style.top = `${reactionSpan.offsetTop + reactionSpan.offsetHeight + 5}px`;
+      const title = document.createElement("div");
+      title.textContent = `Reacted with ${emoji}`;
+      title.style.fontWeight = "bold";
+      usersList.appendChild(title);
+      users.forEach(uid => {
+        const user = usersMap.get(uid);
+        if (user) {
+          const userDiv = document.createElement("div");
+          userDiv.textContent = user.username;
+          usersList.appendChild(userDiv);
+        }
+      });
+      if (users.length === 0) {
+        const noUsers = document.createElement("div");
+        noUsers.textContent = "No reactions";
+        usersList.appendChild(noUsers);
+      }
+      reactionSpan.parentElement.appendChild(usersList);
+      setTimeout(() => usersList.remove(), 3000);
     } catch (error) {
-      alert("Failed to add reaction: " + error.message);
+      alert("Failed to fetch reaction users: " + error.message);
     }
   }
 
-  // Typing logic
   function startTyping() {
     if (isTyping) return;
     isTyping = true;
@@ -916,9 +941,12 @@
       clearTimeout(typingTimeout);
       typingTimeout = null;
     }
+    if (replyToMessage) {
+      textInput.placeholder = "Type a message...";
+      replyToMessage = null;
+    }
   }
 
-  // Listen to typing of others and show indicator
   onValue(typingRef, (snapshot) => {
     const typingUsers = [];
     snapshot.forEach(child => {
@@ -946,28 +974,33 @@
     }
   });
 
-  // Listen for new messages
   onChildAdded(messagesRef, (data) => {
     const msg = data.val();
     msg.id = data.key;
     addMessage(msg);
   });
 
-  // Load existing messages on page load
-  onValue(messagesRef, (snapshot) => {
-    messagesCache = [];
-    usersMap.clear();
-    messagesDiv.innerHTML = "";
-    snapshot.forEach(child => {
-      const m = child.val();
-      m.id = child.key;
-      cacheUserInfo(m);
-      messagesCache.push(m);
-      messagesDiv.appendChild(renderMessage(m));
-    });
+  onChildChanged(messagesRef, (data) => {
+    const msg = data.val();
+    msg.id = data.key;
+    const index = messagesCache.findIndex(m => m.id === msg.id);
+    if (index !== -1) {
+      messagesCache[index] = msg;
+      const msgDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
+      if (msgDiv) {
+        const newDiv = renderMessage(msg);
+        msgDiv.replaceWith(newDiv);
+      }
+    }
   });
 
-  // User presence
+  onChildRemoved(messagesRef, (data) => {
+    const msgId = data.key;
+    messagesCache = messagesCache.filter(m => m.id !== msgId);
+    const msgDiv = messagesDiv.querySelector(`[data-message-id="${msgId}"]`);
+    if (msgDiv) msgDiv.remove();
+  });
+
   function setupPresence() {
     if (!userId) return;
     const userPresenceRef = ref(db, `presence/${userId}`);
@@ -991,13 +1024,11 @@
     });
   }
 
-  // Clear typing on page unload
   window.addEventListener("beforeunload", () => {
     if (!userId) return;
     set(ref(db, `typing/${userId}`), null);
   });
 
-  // Event handlers
   sendBtn.addEventListener("click", () => {
     sendMessage(textInput.value.trim());
   });
@@ -1019,16 +1050,16 @@
     }
   });
 
-  // Cancel reply button
-  cancelReplyBtn.addEventListener("click", () => {
-    cancelReply();
-  });
-
-  // File sending with Firebase Storage
   fileBtn.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", async () => {
     const file = fileInput.files[0];
     if (!file) return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert("File is too large. Maximum size is 5MB.");
+      fileInput.value = "";
+      return;
+    }
     try {
       const fileRef = storageRef(storage, `files/${userId}/${Date.now()}_${file.name}`);
       await uploadBytes(fileRef, file);
@@ -1040,25 +1071,40 @@
     }
   });
 
-  // Emoji picker
   function populateEmojiPicker() {
     emojiPicker.innerHTML = "";
-    emojis.forEach(e => {
-      const span = document.createElement("span");
-      span.textContent = e;
-      span.tabIndex = 0;
-      span.addEventListener("click", () => {
-        textInput.value += e;
-        textInput.focus();
-        emojiPicker.style.display = "none";
+    const pageSize = 50;
+    let currentPage = 0;
+
+    function loadPage() {
+      const start = currentPage * pageSize;
+      const end = start + pageSize;
+      const emojisToShow = emojis.slice(start, end);
+      emojisToShow.forEach(e => {
+        const span = document.createElement("span");
+        span.textContent = e;
+        span.tabIndex = 0;
+        span.addEventListener("click", () => {
+          textInput.value += e;
+          textInput.focus();
+          emojiPicker.style.display = "none";
+        });
+        span.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            span.click();
+          }
+        });
+        emojiPicker.appendChild(span);
       });
-      span.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter" || ev.key === " ") {
-          ev.preventDefault();
-          span.click();
-        }
-      });
-      emojiPicker.appendChild(span);
+    }
+
+    loadPage();
+    emojiPicker.addEventListener("scroll", () => {
+      if (emojiPicker.scrollTop + emojiPicker.clientHeight >= emojiPicker.scrollHeight - 50) {
+        currentPage++;
+        loadPage();
+      }
     });
   }
   populateEmojiPicker();
@@ -1078,20 +1124,20 @@
     if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn")) {
       document.querySelectorAll(".reaction-picker").forEach(picker => picker.remove());
     }
+    if (!e.target.closest(".reaction-users")) {
+      document.querySelectorAll(".reaction-users").forEach(list => list.remove());
+    }
   });
 
-  // Night mode toggle
   nightModeBtn.addEventListener("click", () => {
     const night = document.body.classList.toggle("night");
     saveNightMode(night);
   });
 
-  // Load night mode
   if (loadNightMode()) {
     document.body.classList.add("night");
   }
 
-  // Profile modal
   function openProfileModal() {
     modalOverlay.style.display = "flex";
     usernameInput.focus();
@@ -1118,7 +1164,6 @@
     openProfileModal();
   });
 
-  // Avatar Picker
   avatarPickerBtn.addEventListener("click", () => {
     openAvatarPicker();
   });
@@ -1161,7 +1206,6 @@
     if (e.target === modalOverlay) modalOverlay.style.display = "none";
   });
 
-  // Initialize user
   function initUser() {
     currentUser = loadUserFromLocal();
     userId = generateUserId();
@@ -1175,8 +1219,6 @@
   }
 
   initUser();
-
 </script>
-
 </body>
 </html>
