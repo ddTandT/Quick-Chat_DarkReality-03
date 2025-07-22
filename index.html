@@ -209,12 +209,12 @@
     padding: 8px 12px;
     border-radius: 4px;
     margin-bottom: 5px;
-    display: none;
     font-size: 0.85em;
     position: relative;
     width: 100%;
     box-sizing: border-box;
     border-left: 4px solid #d1d1d1;
+    z-index: 10;
   }
   body.night #replyPreview {
     background: #333;
@@ -296,14 +296,14 @@
     background: rgba(255, 255, 255, 0.3);
     border-left: 4px solid #d1d1d1;
     padding: 8px 12px;
-    margin-bottom: 8px;
+    margin-bottom: 8 nourpx;
     font-size: 0.85em;
     color: #333;
     border-radius: 4px;
     position: relative;
   }
   body.night .reply-quote {
-    background: rgba(0, 0, 0, 0.3);
+    background: #333;
     border-left-color: #555;
     color: #ddd;
   }
@@ -381,7 +381,7 @@
   }
   #modalContent h2 {
     margin-top: 0;
-ام
+  }
   #usernameInput {
     width: 100%;
     padding: 8px;
@@ -943,6 +943,7 @@
       <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
       <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
     `;
+    replyPreview.scrollIntoView({ behavior: "smooth", block: "nearest" });
     const closeBtn = replyPreview.querySelector(".close-reply");
     closeBtn.addEventListener("click", () => {
       replyToMessage = null;
@@ -964,7 +965,7 @@
     picker.className = "reaction-picker";
     picker.style.display = "flex";
     picker.style.left = `${button.offsetLeft}px`;
-    picker.style.bottom = `${element.parentElement.offsetHeight + 10}px`;
+    picker.style.bottom = `${button.parentElement.offsetHeight + 10}px`;
     reactionEmojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
