@@ -209,12 +209,12 @@
     padding: 8px 12px;
     border-radius: 4px;
     margin-bottom: 5px;
+    display: none;
     font-size: 0.85em;
     position: relative;
     width: 100%;
     box-sizing: border-box;
     border-left: 4px solid #d1d1d1;
-    z-index: 10;
   }
   body.night #replyPreview {
     background: #333;
@@ -266,14 +266,16 @@
     position: absolute;
     background: #fff;
     border: 1px solid #ccc;
-    max-width: 300px;
-    max-height: 150px;
-    overflow-y: auto;
     display: none;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     padding: 5px;
     border-radius: 6px;
     z-index: 10;
+    max-width: 200px;
+    height: 30px;
+    overflow: hidden;
+    justify-content: center;
+    align-items: center;
   }
   body.night #emojiPicker, body.night .reaction-picker {
     background: #333;
@@ -282,28 +284,32 @@
   #emojiPicker span, .reaction-picker span {
     cursor: pointer;
     font-size: 20px;
-    margin: 2px 4px;
+    margin: 0 6px;
     user-select: none;
   }
   #emojiPicker span:hover, #emojiPicker span:focus,
   .reaction-picker span:hover, .reaction-picker span:focus {
-    background: #0078d7;
-    color: white;
+    background: #f0f0f0;
+    color: #333;
     border-radius: 4px;
     outline: none;
+  }
+  body.night .reaction-picker span:hover, body.night .reaction-picker span:focus {
+    background: #444;
+    color: #ddd;
   }
   .reply-quote {
     background: rgba(255, 255, 255, 0.3);
     border-left: 4px solid #d1d1d1;
     padding: 8px 12px;
-    margin-bottom: 8 nourpx;
+    margin-bottom: 8px;
     font-size: 0.85em;
     color: #333;
     border-radius: 4px;
     position: relative;
   }
   body.night .reply-quote {
-    background: #333;
+    background: rgba(0, 0, 0, 0.3);
     border-left-color: #555;
     color: #ddd;
   }
@@ -751,7 +757,7 @@
         imgFile.style.maxWidth = "100%";
         imgFile.style.borderRadius = "8px";
         imgFile.alt = msg.fileName || "Uploaded image";
-        bubble.appendChild(imgFile);
+        bubble UVAChild(imgFile);
       } else {
         const a = document.createElement("a");
         a.href = msg.fileUrl;
@@ -943,7 +949,6 @@
       <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
       <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
     `;
-    replyPreview.scrollIntoView({ behavior: "smooth", block: "nearest" });
     const closeBtn = replyPreview.querySelector(".close-reply");
     closeBtn.addEventListener("click", () => {
       replyToMessage = null;
@@ -964,8 +969,8 @@
     picker = document.createElement("div");
     picker.className = "reaction-picker";
     picker.style.display = "flex";
-    picker.style.left = `${button.offsetLeft}px`;
-    picker.style.bottom = `${button.parentElement.offsetHeight + 10}px`;
+    picker.style.left = `${button.offsetLeft - 60}px`; // Center below the button
+    picker.style.top = `${button.parentElement.offsetTop + button.parentElement.offsetHeight + 10}px`;
     reactionEmojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
@@ -992,17 +997,27 @@
       const snapshot = await get(msgRef);
       let reactions = snapshot.val() || {};
       const userReaction = Object.entries(reactions).find(([_, users]) => users.includes(userId));
-      if (userReaction && userReaction[0] !== emoji) {
+      if (userReaction && userReaction[0] === emoji) {
+        // Remove reaction if clicking the same emoji
         reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
         if (reactions[userReaction[0]].length === 0) {
           delete reactions[userReaction[0]];
         }
-      }
-      if (!reactions[emoji]) {
-        reactions[emoji] = [];
-      }
-      if (!reactions[emoji].includes(userId)) {
-        reactions[emoji].push(userId);
+      } else {
+        // Remove existing reaction if different
+        if (userReaction) {
+          reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
+          if (reactions[userReaction[0]].length === 0) {
+            delete reactions[userReaction[0]];
+          }
+        }
+        // Add new reaction
+        if (!reactions[emoji]) {
+          reactions[emoji] = [];
+        }
+        if (!reactions[emoji].includes(userId)) {
+          reactions[emoji].push(userId);
+        }
       }
       await set(msgRef, reactions);
       // Update local cache
