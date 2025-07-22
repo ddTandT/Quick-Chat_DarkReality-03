@@ -274,7 +274,7 @@
     overflow-y: auto;
     padding: 10px;
     z-index: 10;
-    display: grid;
+    display: none; /* Ensure hidden by default */
     grid-template-columns: repeat(8, 1fr);
     gap: 5px;
   }
@@ -717,12 +717,14 @@
 
   function cacheUserInfo(msg) {
     if (msg && msg.userId && msg.username) {
+      console.log(`Caching user: ${msg.userId}, ${msg.username}, avatar: ${msg.avatar}`);
       usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar });
     }
   }
 
   function renderMessage(msg) {
     try {
+      console.log(`Rendering message: ${msg.id}, replyTo: ${msg.replyTo}`);
       const div = document.createElement("div");
       div.className = "message " + (msg.userId === userId ? "you" : "");
       div.setAttribute("tabindex", "0");
@@ -762,6 +764,7 @@
 
       if (msg.replyTo) {
         const replyData = messagesCache.find(m => m.id === msg.replyTo);
+        console.log(`Reply data for ${msg.replyTo}:`, replyData);
         if (replyData) {
           cacheUserInfo(replyData); // Ensure replied user info is cached
           const replyQuote = document.createElement("div");
@@ -775,6 +778,7 @@
           replyQuote.appendChild(replyText);
           bubble.appendChild(replyQuote);
         } else {
+          console.warn(`Reply message ${msg.replyTo} not found in cache`);
           const replyQuote = document.createElement("div");
           replyQuote.className = "reply-quote";
           const replySender = document.createElement("div");
@@ -946,6 +950,7 @@
       replyTo: replyToMessage ? replyToMessage.id : null
     };
     try {
+      console.log("Sending message:", msg);
       await push(messagesRef, msg);
       textInput.value = "";
       replyToMessage = null;
@@ -998,6 +1003,7 @@
 
   function setReplyTo(msg) {
     try {
+      console.log(`Setting reply to: ${msg.id}, ${msg.username}`);
       replyToMessage = msg;
       cacheUserInfo(msg); // Ensure replied user info is cached
       replyPreview.style.display = "block";
@@ -1172,6 +1178,7 @@
     try {
       const msg = data.val();
       msg.id = data.key;
+      console.log("New message added:", msg);
       addMessage(msg);
     } catch (error) {
       console.error("Error in onChildAdded:", error);
@@ -1180,6 +1187,7 @@
 
   onValue(messagesRef, (snapshot) => {
     try {
+      console.log("Messages snapshot received");
       messagesCache = [];
       usersMap.clear();
       messagesDiv.innerHTML = "";
@@ -1190,6 +1198,8 @@
         messagesCache.push(m);
         messagesDiv.appendChild(renderMessage(m));
       });
+      console.log("Messages cache:", messagesCache);
+      console.log("Users map:", Array.from(usersMap.entries()));
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Error in onValue:", error);
@@ -1309,13 +1319,13 @@
 
   emojiBtn.addEventListener("click", () => {
     try {
-      if (emojiPicker.style.display === "grid") {
-        emojiPicker.style.display = "none";
-      } else {
+      if (emojiPicker.style.display === "none") {
         const rect = emojiBtn.getBoundingClientRect();
         emojiPicker.style.display = "grid";
         emojiPicker.style.left = `${rect.left}px`;
         emojiPicker.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+      } else {
+        emojiPicker.style.display = "none";
       }
     } catch (error) {
       console.error("Error toggling emoji picker:", error);
@@ -1458,6 +1468,8 @@
         currentUser.avatar = selectedAvatarUrl;
         setupPresence();
       }
+      // Ensure emoji picker is hidden on init
+      emojiPicker.style.display = "none";
     } catch (error) {
       console.error("Error initializing user:", error);
     }
