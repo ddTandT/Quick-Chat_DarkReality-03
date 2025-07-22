@@ -209,12 +209,12 @@
     padding: 8px 12px;
     border-radius: 4px;
     margin-bottom: 5px;
+    display: none;
     font-size: 0.85em;
     position: relative;
     width: 100%;
     box-sizing: border-box;
     border-left: 4px solid #d1d1d1;
-    z-index: 10;
   }
   body.night #replyPreview {
     background: #333;
@@ -266,9 +266,6 @@
     position: absolute;
     background: #fff;
     border: 1px solid #ccc;
-    max-width: 300px;
-    max-height: 150px;
-    overflow-y: auto;
     display: none;
     flex-wrap: wrap;
     padding: 5px;
@@ -278,6 +275,17 @@
   body.night #emojiPicker, body.night .reaction-picker {
     background: #333;
     border: 1px solid #555;
+  }
+  #emojiPicker {
+    max-width: 300px;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  .reaction-picker {
+    display: flex;
+    gap: 5px;
+    padding: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
   #emojiPicker span, .reaction-picker span {
     cursor: pointer;
@@ -296,14 +304,14 @@
     background: rgba(255, 255, 255, 0.3);
     border-left: 4px solid #d1d1d1;
     padding: 8px 12px;
-    margin-bottom: 8 nourpx;
+    margin-bottom: 8px;
     font-size: 0.85em;
     color: #333;
     border-radius: 4px;
     position: relative;
   }
   body.night .reply-quote {
-    background: #333;
+    background: rgba(0, 0, 0, 0.3);
     border-left-color: #555;
     color: #ddd;
   }
@@ -586,7 +594,7 @@
     "🥐","🍞","🥖","🥨","🥯","🥞","🧇","🧀","🍖","🍗",
     "🥩","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🫔",
     "🥙","🧆","🥚","🍳","🥘","🍲","🥗","🍿","🧈","🧃",
-    "🥤","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🍾","🧉",
+    "🥤","🍺","🍻","🥂","� hous","🥃","🍸","🍹","🍾","🧉",
     "🚗","🚕","🚙","🚌","🚎","🏎","🚓","🚑","🚒","🚐",
     "🛻","🚚","🚛","🚜","🛵","🏍","🛺","🚲","🛴","🛹",
     "🛼","🚨","🚔","🚍","🚘","🚖","🚡","🚠","🚟","🚃",
@@ -658,7 +666,7 @@
       '<': "&lt;",
       '>': "&gt;",
       '"': "&quot;",
-      "'": "&#39;"
+      "'": "&apos;"
     })[m]);
   }
   function formatTime(ts) {
@@ -730,11 +738,12 @@
     if (msg.replyTo) {
       const replyData = messagesCache.find(m => m.id === msg.replyTo);
       if (replyData) {
+        cacheUserInfo(replyData); // Ensure replied user info is cached
         const replyQuote = document.createElement("div");
         replyQuote.className = "reply-quote";
         const replySender = document.createElement("div");
         replySender.className = "quote-sender";
-        replySender.textContent = replyData.username;
+        replySender.textContent = replyData.username || "Unknown User";
         replyQuote.appendChild(replySender);
         const replyText = document.createElement("div");
         replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
@@ -937,13 +946,13 @@
 
   function setReplyTo(msg) {
     replyToMessage = msg;
+    cacheUserInfo(msg); // Ensure replied user info is cached
     replyPreview.style.display = "block";
     replyPreview.innerHTML = `
-      <div class="quote-sender">${escapeHTML(msg.username)}</div>
+      <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
       <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
       <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
     `;
-    replyPreview.scrollIntoView({ behavior: "smooth", block: "nearest" });
     const closeBtn = replyPreview.querySelector(".close-reply");
     closeBtn.addEventListener("click", () => {
       replyToMessage = null;
@@ -965,7 +974,7 @@
     picker.className = "reaction-picker";
     picker.style.display = "flex";
     picker.style.left = `${button.offsetLeft}px`;
-    picker.style.bottom = `${button.parentElement.offsetHeight + 10}px`;
+    picker.style.top = `${button.parentElement.offsetTop - 40}px`; // Position above the button
     reactionEmojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
@@ -992,17 +1001,27 @@
       const snapshot = await get(msgRef);
       let reactions = snapshot.val() || {};
       const userReaction = Object.entries(reactions).find(([_, users]) => users.includes(userId));
-      if (userReaction && userReaction[0] !== emoji) {
+      if (userReaction && userReaction[0] === emoji) {
+        // Remove reaction if clicking the same emoji
         reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
         if (reactions[userReaction[0]].length === 0) {
           delete reactions[userReaction[0]];
         }
-      }
-      if (!reactions[emoji]) {
-        reactions[emoji] = [];
-      }
-      if (!reactions[emoji].includes(userId)) {
-        reactions[emoji].push(userId);
+      } else {
+        // Remove existing reaction if different
+        if (userReaction) {
+          reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
+          if (reactions[userReaction[0]].length === 0) {
+            delete reactions[userReaction[0]];
+          }
+        }
+        // Add new reaction
+        if (!reactions[emoji]) {
+          reactions[emoji] = [];
+        }
+        if (!reactions[emoji].includes(userId)) {
+          reactions[emoji].push(userId);
+        }
       }
       await set(msgRef, reactions);
       // Update local cache
@@ -1016,8 +1035,8 @@
         }
       }
     } catch (error) {
-      console.error("Failed to add reaction:", error);
-      alert("Failed to add reaction: " + error.message);
+      console.error("Failed to add/remove reaction:", error);
+      alert("Failed to add/remove reaction: " + error.message);
     }
   }
 
