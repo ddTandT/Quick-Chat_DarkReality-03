@@ -147,14 +147,14 @@
     right: 10px;
   }
   .message:not(.you) .actions {
-    left: 10px;
+    left: 60px; /* Adjusted for avatar width */
   }
   .actions button {
     background: transparent;
     border: none;
     cursor: pointer;
     font-size: 1.1em;
-    margin: 0 5px;
+    margin-left: 5px;
     color: #eee;
   }
   .actions button:hover {
@@ -184,6 +184,7 @@
     display: flex;
     gap: 5px;
     align-items: center;
+    flex-wrap: wrap;
   }
   body.night footer {
     background: #222;
@@ -208,6 +209,8 @@
     display: none;
     font-size: 0.85em;
     position: relative;
+    width: 100%;
+    box-sizing: border-box;
   }
   body.night #replyPreview {
     background: #333;
@@ -575,13 +578,13 @@
     "🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥",
     "📽","🎞","📞","☎️","📟","📠","📺","📻","🎙","🎚",
     "🎛","⏱","⏲","⏰","🕰","⌛","⏳","📡","🔋","🔌",
-    "💡","🔦","🕯","🪔","📔","�15","📖","📗","📘","📙",
+    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘","📙",
     "📚","📓","📒","📃","📜","📄","📰","🗞","📑","🔖",
     "🏷","💰","💴","💵","💶","💷","💸","💳","🧾","💹",
     "✉️","📧","📨","📩","📤","📥","📦","📫","📪","📬",
     "📭","📮","🗳","✏️","🖊","🖋","🖌","🖍","📝","📅",
     "📆","🗓","📇","📈","📉","📊","📋","📌","📍","📎",
-    "🖇","📏","📐","✂️","🗃","🗂","🗒","🗓","📁","�02",
+    "🖇","📏","📐","✂️","🗃","🗂","🗒","🗓","📁","📂",
     "🗑","🔒","🔓","🔏","🔐","🔑","🗝","🔨","🪓","⛏",
     "⚒","🛠","🗡","⚔","🔫","🛡","🚬","⚰","🪦","⚱",
     "🏺","🔮","📿","🧿","💈","⚗","🧪","🧫","🧬","🔬",
@@ -632,11 +635,11 @@
   function escapeHTML(str) {
     if (!str) return "";
     return str.replace(/[&<>"']/g, (m) => ({
-      '&': "&",
-      '<': "<",
-      '>': ">",
-      '"': """,
-      "'": "'"
+      '&': "&amp;",
+      '<': "&lt;",
+      '>': "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
     })[m]);
   }
   function formatTime(ts) {
@@ -675,6 +678,7 @@
     div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || "file"}`);
     div.dataset.messageId = msg.id;
 
+    // Add hover and touch events for actions
     div.addEventListener("mouseenter", () => div.classList.add("touched"));
     div.addEventListener("mouseleave", () => div.classList.remove("touched"));
     div.addEventListener("touchstart", () => div.classList.add("touched"));
@@ -785,9 +789,7 @@
         reactionSpan.className = "reaction";
         reactionSpan.textContent = `${emoji} ${users.length}`;
         reactionSpan.setAttribute("aria-label", `${emoji} reaction, ${users.length} users`);
-        reactionSpan.addEventListener("click", (e) => {
-          showReactionUsers(emoji, users, e.target);
-        });
+        reactionSpan.addEventListener("click", (e) => showReactionUsers(emoji, users, e.target));
         reactionsDiv.appendChild(reactionSpan);
       });
     }
@@ -800,10 +802,9 @@
   }
 
   function showReactionUsers(emoji, userIds, element) {
-    let userList = element.parentElement.querySelector(".reaction-users");
+    let userList = document.querySelector(".reaction-users");
     if (userList) {
       userList.remove();
-      return;
     }
     userList = document.createElement("div");
     userList.className = "reaction-users";
@@ -818,7 +819,9 @@
         userList.appendChild(userDiv);
       }
     });
-    element.parentElement.appendChild(userList);
+    if (userList.children.length > 0) {
+      element.parentElement.appendChild(userList);
+    }
   }
 
   function renderAllMessagesPresence() {
@@ -860,8 +863,10 @@
       textInput.value = "";
       replyToMessage = null;
       replyPreview.style.display = "none";
+      replyPreview.innerHTML = "";
       stopTyping();
     } catch (error) {
+      console.error("Failed to send message:", error);
       alert("Failed to send message: " + error.message);
     }
   }
@@ -873,7 +878,11 @@
     const msgRef = ref(db, `messages/${messageId}`);
     try {
       await remove(msgRef);
+      messagesCache = messagesCache.filter(m => m.id !== messageId);
+      const msgDiv = messagesDiv.querySelector(`[data-message-id="${messageId}"]`);
+      if (msgDiv) msgDiv.remove();
     } catch (error) {
+      console.error("Failed to delete message:", error);
       alert("Failed to delete message: " + error.message);
     }
   }
@@ -886,9 +895,11 @@
       <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
       <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
     `;
-    replyPreview.querySelector(".close-reply").addEventListener("click", () => {
+    const closeBtn = replyPreview.querySelector(".close-reply");
+    closeBtn.addEventListener("click", () => {
       replyToMessage = null;
       replyPreview.style.display = "none";
+      replyPreview.innerHTML = "";
       textInput.placeholder = "Type a message...";
     });
     textInput.placeholder = `Replying to ${msg.username}...`;
@@ -930,7 +941,7 @@
     const msgRef = ref(db, `messages/${messageId}/reactions`);
     try {
       const snapshot = await get(msgRef);
-      const reactions = snapshot.val() || {};
+      let reactions = snapshot.val() || {};
       const userReaction = Object.entries(reactions).find(([_, users]) => users.includes(userId));
       if (userReaction && userReaction[0] !== emoji) {
         reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
@@ -945,7 +956,18 @@
         reactions[emoji].push(userId);
       }
       await set(msgRef, reactions);
+      // Update local cache
+      const msg = messagesCache.find(m => m.id === messageId);
+      if (msg) {
+        msg.reactions = reactions;
+        const msgDiv = messagesDiv.querySelector(`[data-message-id="${messageId}"]`);
+        if (msgDiv) {
+          const newDiv = renderMessage(msg);
+          msgDiv.replaceWith(newDiv);
+        }
+      }
     } catch (error) {
+      console.error("Failed to add reaction:", error);
       alert("Failed to add reaction: " + error.message);
     }
   }
@@ -953,7 +975,9 @@
   function startTyping() {
     if (isTyping) return;
     isTyping = true;
-    set(ref(db, `typing/${userId}`), true);
+    set(ref(db, `typing/${userId}`), true).catch(error => {
+      console.error("Failed to set typing status:", error);
+    });
     lastTypingTime = Date.now();
     if (typingTimeout) clearTimeout(typingTimeout);
     typingTimeout = setTimeout(stopTyping, 3000);
@@ -962,14 +986,14 @@
   function stopTyping() {
     if (!isTyping) return;
     isTyping = false;
-    remove(ref(db, `typing/${userId}`));
+    remove(ref(db, `typing/${userId}`)).catch(error => {
+      console.error("Failed to remove typing status:", error);
+    });
     if (typingTimeout) {
       clearTimeout(typingTimeout);
       typingTimeout = null;
     }
-    if (replyToMessage) {
-      replyPreview.style.display = "block";
-    } else {
+    if (!replyToMessage) {
       textInput.placeholder = "Type a message...";
     }
   }
@@ -1018,6 +1042,7 @@
       messagesCache.push(m);
       messagesDiv.appendChild(renderMessage(m));
     });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
   });
 
   function setupPresence() {
@@ -1027,7 +1052,9 @@
 
     onValue(connectedRef, (snap) => {
       if (snap.val() === true) {
-        set(userPresenceRef, { state: "online", lastChanged: Date.now() });
+        set(userPresenceRef, { state: "online", lastChanged: Date.now() }).catch(error => {
+          console.error("Failed to set presence:", error);
+        });
         onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() });
         onDisconnect(userTypingRef).remove();
       }
@@ -1045,7 +1072,9 @@
 
   window.addEventListener("beforeunload", () => {
     if (!userId) return;
-    set(ref(db, `typing/${userId}`), null);
+    set(ref(db, `typing/${userId}`), null).catch(error => {
+      console.error("Failed to clear typing on unload:", error);
+    });
   });
 
   sendBtn.addEventListener("click", () => {
@@ -1080,6 +1109,7 @@
       await sendMessage("", url, file.name);
       fileInput.value = "";
     } catch (error) {
+      console.error("Failed to upload file:", error);
       alert("Failed to upload file: " + error.message);
     }
   });
