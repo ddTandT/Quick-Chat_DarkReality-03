@@ -639,7 +639,7 @@
       '<': "&lt;",
       '>': "&gt;",
       '"': "&quot;",
-      "'": "&apos;"
+      "'": "&#39;"
     })[m]);
   }
   function formatTime(ts) {
@@ -718,7 +718,7 @@
         replySender.textContent = replyData.username;
         replyQuote.appendChild(replySender);
         const replyText = document.createElement("div");
-        replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 || replyData.fileName?.length > 50 ? "..." : "");
+        replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
         replyQuote.appendChild(replyText);
         bubble.appendChild(replyQuote);
       }
@@ -892,7 +892,7 @@
     replyPreview.style.display = "block";
     replyPreview.innerHTML = `
       <div class="quote-sender">${escapeHTML(msg.username)}</div>
-      <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 || msg.fileName?.length > 50 ? "..." : ""}</div>
+      <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
       <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
     `;
     const closeBtn = replyPreview.querySelector(".close-reply");
@@ -916,7 +916,7 @@
     picker.className = "reaction-picker";
     picker.style.display = "flex";
     picker.style.left = `${button.offsetLeft}px`;
-    picker.style.bottom = `${element.parentElement.offsetHeight + 10}px`;
+    picker.style.bottom = `${button.parentElement.offsetHeight + 10}px`;
     reactionEmojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
@@ -1148,7 +1148,7 @@
     if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
       emojiPicker.style.display = "none";
     }
-    if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn") && !e.target.closest(".react-btn")) {
+    if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn")) {
       document.querySelectorAll(".reaction-picker").forEach(picker => picker.remove());
     }
     if (!e.target.closest(".reaction-users") && !e.target.classList.contains("reaction")) {
