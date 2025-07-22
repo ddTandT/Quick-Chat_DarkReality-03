@@ -163,6 +163,9 @@
   .actions button.delete-btn::before {
     content: "🗑️";
   }
+  .actions button.edit-btn::before {
+    content: "✎";
+  }
   .actions button.reply-btn::before {
     content: "↩️";
   }
@@ -203,7 +206,7 @@
   }
   #replyPreview {
     background: #f5f5f5;
-    padding: 5px 10px;
+    padding: 8px 12px;
     border-radius: 4px;
     margin-bottom: 5px;
     display: none;
@@ -211,13 +214,28 @@
     position: relative;
     width: 100%;
     box-sizing: border-box;
+    border-left: 4px solid #d1d1d1;
   }
   body.night #replyPreview {
     background: #333;
     color: #ddd;
+    border-left-color: #555;
+  }
+  #replyPreview::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 10px;
+    width: 50px;
+    height: 1px;
+    background: #d1d1d1;
+  }
+  body.night #replyPreview::before {
+    background: #555;
   }
   #replyPreview .quote-sender {
     font-weight: bold;
+    margin-bottom: 2px;
   }
   #replyPreview .close-reply {
     position: absolute;
@@ -275,30 +293,31 @@
     outline: none;
   }
   .reply-quote {
-    background: rgba(255, 255, 255, 0.1);
-    border-left: 4px solid #0078d7;
-    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-left: 4px solid #d1d1d1;
+    padding: 8px 12px;
     margin-bottom: 8px;
     font-size: 0.85em;
-    color: #ddd;
+    color: #333;
     border-radius: 4px;
     position: relative;
   }
   body.night .reply-quote {
     background: rgba(0, 0, 0, 0.3);
-    border-left-color: #005a9e;
+    border-left-color: #555;
+    color: #ddd;
   }
   .reply-quote::before {
     content: "";
     position: absolute;
-    top: -4px;
+    top: -1px;
     left: 10px;
     width: 50px;
     height: 1px;
-    background: #0078d7;
+    background: #d1d1d1;
   }
   body.night .reply-quote::before {
-    background: #005a9e;
+    background: #555;
   }
   .reply-quote .quote-sender {
     font-weight: bold;
@@ -362,7 +381,7 @@
   }
   #modalContent h2 {
     margin-top: 0;
-  }
+ام
   #usernameInput {
     width: 100%;
     padding: 8px;
@@ -761,6 +780,13 @@
       deleteBtn.title = "Delete";
       deleteBtn.addEventListener("click", () => deleteMessage(msg.id));
       actions.appendChild(deleteBtn);
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "edit-btn";
+      editBtn.setAttribute("aria-label", "Edit message");
+      editBtn.title = "Edit";
+      editBtn.addEventListener("click", () => editMessage(msg));
+      actions.appendChild(editBtn);
     }
     const replyBtn = document.createElement("button");
     replyBtn.className = "reply-btn";
@@ -887,6 +913,28 @@
     }
   }
 
+  async function editMessage(msg) {
+    if (!msg.text) return; // Only text messages can be edited
+    const newText = prompt("Edit your message:", msg.text);
+    if (!newText || newText.trim() === msg.text) return;
+    const msgRef = ref(db, `messages/${msg.id}`);
+    try {
+      await update(msgRef, { text: newText.trim() });
+      const msgIndex = messagesCache.findIndex(m => m.id === msg.id);
+      if (msgIndex !== -1) {
+        messagesCache[msgIndex].text = newText.trim();
+        const msgDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
+        if (msgDiv) {
+          const newDiv = renderMessage(messagesCache[msgIndex]);
+          msgDiv.replaceWith(newDiv);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to edit message:", error);
+      alert("Failed to edit message: " + error.message);
+    }
+  }
+
   function setReplyTo(msg) {
     replyToMessage = msg;
     replyPreview.style.display = "block";
@@ -916,7 +964,7 @@
     picker.className = "reaction-picker";
     picker.style.display = "flex";
     picker.style.left = `${button.offsetLeft}px`;
-    picker.style.bottom = `${button.parentElement.offsetHeight + 10}px`;
+    picker.style.bottom = `${element.parentElement.offsetHeight + 10}px`;
     reactionEmojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
