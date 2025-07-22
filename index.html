@@ -147,7 +147,7 @@
     right: 10px;
   }
   .message:not(.you) .actions {
-    left: 60px;
+    left: 60px; /* Adjusted for avatar width */
   }
   .actions button {
     background: transparent;
@@ -203,7 +203,7 @@
   }
   #replyPreview {
     background: #f5f5f5;
-    padding: 8px 12px;
+    padding: 5px 10px;
     border-radius: 4px;
     margin-bottom: 5px;
     display: none;
@@ -211,21 +211,13 @@
     position: relative;
     width: 100%;
     box-sizing: border-box;
-    border-left: 4px solid #0078d7;
   }
   body.night #replyPreview {
     background: #333;
     color: #ddd;
-    border-left-color: #005a9e;
   }
   #replyPreview .quote-sender {
     font-weight: bold;
-    margin-bottom: 2px;
-  }
-  #replyPreview .quote-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
   #replyPreview .close-reply {
     position: absolute;
@@ -647,7 +639,7 @@
       '<': "&lt;",
       '>': "&gt;",
       '"': "&quot;",
-      "'": "&#39;"
+      "'": "&apos;"
     })[m]);
   }
   function formatTime(ts) {
@@ -686,6 +678,7 @@
     div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || "file"}`);
     div.dataset.messageId = msg.id;
 
+    // Add hover and touch events for actions
     div.addEventListener("mouseenter", () => div.classList.add("touched"));
     div.addEventListener("mouseleave", () => div.classList.remove("touched"));
     div.addEventListener("touchstart", () => div.classList.add("touched"));
@@ -725,7 +718,7 @@
         replySender.textContent = replyData.username;
         replyQuote.appendChild(replySender);
         const replyText = document.createElement("div");
-        replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
+        replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 || replyData.fileName?.length > 50 ? "..." : "");
         replyQuote.appendChild(replyText);
         bubble.appendChild(replyQuote);
       }
@@ -898,8 +891,8 @@
     replyToMessage = msg;
     replyPreview.style.display = "block";
     replyPreview.innerHTML = `
-      <div class="quote-sender">Replying to ${escapeHTML(msg.username)}</div>
-      <div class="quote-text">${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
+      <div class="quote-sender">${escapeHTML(msg.username)}</div>
+      <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 || msg.fileName?.length > 50 ? "..." : ""}</div>
       <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
     `;
     const closeBtn = replyPreview.querySelector(".close-reply");
@@ -923,7 +916,7 @@
     picker.className = "reaction-picker";
     picker.style.display = "flex";
     picker.style.left = `${button.offsetLeft}px`;
-    picker.style.bottom = `${button.parentElement.offsetHeight + 10}px`;
+    picker.style.bottom = `${element.parentElement.offsetHeight + 10}px`;
     reactionEmojis.forEach(emoji => {
       const span = document.createElement("span");
       span.textContent = emoji;
@@ -963,6 +956,7 @@
         reactions[emoji].push(userId);
       }
       await set(msgRef, reactions);
+      // Update local cache
       const msg = messagesCache.find(m => m.id === messageId);
       if (msg) {
         msg.reactions = reactions;
@@ -1154,7 +1148,7 @@
     if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
       emojiPicker.style.display = "none";
     }
-    if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn")) {
+    if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn") && !e.target.closest(".react-btn")) {
       document.querySelectorAll(".reaction-picker").forEach(picker => picker.remove());
     }
     if (!e.target.closest(".reaction-users") && !e.target.classList.contains("reaction")) {
