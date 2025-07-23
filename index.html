@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -124,6 +125,27 @@
     font-size: 1.5em;
     vertical-align: middle;
   }
+  .bubble .file-preview {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 5px;
+  }
+  .bubble .pdf-preview {
+    width: 100%;
+    height: 200px;
+    border: none;
+    border-radius: 8px;
+    margin-top: 5px;
+  }
+  .bubble .file-link {
+    color: white;
+    text-decoration: underline;
+    margin-top: 5px;
+    display: inline-block;
+  }
+  body.night .bubble .file-link {
+    color: #ddd;
+  }
   .info {
     font-size: 0.7em;
     color: #ccc;
@@ -147,7 +169,7 @@
     right: 10px;
   }
   .message:not(.you) .actions {
-    left: 60px; /* Adjusted for avatar width */
+    left: 60px;
   }
   .actions button {
     background: transparent;
@@ -262,19 +284,29 @@
   #fileInput {
     display: none;
   }
+  #fileBtn {
+    background: #0078d7;
+    color: white;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #fileBtn:hover {
+    background: #005a9e;
+  }
   #emojiPicker {
     position: absolute;
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    display: none;
     width: 280px;
     max-height: 200px;
     overflow-y: auto;
     padding: 10px;
     z-index: 10;
-    display: none; /* Ensure hidden by default */
+    display: none;
     grid-template-columns: repeat(8, 1fr);
     gap: 5px;
   }
@@ -427,10 +459,6 @@
     border: 1px solid #666;
     color: white;
   }
-  #modalContent .btn-group {
-    display: flex;
-    gap: 10px;
-  }
   #saveProfileBtn {
     width: 100%;
     padding: 10px;
@@ -475,7 +503,7 @@
 
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
-  <input type="file" id="fileInput" aria-label="File input" />
+  <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
   <div id="replyPreview"></div>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
@@ -506,6 +534,7 @@
     getStorage, ref as storageRef, uploadBytes, getDownloadURL
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
+  // Replace with your Firebase project configuration
   const firebaseConfig = {
     apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
     authDomain: "live-chat-app-5ea98.firebaseapp.com",
@@ -516,13 +545,20 @@
     appId: "1:58710835031:web:9248de0eba59c09c0fc812"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const storage = getStorage(app);
-  const messagesRef = ref(db, "messages");
-  const typingRef = ref(db, "typing");
-  const presenceRef = ref(db, "presence");
-  const connectedRef = ref(db, ".info/connected");
+  let app, db, storage, messagesRef, typingRef, presenceRef, connectedRef;
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getDatabase(app);
+    storage = getStorage(app);
+    messagesRef = ref(db, "messages");
+    typingRef = ref(db, "typing");
+    presenceRef = ref(db, "presence");
+    connectedRef = ref(db, ".info/connected");
+    console.log("Firebase initialized successfully");
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+    alert("Failed to connect to the server. Please check your network or Firebase configuration.");
+  }
 
   const textInput = document.getElementById("text");
   const sendBtn = document.getElementById("sendBtn");
@@ -658,73 +694,132 @@
   const usersMap = new Map();
 
   function saveUserToLocal(user) {
-    localStorage.setItem("quickchat-user", JSON.stringify(user));
-  }
-  function loadUserFromLocal() {
-    const userStr = localStorage.getItem("quickchat-user");
-    if (!userStr) return null;
     try {
+      localStorage.setItem("quickchat-user", JSON.stringify(user));
+      console.log("User saved to localStorage:", user);
+    } catch (error) {
+      console.error("Error saving user to localStorage:", error);
+    }
+  }
+
+  function loadUserFromLocal() {
+    try {
+      const userStr = localStorage.getItem("quickchat-user");
+      if (!userStr) return null;
       return JSON.parse(userStr);
-    } catch {
+    } catch (error) {
+      console.error("Error loading user from localStorage:", error);
       return null;
     }
   }
+
   function saveNightMode(enabled) {
-    localStorage.setItem("quickchat-nightmode", enabled ? "1" : "0");
+    try {
+      localStorage.setItem("quickchat-nightmode", enabled ? "1" : "0");
+      console.log("Night mode saved:", enabled);
+    } catch (error) {
+      console.error("Error saving night mode:", error);
+    }
   }
+
   function loadNightMode() {
-    return localStorage.getItem("quickchat-nightmode") === "1";
+    try {
+      return localStorage.getItem("quickchat-nightmode") === "1";
+    } catch (error) {
+      console.error("Error loading night mode:", error);
+      return false;
+    }
   }
+
   function generateUserId() {
-    let id = localStorage.getItem("quickchat-userid");
-    if (!id) {
-      id = 'user_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem("quickchat-userid", id);
+    try {
+      let id = localStorage.getItem("quickchat-userid");
+      if (!id) {
+        id = 'user_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem("quickchat-userid", id);
+      }
+      console.log("Generated userId:", id);
+      return id;
+    } catch (error) {
+      console.error("Error generating userId:", error);
+      return 'user_' + Date.now();
     }
-    return id;
   }
+
   function escapeHTML(str) {
-    if (!str) return "";
-    return str.replace(/[&<>"']/g, (m) => ({
-      '&': "&amp;",
-      '<': "&lt;",
-      '>': "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[m]);
-  }
-  function formatTime(ts) {
-    const d = new Date(ts);
-    return d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
-  }
-  function getAvatarForUser(user) {
-    if (user.avatar) return user.avatar;
-    const idx = hashCode(user.username + userId) % maleAvatars.length;
-    return maleAvatars[Math.abs(idx)];
-  }
-  function hashCode(str) {
-    let hash = 0;
-    for(let i=0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0;
+    try {
+      if (!str) return "";
+      return str.replace(/[&<>"']/g, (m) => ({
+        '&': "&amp;",
+        '<': "&lt;",
+        '>': "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[m]);
+    } catch (error) {
+      console.error("Error escaping HTML:", error);
+      return str;
     }
-    return hash;
   }
+
+  function formatTime(ts) {
+    try {
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Unknown time";
+    }
+  }
+
+  function getAvatarForUser(user) {
+    try {
+      if (user.avatar) return user.avatar;
+      const idx = hashCode(user.username + userId) % maleAvatars.length;
+      return maleAvatars[Math.abs(idx)];
+    } catch (error) {
+      console.error("Error getting avatar:", error);
+      return maleAvatars[0];
+    }
+  }
+
+  function hashCode(str) {
+    try {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash;
+    } catch (error) {
+      console.error("Error hashing code:", error);
+      return 0;
+    }
+  }
+
   function styleEmojis(text) {
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
-    return text.replace(emojiRegex, '<span class="emoji">$&</span>');
+    try {
+      const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+      return text.replace(emojiRegex, '<span class="emoji">$&</span>');
+    } catch (error) {
+      console.error("Error styling emojis:", error);
+      return text;
+    }
   }
 
   function cacheUserInfo(msg) {
-    if (msg && msg.userId && msg.username) {
-      console.log(`Caching user: ${msg.userId}, ${msg.username}, avatar: ${msg.avatar}`);
-      usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar });
+    try {
+      if (msg && msg.userId && msg.username) {
+        usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar });
+        console.log(`Cached user: ${msg.userId}, ${msg.username}`);
+      }
+    } catch (error) {
+      console.error("Error caching user info:", error);
     }
   }
 
   function renderMessage(msg) {
     try {
-      console.log(`Rendering message: ${msg.id}, replyTo: ${msg.replyTo}`);
       const div = document.createElement("div");
       div.className = "message " + (msg.userId === userId ? "you" : "");
       div.setAttribute("tabindex", "0");
@@ -732,7 +827,6 @@
       div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || "file"}`);
       div.dataset.messageId = msg.id;
 
-      // Add hover and touch events for actions
       div.addEventListener("mouseenter", () => div.classList.add("touched"));
       div.addEventListener("mouseleave", () => div.classList.remove("touched"));
       div.addEventListener("touchstart", () => div.classList.add("touched"));
@@ -764,9 +858,8 @@
 
       if (msg.replyTo) {
         const replyData = messagesCache.find(m => m.id === msg.replyTo);
-        console.log(`Reply data for ${msg.replyTo}:`, replyData);
         if (replyData) {
-          cacheUserInfo(replyData); // Ensure replied user info is cached
+          cacheUserInfo(replyData);
           const replyQuote = document.createElement("div");
           replyQuote.className = "reply-quote";
           const replySender = document.createElement("div");
@@ -777,18 +870,6 @@
           replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
           replyQuote.appendChild(replyText);
           bubble.appendChild(replyQuote);
-        } else {
-          console.warn(`Reply message ${msg.replyTo} not found in cache`);
-          const replyQuote = document.createElement("div");
-          replyQuote.className = "reply-quote";
-          const replySender = document.createElement("div");
-          replySender.className = "quote-sender";
-          replySender.textContent = "Unknown User";
-          replyQuote.appendChild(replySender);
-          const replyText = document.createElement("div");
-          replyText.textContent = "Message not found";
-          replyQuote.appendChild(replyText);
-          bubble.appendChild(replyQuote);
         }
       }
 
@@ -797,18 +878,32 @@
         if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)) {
           const imgFile = document.createElement("img");
           imgFile.src = msg.fileUrl;
-          imgFile.style.maxWidth = "100%";
-          imgFile.style.borderRadius = "8px";
+          imgFile.className = "file-preview";
           imgFile.alt = msg.fileName || "Uploaded image";
+          imgFile.onerror = () => {
+            imgFile.src = "";
+            imgFile.alt = "Failed to load image";
+            imgFile.nextSibling.textContent = `Failed to load ${msg.fileName || "image"}`;
+          };
           bubble.appendChild(imgFile);
-        } else {
-          const a = document.createElement("a");
-          a.href = msg.fileUrl;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = `Download File (${msg.fileName || 'file'})`;
-          bubble.appendChild(a);
+        } else if (ext === "pdf") {
+          const pdfFrame = document.createElement("iframe");
+          pdfFrame.src = msg.fileUrl + "#toolbar=0&navpanes=0&scrollbar=0";
+          pdfFrame.className = "pdf-preview";
+          pdfFrame.title = msg.fileName || "Uploaded PDF";
+          pdfFrame.onerror = () => {
+            pdfFrame.src = "";
+            pdfFrame.nextSibling.textContent = `Failed to load ${msg.fileName || "PDF"}`;
+          };
+          bubble.appendChild(pdfFrame);
         }
+        const fileLink = document.createElement("a");
+        fileLink.href = msg.fileUrl;
+        fileLink.target = "_blank";
+        fileLink.rel = "noopener noreferrer";
+        fileLink.className = "file-link";
+        fileLink.textContent = `View ${msg.fileName || "file"}`;
+        bubble.appendChild(fileLink);
       } else {
         bubble.innerHTML = styleEmojis(escapeHTML(msg.text)).replace(/\n/g, "<br>");
       }
@@ -876,16 +971,14 @@
       return div;
     } catch (error) {
       console.error("Error rendering message:", error);
-      return document.createElement("div"); // Return empty div to prevent breaking
+      return document.createElement("div");
     }
   }
 
   function showReactionUsers(emoji, userIds, element) {
     try {
       let userList = document.querySelector(".reaction-users");
-      if (userList) {
-        userList.remove();
-      }
+      if (userList) userList.remove();
       userList = document.createElement("div");
       userList.className = "reaction-users";
       userList.style.display = "block";
@@ -938,18 +1031,27 @@
   }
 
   async function sendMessage(text, fileUrl = null, fileName = null) {
-    if (!text && !fileUrl) return;
-    const msg = {
-      text: text || "",
-      fileUrl: fileUrl || null,
-      fileName: fileName || null,
-      timestamp: Date.now(),
-      userId,
-      username: currentUser.username,
-      avatar: selectedAvatarUrl,
-      replyTo: replyToMessage ? replyToMessage.id : null
-    };
     try {
+      if (!text && !fileUrl) {
+        console.log("No text or file to send, skipping");
+        return;
+      }
+      if (!currentUser || !userId) {
+        console.error("User not initialized");
+        alert("Please set up your profile first.");
+        openProfileModal();
+        return;
+      }
+      const msg = {
+        text: text || "",
+        fileUrl: fileUrl || null,
+        fileName: fileName || null,
+        timestamp: Date.now(),
+        userId,
+        username: currentUser.username,
+        avatar: selectedAvatarUrl,
+        replyTo: replyToMessage ? replyToMessage.id : null
+      };
       console.log("Sending message:", msg);
       await push(messagesRef, msg);
       textInput.value = "";
@@ -973,6 +1075,7 @@
       messagesCache = messagesCache.filter(m => m.id !== messageId);
       const msgDiv = messagesDiv.querySelector(`[data-message-id="${messageId}"]`);
       if (msgDiv) msgDiv.remove();
+      console.log(`Message ${messageId} deleted`);
     } catch (error) {
       console.error("Failed to delete message:", error);
       alert("Failed to delete message: " + error.message);
@@ -981,7 +1084,7 @@
 
   async function editMessage(msg) {
     try {
-      if (!msg.text) return; // Only text messages can be edited
+      if (!msg.text) return;
       const newText = prompt("Edit your message:", msg.text);
       if (!newText || newText.trim() === msg.text) return;
       const msgRef = ref(db, `messages/${msg.id}`);
@@ -995,6 +1098,7 @@
           msgDiv.replaceWith(newDiv);
         }
       }
+      console.log(`Message ${msg.id} edited`);
     } catch (error) {
       console.error("Failed to edit message:", error);
       alert("Failed to edit message: " + error.message);
@@ -1003,9 +1107,8 @@
 
   function setReplyTo(msg) {
     try {
-      console.log(`Setting reply to: ${msg.id}, ${msg.username}`);
       replyToMessage = msg;
-      cacheUserInfo(msg); // Ensure replied user info is cached
+      cacheUserInfo(msg);
       replyPreview.style.display = "block";
       replyPreview.innerHTML = `
         <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
@@ -1021,11 +1124,9 @@
       });
       textInput.placeholder = `Replying to ${msg.username}...`;
       textInput.focus();
+      console.log(`Set reply to message ${msg.id}`);
     } catch (error) {
       console.error("Error setting reply:", error);
-      replyToMessage = null;
-      replyPreview.style.display = "none";
-      replyPreview.innerHTML = "";
     }
   }
 
@@ -1040,7 +1141,7 @@
       picker.className = "reaction-picker";
       picker.style.display = "flex";
       picker.style.left = `${button.offsetLeft}px`;
-      picker.style.top = `${button.parentElement.offsetTop - 40}px`; // Position above the button
+      picker.style.top = `${button.parentElement.offsetTop - 40}px`;
       reactionEmojis.forEach(emoji => {
         const span = document.createElement("span");
         span.textContent = emoji;
@@ -1071,20 +1172,17 @@
       let reactions = snapshot.val() || {};
       const userReaction = Object.entries(reactions).find(([_, users]) => users.includes(userId));
       if (userReaction && userReaction[0] === emoji) {
-        // Remove reaction if clicking the same emoji
         reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
         if (reactions[userReaction[0]].length === 0) {
           delete reactions[userReaction[0]];
         }
       } else {
-        // Remove existing reaction if different
         if (userReaction) {
           reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
           if (reactions[userReaction[0]].length === 0) {
             delete reactions[userReaction[0]];
           }
         }
-        // Add new reaction
         if (!reactions[emoji]) {
           reactions[emoji] = [];
         }
@@ -1093,7 +1191,6 @@
         }
       }
       await set(msgRef, reactions);
-      // Update local cache
       const msg = messagesCache.find(m => m.id === messageId);
       if (msg) {
         msg.reactions = reactions;
@@ -1103,6 +1200,7 @@
           msgDiv.replaceWith(newDiv);
         }
       }
+      console.log(`Added reaction ${emoji} to message ${messageId}`);
     } catch (error) {
       console.error("Failed to add/remove reaction:", error);
       alert("Failed to add/remove reaction: " + error.message);
@@ -1143,68 +1241,72 @@
     }
   }
 
-  onValue(typingRef, (snapshot) => {
+  function setupTypingListener() {
     try {
-      const typingUsers = [];
-      snapshot.forEach(child => {
-        if (child.key !== userId && child.val()) {
-          if (presenceMap.get(child.key) === "online") {
-            typingUsers.push(child.key);
+      onValue(typingRef, (snapshot) => {
+        const typingUsers = [];
+        snapshot.forEach(child => {
+          if (child.key !== userId && child.val()) {
+            if (presenceMap.get(child.key) === "online") {
+              typingUsers.push(child.key);
+            }
+          }
+        });
+        if (typingUsers.length === 0) {
+          typingIndicator.textContent = "";
+        } else {
+          const namesTyping = [];
+          typingUsers.forEach(uid => {
+            const user = usersMap.get(uid);
+            if (user && user.username) namesTyping.push(user.username);
+          });
+          if (namesTyping.length === 1) {
+            typingIndicator.textContent = `${namesTyping[0]} is typing...`;
+          } else if (namesTyping.length === 2) {
+            typingIndicator.textContent = `${namesTyping[0]} and ${namesTyping[1]} are typing...`;
+          } else {
+            typingIndicator.textContent = `${namesTyping[0]}, ${namesTyping[1]} and others are typing...`;
           }
         }
+      }, (error) => {
+        console.error("Error in typing listener:", error);
       });
-      if (typingUsers.length === 0) {
-        typingIndicator.textContent = "";
-      } else {
-        const namesTyping = [];
-        typingUsers.forEach(uid => {
-          const user = usersMap.get(uid);
-          if (user && user.username) namesTyping.push(user.username);
+    } catch (error) {
+      console.error("Error setting up typing listener:", error);
+    }
+  }
+
+  function setupMessageListener() {
+    try {
+      onChildAdded(messagesRef, (data) => {
+        const msg = data.val();
+        msg.id = data.key;
+        console.log("New message received:", msg);
+        addMessage(msg);
+      }, (error) => {
+        console.error("Error in onChildAdded:", error);
+      });
+
+      onValue(messagesRef, (snapshot) => {
+        console.log("Messages snapshot received");
+        messagesCache = [];
+        usersMap.clear();
+        messagesDiv.innerHTML = "";
+        snapshot.forEach(child => {
+          const m = child.val();
+          m.id = child.key;
+          cacheUserInfo(m);
+          messagesCache.push(m);
+          messagesDiv.appendChild(renderMessage(m));
         });
-        if (namesTyping.length === 1) {
-          typingIndicator.textContent = `${namesTyping[0]} is typing...`;
-        } else if (namesTyping.length === 2) {
-          typingIndicator.textContent = `${namesTyping[0]} and ${namesTyping[1]} are typing...`;
-        } else {
-          typingIndicator.textContent = `${namesTyping[0]}, ${namesTyping[1]} and others are typing...`;
-        }
-      }
-    } catch (error) {
-      console.error("Error in typing listener:", error);
-    }
-  });
-
-  onChildAdded(messagesRef, (data) => {
-    try {
-      const msg = data.val();
-      msg.id = data.key;
-      console.log("New message added:", msg);
-      addMessage(msg);
-    } catch (error) {
-      console.error("Error in onChildAdded:", error);
-    }
-  });
-
-  onValue(messagesRef, (snapshot) => {
-    try {
-      console.log("Messages snapshot received");
-      messagesCache = [];
-      usersMap.clear();
-      messagesDiv.innerHTML = "";
-      snapshot.forEach(child => {
-        const m = child.val();
-        m.id = child.key;
-        cacheUserInfo(m);
-        messagesCache.push(m);
-        messagesDiv.appendChild(renderMessage(m));
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }, (error) => {
+        console.error("Error in messages onValue:", error);
       });
-      console.log("Messages cache:", messagesCache);
-      console.log("Users map:", Array.from(usersMap.entries()));
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
-      console.error("Error in onValue:", error);
+      console.error("Error setting up message listener:", error);
     }
-  });
+  }
 
   function setupPresence() {
     try {
@@ -1217,9 +1319,15 @@
           set(userPresenceRef, { state: "online", lastChanged: Date.now() }).catch(error => {
             console.error("Failed to set presence:", error);
           });
-          onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() });
-          onDisconnect(userTypingRef).remove();
+          onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() }).catch(error => {
+            console.error("Failed to set onDisconnect presence:", error);
+          });
+          onDisconnect(userTypingRef).remove().catch(error => {
+            console.error("Failed to set onDisconnect typing:", error);
+          });
         }
+      }, (error) => {
+        console.error("Error in connectedRef listener:", error);
       });
 
       onValue(presenceRef, (snapshot) => {
@@ -1229,6 +1337,8 @@
           presenceMap.set(child.key, p.state);
         });
         renderAllMessagesPresence();
+      }, (error) => {
+        console.error("Error in presence listener:", error);
       });
     } catch (error) {
       console.error("Error setting up presence:", error);
@@ -1247,7 +1357,12 @@
   });
 
   sendBtn.addEventListener("click", () => {
-    sendMessage(textInput.value.trim());
+    try {
+      sendMessage(textInput.value.trim());
+    } catch (error) {
+      console.error("Error in send button click:", error);
+      alert("Failed to send message: " + error.message);
+    }
   });
 
   textInput.addEventListener("keydown", (e) => {
@@ -1275,19 +1390,50 @@
     }
   });
 
-  fileBtn.addEventListener("click", () => fileInput.click());
+  fileBtn.addEventListener("click", () => {
+    try {
+      console.log("File button clicked");
+      fileInput.click();
+    } catch (error) {
+      console.error("Error in file button click:", error);
+    }
+  });
+
   fileInput.addEventListener("change", async () => {
     try {
+      console.log("File input changed");
       const file = fileInput.files[0];
-      if (!file) return;
+      if (!file) {
+        console.log("No file selected");
+        fileInput.value = "";
+        return;
+      }
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        console.error("File size exceeds 5MB:", file.size);
+        alert("File size exceeds 5MB limit.");
+        fileInput.value = "";
+        return;
+      }
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "application/pdf"];
+      if (!allowedTypes.includes(file.type)) {
+        console.error("Invalid file type:", file.type);
+        alert("Only images (jpg, png, gif, webp, bmp) and PDFs are allowed.");
+        fileInput.value = "";
+        return;
+      }
+      console.log("Uploading file:", file.name);
       const fileRef = storageRef(storage, `files/${userId}/${Date.now()}_${file.name}`);
       await uploadBytes(fileRef, file);
       const url = await getDownloadURL(fileRef);
+      console.log("File uploaded, URL:", url);
       await sendMessage("", url, file.name);
+      console.log("File message sent");
       fileInput.value = "";
     } catch (error) {
       console.error("Failed to upload file:", error);
       alert("Failed to upload file: " + error.message);
+      fileInput.value = "";
     }
   });
 
@@ -1311,6 +1457,7 @@
         });
         emojiPicker.appendChild(span);
       });
+      console.log("Emoji picker populated");
     } catch (error) {
       console.error("Error populating emoji picker:", error);
     }
@@ -1352,6 +1499,7 @@
     try {
       const night = document.body.classList.toggle("night");
       saveNightMode(night);
+      console.log("Night mode toggled:", night);
     } catch (error) {
       console.error("Error toggling night mode:", error);
     }
@@ -1365,17 +1513,21 @@
     try {
       modalOverlay.style.display = "flex";
       usernameInput.focus();
+      console.log("Profile modal opened");
     } catch (error) {
       console.error("Error opening profile modal:", error);
     }
   }
+
   function closeProfileModal() {
     try {
       modalOverlay.style.display = "none";
+      console.log("Profile modal closed");
     } catch (error) {
       console.error("Error closing profile modal:", error);
     }
   }
+
   saveProfileBtn.addEventListener("click", () => {
     try {
       const val = usernameInput.value.trim();
@@ -1391,12 +1543,19 @@
       saveUserToLocal(currentUser);
       closeProfileModal();
       setupPresence();
+      console.log("Profile saved:", currentUser);
     } catch (error) {
       console.error("Error saving profile:", error);
+      alert("Failed to save profile: " + error.message);
     }
   });
+
   changeUserBtn.addEventListener("click", () => {
-    openProfileModal();
+    try {
+      openProfileModal();
+    } catch (error) {
+      console.error("Error opening profile modal:", error);
+    }
   });
 
   avatarPickerBtn.addEventListener("click", () => {
@@ -1406,6 +1565,7 @@
       console.error("Error opening avatar picker:", error);
     }
   });
+
   function openAvatarPicker() {
     try {
       avatarPickerOverlay.style.display = "flex";
@@ -1427,6 +1587,7 @@
           currentUser.avatar = url;
           saveUserToLocal(currentUser);
           avatarPickerOverlay.style.display = "none";
+          console.log("Avatar selected:", url);
         });
         img.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1441,6 +1602,7 @@
       console.error("Error opening avatar picker:", error);
     }
   }
+
   avatarPickerOverlay.addEventListener("click", (e) => {
     try {
       if (e.target === avatarPickerOverlay) avatarPickerOverlay.style.display = "none";
@@ -1467,11 +1629,14 @@
         selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
         currentUser.avatar = selectedAvatarUrl;
         setupPresence();
+        setupTypingListener();
+        setupMessageListener();
       }
-      // Ensure emoji picker is hidden on init
       emojiPicker.style.display = "none";
+      console.log("User initialized:", currentUser);
     } catch (error) {
       console.error("Error initializing user:", error);
+      alert("Failed to initialize user: " + error.message);
     }
   }
 
@@ -1481,3 +1646,4 @@
 
 </body>
 </html>
+```
