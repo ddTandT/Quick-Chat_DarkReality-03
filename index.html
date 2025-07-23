@@ -124,27 +124,6 @@
     font-size: 1.5em;
     vertical-align: middle;
   }
-  .bubble .file-preview {
-    max-width: 100%;
-    border-radius: 8px;
-    margin-top: 5px;
-  }
-  .bubble .pdf-preview {
-    width: 100%;
-    height: 200px;
-    border: none;
-    border-radius: 8px;
-    margin-top: 5px;
-  }
-  .bubble .file-link {
-    color: white;
-    text-decoration: underline;
-    margin-top: 5px;
-    display: inline-block;
-  }
-  body.night .bubble .file-link {
-    color: #ddd;
-  }
   .info {
     font-size: 0.7em;
     color: #ccc;
@@ -289,12 +268,13 @@
     border: 1px solid #ccc;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    display: none;
     width: 280px;
     max-height: 200px;
     overflow-y: auto;
     padding: 10px;
     z-index: 10;
-    display: none;
+    display: none; /* Ensure hidden by default */
     grid-template-columns: repeat(8, 1fr);
     gap: 5px;
   }
@@ -495,7 +475,7 @@
 
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
-  <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf" />
+  <input type="file" id="fileInput" aria-label="File input" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
   <div id="replyPreview"></div>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
@@ -706,11 +686,11 @@
   function escapeHTML(str) {
     if (!str) return "";
     return str.replace(/[&<>"']/g, (m) => ({
-      '&': "&",
-      '<': "<",
-      '>': ">",
-      '"': """,
-      "'": "'"
+      '&': "&amp;",
+      '<': "&lt;",
+      '>': "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
     })[m]);
   }
   function formatTime(ts) {
@@ -786,7 +766,7 @@
         const replyData = messagesCache.find(m => m.id === msg.replyTo);
         console.log(`Reply data for ${msg.replyTo}:`, replyData);
         if (replyData) {
-          cacheUserInfo(replyData);
+          cacheUserInfo(replyData); // Ensure replied user info is cached
           const replyQuote = document.createElement("div");
           replyQuote.className = "reply-quote";
           const replySender = document.createElement("div");
@@ -817,23 +797,18 @@
         if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)) {
           const imgFile = document.createElement("img");
           imgFile.src = msg.fileUrl;
-          imgFile.className = "file-preview";
+          imgFile.style.maxWidth = "100%";
+          imgFile.style.borderRadius = "8px";
           imgFile.alt = msg.fileName || "Uploaded image";
           bubble.appendChild(imgFile);
-        } else if (ext === "pdf") {
-          const pdfFrame = document.createElement("iframe");
-          pdfFrame.src = msg.fileUrl + "#toolbar=0&navpanes=0&scrollbar=0";
-          pdfFrame.className = "pdf-preview";
-          pdfFrame.title = msg.fileName || "Uploaded PDF";
-          bubble.appendChild(pdfFrame);
+        } else {
+          const a = document.createElement("a");
+          a.href = msg.fileUrl;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = `Download File (${msg.fileName || 'file'})`;
+          bubble.appendChild(a);
         }
-        const fileLink = document.createElement("a");
-        fileLink.href = msg.fileUrl;
-        fileLink.target = "_blank";
-        fileLink.rel = "noopener noreferrer";
-        fileLink.className = "file-link";
-        fileLink.textContent = `View ${msg.fileName || 'file'}`;
-        bubble.appendChild(fileLink);
       } else {
         bubble.innerHTML = styleEmojis(escapeHTML(msg.text)).replace(/\n/g, "<br>");
       }
@@ -901,7 +876,7 @@
       return div;
     } catch (error) {
       console.error("Error rendering message:", error);
-      return document.createElement("div");
+      return document.createElement("div"); // Return empty div to prevent breaking
     }
   }
 
@@ -1030,7 +1005,7 @@
     try {
       console.log(`Setting reply to: ${msg.id}, ${msg.username}`);
       replyToMessage = msg;
-      cacheUserInfo(msg);
+      cacheUserInfo(msg); // Ensure replied user info is cached
       replyPreview.style.display = "block";
       replyPreview.innerHTML = `
         <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
@@ -1065,7 +1040,7 @@
       picker.className = "reaction-picker";
       picker.style.display = "flex";
       picker.style.left = `${button.offsetLeft}px`;
-      picker.style.top = `${button.parentElement.offsetTop - 40}px`;
+      picker.style.top = `${button.parentElement.offsetTop - 40}px`; // Position above the button
       reactionEmojis.forEach(emoji => {
         const span = document.createElement("span");
         span.textContent = emoji;
@@ -1096,17 +1071,20 @@
       let reactions = snapshot.val() || {};
       const userReaction = Object.entries(reactions).find(([_, users]) => users.includes(userId));
       if (userReaction && userReaction[0] === emoji) {
+        // Remove reaction if clicking the same emoji
         reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
         if (reactions[userReaction[0]].length === 0) {
           delete reactions[userReaction[0]];
         }
       } else {
+        // Remove existing reaction if different
         if (userReaction) {
           reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
           if (reactions[userReaction[0]].length === 0) {
             delete reactions[userReaction[0]];
           }
         }
+        // Add new reaction
         if (!reactions[emoji]) {
           reactions[emoji] = [];
         }
@@ -1115,6 +1093,7 @@
         }
       }
       await set(msgRef, reactions);
+      // Update local cache
       const msg = messagesCache.find(m => m.id === messageId);
       if (msg) {
         msg.reactions = reactions;
@@ -1301,18 +1280,6 @@
     try {
       const file = fileInput.files[0];
       if (!file) return;
-      const maxSize = 5 * 1024 * 1024; // 5MB limit
-      if (file.size > maxSize) {
-        alert("File size exceeds 5MB limit.");
-        fileInput.value = "";
-        return;
-      }
-      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "application/pdf"];
-      if (!allowedTypes.includes(file.type)) {
-        alert("Only images (jpg, png, gif, webp, bmp) and PDFs are allowed.");
-        fileInput.value = "";
-        return;
-      }
       const fileRef = storageRef(storage, `files/${userId}/${Date.now()}_${file.name}`);
       await uploadBytes(fileRef, file);
       const url = await getDownloadURL(fileRef);
@@ -1435,7 +1402,7 @@
   avatarPickerBtn.addEventListener("click", () => {
     try {
       openAvatarPicker();
-    } try {
+    } catch (error) {
       console.error("Error opening avatar picker:", error);
     }
   });
@@ -1501,6 +1468,7 @@
         currentUser.avatar = selectedAvatarUrl;
         setupPresence();
       }
+      // Ensure emoji picker is hidden on init
       emojiPicker.style.display = "none";
     } catch (error) {
       console.error("Error initializing user:", error);
