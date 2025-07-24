@@ -527,7 +527,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getDatabase, ref, push, onChildAdded, get, set,
-    remove, onValue, onDisconnect, update
+    remove, onValue, onDisconnect, update, onChildRemoved, onChildChanged
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import {
     getStorage, ref as storageRef, uploadBytes, getDownloadURL
@@ -873,6 +873,7 @@
       const bubble = document.createElement("div");
       bubble.className = "bubble";
 
+      // Enhanced reply rendering to ensure replied-to message is shown
       if (msg.replyTo) {
         const replyData = messagesCache.find(m => m.id === msg.replyTo);
         if (replyData) {
@@ -886,6 +887,12 @@
           const replyText = document.createElement("div");
           replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
           replyQuote.appendChild(replyText);
+          bubble.appendChild(replyQuote);
+        } else {
+          // Handle case where replied-to message is not found
+          const replyQuote = document.createElement("div");
+          replyQuote.className = "reply-quote";
+          replyQuote.innerHTML = "<i>Original message not found</i>";
           bubble.appendChild(replyQuote);
         }
       }
@@ -1038,9 +1045,21 @@
   function addMessage(msg) {
     try {
       cacheUserInfo(msg);
-      messagesCache.push(msg);
+      // Ensure message is not duplicated in cache
+      const existingIndex = messagesCache.findIndex(m => m.id === msg.id);
+      if (existingIndex !== -1) {
+        messagesCache[existingIndex] = msg;
+      } else {
+        messagesCache.push(msg);
+      }
+      // Re-render only the affected message
+      const existingDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
       const dom = renderMessage(msg);
-      messagesDiv.appendChild(dom);
+      if (existingDiv) {
+        existingDiv.replaceWith(dom);
+      } else {
+        messagesDiv.appendChild(dom);
+      }
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Error adding message:", error);
@@ -1067,7 +1086,9 @@
         userId,
         username: currentUser.username,
         avatar: selectedAvatarUrl,
-        replyTo: replyToMessage ? replyToMessage.id : null
+        replyTo: replyToMessage ? replyToMessage.id : null,
+        // Include replyToUsername for better rendering when original message is deleted
+        replyToUsername: replyToMessage ? replyToMessage.username : null
       };
       console.log("Sending message:", msg);
       await push(messagesRef, msg);
@@ -1302,6 +1323,37 @@
         addMessage(msg);
       }, (error) => {
         console.error("Error in onChildAdded:", error);
+      });
+
+      // Added onChildChanged to update messages with replies
+      onChildChanged(messagesRef, (data) => {
+        const msg = data.val();
+        msg.id = data.key;
+        console.log("Message updated:", msg);
+        addMessage(msg);
+      }, (error) => {
+        console.error("Error in onChildChanged:", error);
+      });
+
+      // Added onChildRemoved to handle deleted messages
+      onChildRemoved(messagesRef, (data) => {
+        const msgId = data.key;
+        console.log(`Message ${msgId} removed`);
+        messagesCache = messagesCache.filter(m => m.id !== msgId);
+        const msgDiv = messagesDiv.querySelector(`[data-message-id="${msgId}"]`);
+        if (msgDiv) msgDiv.remove();
+        // Re-render messages that replied to the deleted message
+        messagesCache.forEach(m => {
+          if (m.replyTo === msgId) {
+            const msgDiv = messagesDiv.querySelector(`[data-message-id="${m.id}"]`);
+            if (msgDiv) {
+              const newDiv = renderMessage(m);
+              msgDiv.replaceWith(newDiv);
+            }
+          }
+        });
+      }, (error) => {
+        console.error("Error in onChildRemoved:", error);
       });
 
       onValue(messagesRef, (snapshot) => {
@@ -1663,4 +1715,3 @@
 
 </body>
 </html>
-```
