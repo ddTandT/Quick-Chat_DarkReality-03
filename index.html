@@ -555,7 +555,7 @@
     remove, onValue, onDisconnect, update
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import {
-    getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject
+    getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
@@ -932,6 +932,10 @@
             pdfFrame.nextSibling.textContent = `Failed to load ${msg.fileName || "PDF"}`;
           };
           bubble.appendChild(pdfFrame);
+        } else if (["doc", "docx"].includes(ext)) {
+          const fileIcon = document.createElement("span");
+          fileIcon.textContent = "📄 ";
+          bubble.appendChild(fileIcon);
         }
         const fileLink = document.createElement("a");
         fileLink.href = msg.fileUrl;
@@ -1068,9 +1072,9 @@
 
   async function uploadFileToFirebase(file) {
     try {
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        throw new Error("File size exceeds 10MB limit.");
+        throw new Error("File size exceeds 5MB limit.");
       }
       const allowedTypes = [
         "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
@@ -1088,9 +1092,23 @@
           expiry: (Date.now() + 7 * 24 * 60 * 60 * 1000).toString()
         }
       };
-      await uploadBytes(fileRef, file, metadata);
-      const url = await getDownloadURL(fileRef);
-      return { url, filePath: `files/${userId}/${fileName}` };
+      const uploadTask = uploadBytesResumable(fileRef, file, metadata);
+      return new Promise((resolve, reject) => {
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log(`Upload is ${progress}% done`);
+          },
+          (error) => {
+            console.error("Upload failed:", error);
+            reject(error);
+          },
+          async () => {
+            const url = await getDownloadURL(fileRef);
+            resolve({ url, filePath: `files/${userId}/${fileName}` });
+          }
+        );
+      });
     } catch (error) {
       console.error("Error uploading file to Firebase:", error);
       throw error;
