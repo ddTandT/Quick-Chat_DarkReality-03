@@ -162,6 +162,26 @@
   body.night .bubble .file-link {
     color: #b0e0ff;
   }
+  .bubble .file-link-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+  }
+  .bubble .copy-link-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #e7f3ff;
+    padding: 2px;
+  }
+  body.night .bubble .copy-link-btn {
+    color: #b0e0ff;
+  }
+  .bubble .copy-link-btn:hover {
+    color: #fff;
+  }
   .info {
     font-size: 0.7em;
     color: #65676b;
@@ -856,9 +876,10 @@
 
   async function cleanupExpiredFilesAndMessages() {
     try {
-      const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
       const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
 
+      // Clean up expired messages
       const snapshot = await get(messagesRef);
       const messages = snapshot.val() || {};
       for (const [msgId, msg] of Object.entries(messages)) {
@@ -876,10 +897,12 @@
         }
       }
 
-      const [files] = await listAll(storageRef(storage, `files/`));
-      for (const file of files.items) {
-        const [metadata] = await file.getMetadata();
-        const expiry = metadata.metadata?.expiry;
+      // Clean up expired files in storage
+      const filesRef = storageRef(storage, `files/`);
+      const filesList = await listAll(filesRef);
+      for (const file of filesList.items) {
+        const metadata = await file.getMetadata();
+        const expiry = metadata.customMetadata?.expiry;
         if (expiry && parseInt(expiry) < threeDaysAgo) {
           await deleteObject(file).catch(error => {
             console.error("Failed to delete expired file:", error);
@@ -964,6 +987,7 @@
           pdfFrame.src = msg.fileUrl + "#toolbar=0&navpanes=0&scrollbar=0";
           pdfFrame.className = "pdf-preview";
           pdfFrame.title = msg.fileName || "Uploaded PDF";
+          pdfFrame.setAttribute("aria-label", `Preview of ${msg.fileName || "uploaded PDF"}`);
           pdfFrame.onerror = () => {
             pdfFrame.src = "";
             pdfFrame.nextSibling.textContent = `Failed to load ${msg.fileName || "PDF"}`;
@@ -974,13 +998,30 @@
           fileIcon.textContent = "📄 ";
           bubble.appendChild(fileIcon);
         }
+        const fileLinkContainer = document.createElement("div");
+        fileLinkContainer.className = "file-link-container";
         const fileLink = document.createElement("a");
         fileLink.href = msg.fileUrl;
         fileLink.target = "_blank";
         fileLink.rel = "noopener noreferrer";
         fileLink.className = "file-link";
         fileLink.textContent = `View ${msg.fileName || "file"}`;
-        bubble.appendChild(fileLink);
+        fileLinkContainer.appendChild(fileLink);
+        const copyLinkBtn = document.createElement("button");
+        copyLinkBtn.className = "copy-link-btn";
+        copyLinkBtn.textContent = "📋";
+        copyLinkBtn.setAttribute("aria-label", "Copy file link");
+        copyLinkBtn.title = "Copy Link";
+        copyLinkBtn.addEventListener("click", () => {
+          navigator.clipboard.writeText(msg.fileUrl).then(() => {
+            alert("Link copied to clipboard!");
+          }).catch(error => {
+            console.error("Failed to copy link:", error);
+            alert("Failed to copy link.");
+          });
+        });
+        fileLinkContainer.appendChild(copyLinkBtn);
+        bubble.appendChild(fileLinkContainer);
       } else {
         bubble.innerHTML = styleEmojis(escapeHTML(msg.text)).replace(/\n/g, "<br>");
       }
