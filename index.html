@@ -551,11 +551,11 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getDatabase, ref, push, onChildAdded, get, set,
+    getDatabase, ref, push, onChildAdded, onChildChanged, get, set,
     remove, onValue, onDisconnect, update
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import {
-    getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
+    getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, listAll
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
@@ -707,7 +707,7 @@
     "🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥",
     "📽","🎞","📞","☎️","📟","📠","📺","📻","🎙","🎚",
     "🎛","⏱","⏲","⏰","🕰","⌛","⏳","📡","🔋","🔌",
-    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘"," 19",
+    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘","📙",
     "📚","📓","📒","📃","📜","📄","📰","🗞","📑","🔖",
     "🏷","💰","💴","💵","💶","💷","💸","💳","🧾","💹",
     "✉️","📧","📨","📩","📤","📥","📦","📫","📪","📬",
@@ -854,6 +854,43 @@
     }
   }
 
+  async function cleanupExpiredFilesAndMessages() {
+    try {
+      const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+      const snapshot = await get(messagesRef);
+      const messages = snapshot.val() || {};
+      for (const [msgId, msg] of Object.entries(messages)) {
+        if (msg.timestamp < oneDayAgo) {
+          if (msg.filePath) {
+            const fileRef = storageRef(storage, msg.filePath);
+            await deleteObject(fileRef).catch(error => {
+              console.error("Failed to delete file from storage:", error);
+            });
+          }
+          const msgRef = ref(db, `messages/${msgId}`);
+          await remove(msgRef).catch(error => {
+            console.error("Failed to delete message:", error);
+          });
+        }
+      }
+
+      const [files] = await listAll(storageRef(storage, `files/`));
+      for (const file of files.items) {
+        const [metadata] = await file.getMetadata();
+        const expiry = metadata.metadata?.expiry;
+        if (expiry && parseInt(expiry) < threeDaysAgo) {
+          await deleteObject(file).catch(error => {
+            console.error("Failed to delete expired file:", error);
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error cleaning up expired files and messages:", error);
+    }
+  }
+
   function renderMessage(msg) {
     try {
       const div = document.createElement("div");
@@ -903,7 +940,7 @@
           replySender.textContent = replyData.username || "Unknown User";
           replyQuote.appendChild(replySender);
           const replyText = document.createElement("div");
-          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
+          replyText.innerHTML = styleEmojis(escapeHTML(replyData.text || replyData.fileName || "File")).slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
           replyQuote.appendChild(replyText);
           bubble.appendChild(replyQuote);
         }
@@ -1045,9 +1082,7 @@
       Array.from(messagesDiv.children).forEach(div => {
         const avatarWrapper = div.querySelector(".avatar");
         if (!avatarWrapper) return;
-        const userIdInMsg = Array.from(usersMap).find(([uid, u]) => {
-          return div.getAttribute("aria-label")?.startsWith(u.username);
-        })?.[0];
+        const userIdInMsg = div.dataset.userId;
         if (!userIdInMsg) return;
         avatarWrapper.classList.remove("presence-online", "presence-offline");
         const pres = presenceMap.get(userIdInMsg) === "online" ? "presence-online" : "presence-offline";
@@ -1058,12 +1093,23 @@
     }
   }
 
-  function addMessage(msg) {
+  function addMessage(msg, isUpdate = false) {
     try {
       cacheUserInfo(msg);
-      messagesCache.push(msg);
-      const dom = renderMessage(msg);
-      messagesDiv.appendChild(dom);
+      const existingIndex = messagesCache.findIndex(m => m.id === msg.id);
+      if (existingIndex !== -1) {
+        messagesCache[existingIndex] = msg;
+        const existingDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
+        if (existingDiv) {
+          const newDiv = renderMessage(msg);
+          existingDiv.replaceWith(newDiv);
+        }
+      } else {
+        messagesCache.push(msg);
+        const dom = renderMessage(msg);
+        dom.dataset.userId = msg.userId;
+        messagesDiv.appendChild(dom);
+      }
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Error adding message:", error);
@@ -1072,7 +1118,7 @@
 
   async function uploadFileToFirebase(file) {
     try {
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         throw new Error("File size exceeds 5MB limit.");
       }
@@ -1089,7 +1135,7 @@
       const metadata = {
         contentType: file.type,
         customMetadata: {
-          expiry: (Date.now() + 7 * 24 * 60 * 60 * 1000).toString()
+          expiry: (Date.now() + 3 * 24 * 60 * 60 * 1000).toString()
         }
       };
       const uploadTask = uploadBytesResumable(fileRef, file, metadata);
@@ -1201,7 +1247,7 @@
       replyPreview.style.display = "block";
       replyPreview.innerHTML = `
         <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
-        <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
+        <div>${styleEmojis(escapeHTML(msg.text || msg.fileName || "File")).slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
         <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
       `;
       const closeBtn = replyPreview.querySelector(".close-reply");
@@ -1298,7 +1344,7 @@
     try {
       if (isTyping) return;
       isTyping = true;
-      set(ref(db, `typing/${userId}`), true).catch(error => {
+      set(ref(db, `typing/${userId}`), { state: true, timestamp: Date.now() }).catch(error => {
         console.error("Failed to set typing status:", error);
       });
       lastTypingTime = Date.now();
@@ -1333,7 +1379,7 @@
       onValue(typingRef, (snapshot) => {
         const typingUsers = [];
         snapshot.forEach(child => {
-          if (child.key !== userId && child.val()) {
+          if (child.key !== userId && child.val()?.state) {
             if (presenceMap.get(child.key) === "online") {
               typingUsers.push(child.key);
             }
@@ -1373,20 +1419,12 @@
         console.error("Error in onChildAdded:", error);
       });
 
-      onValue(messagesRef, (snapshot) => {
-        messagesCache = [];
-        usersMap.clear();
-        messagesDiv.innerHTML = "";
-        snapshot.forEach(child => {
-          const m = child.val();
-          m.id = child.key;
-          cacheUserInfo(m);
-          messagesCache.push(m);
-          messagesDiv.appendChild(renderMessage(m));
-        });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      onChildChanged(messagesRef, (data) => {
+        const msg = data.val();
+        msg.id = data.key;
+        addMessage(msg, true);
       }, (error) => {
-        console.error("Error in messages onValue:", error);
+        console.error("Error in onChildChanged:", error);
       });
     } catch (error) {
       console.error("Error setting up message listener:", error);
@@ -1401,18 +1439,10 @@
 
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
-          set(userPresenceRef, { state: "online", lastChanged: Date.now() }).catch(error => {
-            console.error("Failed to set presence:", error);
-          });
-          onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() }).catch(error => {
-            console.error("Failed to set onDisconnect presence:", error);
-          });
-          onDisconnect(userTypingRef).remove().catch(error => {
-            console.error("Failed to set onDisconnect typing:", error);
-          });
+          set(userPresenceRef, { state: "online", lastChanged: Date.now() });
+          onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() });
+          onDisconnect(userTypingRef).remove();
         }
-      }, (error) => {
-        console.error("Error in connectedRef listener:", error);
       });
 
       onValue(presenceRef, (snapshot) => {
@@ -1422,8 +1452,6 @@
           presenceMap.set(child.key, p.state);
         });
         renderAllMessagesPresence();
-      }, (error) => {
-        console.error("Error in presence listener:", error);
       });
     } catch (error) {
       console.error("Error setting up presence:", error);
@@ -1688,6 +1716,7 @@
         setupPresence();
         setupTypingListener();
         setupMessageListener();
+        cleanupExpiredFilesAndMessages();
       }
       emojiPicker.style.display = "none";
     } catch (error) {
