@@ -393,17 +393,17 @@
     outline: none;
   }
   .reply-quote {
-    background: rgba(0, 132, 255, 0.1);
+    background: #e4e6eb;
     border-left: 4px solid #0084ff;
-    padding: 6px 10px;
+    padding: 8px 12px;
     margin-bottom: 6px;
     font-size: 0.85em;
     color: #1c1e21;
-    border-radius: 8px;
+    border-radius: 12px;
     position: relative;
   }
   body.night .reply-quote {
-    background: rgba(0, 88, 179, 0.2);
+    background: #3a3b3c;
     border-left-color: #0058b3;
     color: #e4e6eb;
   }
@@ -902,6 +902,34 @@
     }
   }
 
+  async function updateUserAvatarInMessages(newAvatarUrl) {
+    try {
+      const snapshot = await get(messagesRef);
+      const messages = snapshot.val() || {};
+      for (const [msgId, msg] of Object.entries(messages)) {
+        if (msg.userId === userId) {
+          const msgRef = ref(db, `messages/${msgId}`);
+          await update(msgRef, { avatar: newAvatarUrl });
+          const msgIndex = messagesCache.findIndex(m => m.id === msgId);
+          if (msgIndex !== -1) {
+            messagesCache[msgIndex].avatar = newAvatarUrl;
+          }
+        }
+      }
+      // Re-render all messages to update avatars
+      messagesDiv.innerHTML = "";
+      messagesCache.forEach(msg => {
+        const dom = renderMessage(msg);
+        dom.dataset.userId = msg.userId;
+        messagesDiv.appendChild(dom);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    } catch (error) {
+      console.error("Error updating user avatar in messages:", error);
+      alert("Failed to update avatar in messages: " + error.message);
+    }
+  }
+
   function renderMessage(msg) {
     try {
       const div = document.createElement("div");
@@ -951,7 +979,7 @@
           replySender.textContent = replyData.username || "Unknown User";
           replyQuote.appendChild(replySender);
           const replyText = document.createElement("div");
-          replyText.innerHTML = styleEmojis(escapeHTML(replyData.text || replyData.fileName || "File")).slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
+          replyText.innerHTML = styleEmojis(escapeHTML(replyData.text || replyData.fileName || "File"));
           replyQuote.appendChild(replyText);
           bubble.appendChild(replyQuote);
         }
@@ -1264,7 +1292,7 @@
       replyPreview.style.display = "block";
       replyPreview.innerHTML = `
         <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
-        <div>${styleEmojis(escapeHTML(msg.text || msg.fileName || "File")).slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
+        <div>${styleEmojis(escapeHTML(msg.text || msg.fileName || "File"))}</div>
         <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
       `;
       const closeBtn = replyPreview.querySelector(".close-reply");
@@ -1647,6 +1675,7 @@
       saveUserToLocal(currentUser);
       closeProfileModal();
       setupPresence();
+      updateUserAvatarInMessages(selectedAvatarUrl);
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Failed to save profile: " + error.message);
@@ -1689,6 +1718,7 @@
           selectedAvatarUrl = url;
           currentUser.avatar = url;
           saveUserToLocal(currentUser);
+          updateUserAvatarInMessages(url);
           avatarPickerOverlay.style.display = "none";
         });
         img.addEventListener("keydown", (e) => {
@@ -1730,6 +1760,7 @@
       } else {
         selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
         currentUser.avatar = selectedAvatarUrl;
+        saveUserToLocal(currentUser);
         setupPresence();
         setupTypingListener();
         setupMessageListener();
