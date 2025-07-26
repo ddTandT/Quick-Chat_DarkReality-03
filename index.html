@@ -531,7 +531,7 @@
 <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
-  <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf" />
+  <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
   <div id="replyPreview"></div>
   <textarea id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input"></textarea>
@@ -555,7 +555,7 @@
     remove, onValue, onDisconnect, update
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import {
-    getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject, listAll
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
@@ -650,9 +650,7 @@
     "https://randomuser.me/api/portraits/men/47.jpg",
     "https://randomuser.me/api/portraits/men/48.jpg",
     "https://randomuser.me/api/portraits/men/49.jpg",
-    "https://randomuser.me/api/portraits/men/50.jpg",
-    "https://randomuser.me/api/portraits/men/51.jpg",
-    "https://randomuser.me/api/portraits/men/52.jpg"
+    "https://randomuser.me/api/portraits/men/50.jpg"
   ];
 
   const emojis = [
@@ -709,7 +707,7 @@
     "🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥",
     "📽","🎞","📞","☎️","📟","📠","📺","📻","🎙","🎚",
     "🎛","⏱","⏲","⏰","🕰","⌛","⏳","📡","🔋","🔌",
-    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘","📙",
+    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘"," 19",
     "📚","📓","📒","📃","📜","📄","📰","🗞","📑","🔖",
     "🏷","💰","💴","💵","💶","💷","💸","💳","🧾","💹",
     "✉️","📧","📨","📩","📤","📥","📦","📫","📪","📬",
@@ -1070,50 +1068,32 @@
 
   async function uploadFileToFirebase(file) {
     try {
-      if (!file) throw new Error("No file selected.");
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
-        throw new Error("File size exceeds 5MB limit. Please choose a smaller file.");
+        throw new Error("File size exceeds 10MB limit.");
       }
-      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "application/pdf"];
+      const allowedTypes = [
+        "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
+        "application/pdf", "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ];
       if (!allowedTypes.includes(file.type)) {
-        throw new Error("Only images (jpg, png, gif, webp, bmp) and PDFs are allowed.");
+        throw new Error("Only images (jpg, png, gif, webp, bmp), PDFs, and Word files (doc, docx) are allowed.");
       }
-      const fileName = `${Date.now()}_${encodeURIComponent(file.name)}`;
+      const fileName = `${Date.now()}_${file.name}`;
       const fileRef = storageRef(storage, `files/${userId}/${fileName}`);
       const metadata = {
+        contentType: file.type,
         customMetadata: {
           expiry: (Date.now() + 7 * 24 * 60 * 60 * 1000).toString()
         }
       };
-      const snapshot = await uploadBytes(fileRef, file, metadata);
+      await uploadBytes(fileRef, file, metadata);
       const url = await getDownloadURL(fileRef);
       return { url, filePath: `files/${userId}/${fileName}` };
     } catch (error) {
       console.error("Error uploading file to Firebase:", error);
-      throw new Error(`Failed to upload file: ${error.message}`);
-    }
-  }
-
-  async function cleanupExpiredFiles() {
-    try {
-      const filesRef = storageRef(storage, `files`);
-      const listResult = await listAll(filesRef);
-      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      for (const folder of listResult.prefixes) {
-        const folderList = await listAll(folder);
-        for (const item of folderList.items) {
-          const metadata = await item.getMetadata();
-          const expiry = parseInt(metadata.customMetadata?.expiry || "0", 10);
-          if (expiry && expiry < sevenDaysAgo) {
-            await deleteObject(item).catch(err => {
-              console.error(`Failed to delete expired file ${item.name}:`, err);
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error cleaning up expired files:", error);
+      throw error;
     }
   }
 
@@ -1492,19 +1472,13 @@
         fileInput.value = "";
         return;
       }
-      fileBtn.disabled = true;
-      fileBtn.textContent = "Uploading...";
       const { url, filePath } = await uploadFileToFirebase(file);
       await sendMessage("", url, file.name, filePath);
       fileInput.value = "";
-      fileBtn.disabled = false;
-      fileBtn.textContent = "📎";
     } catch (error) {
       console.error("Failed to upload file:", error);
-      alert(error.message);
+      alert("Failed to upload file: " + error.message);
       fileInput.value = "";
-      fileBtn.disabled = false;
-      fileBtn.textContent = "📎";
     }
   });
 
@@ -1705,7 +1679,6 @@
   }
 
   initUser();
-  setInterval(cleanupExpiredFiles, 24 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
