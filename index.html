@@ -19,6 +19,9 @@
     background: #18191a;
     color: #e4e6eb;
   }
+  body.locked main, body.locked header, body.locked footer, body.locked #welcomeMessage {
+    display: none;
+  }
   header {
     background: #1877f2;
     color: white;
@@ -401,10 +404,10 @@
     background: #fff;
     border: 1px solid #ddd;
     padding: 6px;
-    border-radius: 12px; /* Adjusted for vertical layout */
+    border-radius: 12px;
     z-index: 10;
     display: none;
-    flex-direction: column; /* Changed to vertical */
+    flex-direction: column;
     gap: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     animation: reactionPop 0.2s ease-out;
@@ -418,7 +421,7 @@
     font-size: 1.4em;
     padding: 4px;
     transition: transform 0.2s;
-    text-align: center; /* Center emojis in vertical layout */
+    text-align: center;
   }
   .reaction-picker span:hover, .reaction-picker span:focus {
     transform: scale(1.2);
@@ -501,7 +504,7 @@
   body.night .reaction-users div:hover {
     background: #4b4c4f;
   }
-  #modalOverlay, #avatarPickerOverlay {
+  #modalOverlay, #avatarPickerOverlay, #passkeyOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -513,7 +516,7 @@
     align-items: center;
     z-index: 1000;
   }
-  #modalContent, #avatarPickerModal {
+  #modalContent, #avatarPickerModal, #passkeyModal {
     background: white;
     padding: 20px;
     border-radius: 12px;
@@ -522,16 +525,16 @@
     box-sizing: border-box;
     outline: none;
   }
-  body.night #modalContent, body.night #avatarPickerModal {
+  body.night #modalContent, body.night #avatarPickerModal, body.night #passkeyModal {
     background: #3a3b3c;
     color: #e4e6eb;
   }
-  #modalContent h2, #avatarPickerModal h2 {
+  #modalContent h2, #avatarPickerModal h2, #passkeyModal h2 {
     margin: 0 0 10px;
     font-size: 1.2em;
     font-weight: 500;
   }
-  #usernameInput {
+  #usernameInput, #passkeyInput {
     width: 100%;
     padding: 10px;
     font-size: 0.95em;
@@ -539,12 +542,12 @@
     border-radius: 6px;
     border: 1px solid #ddd;
   }
-  body.night #usernameInput {
+  body.night #usernameInput, body.night #passkeyInput {
     background: #4b4c4f;
     border: 1px solid #606770;
     color: #e4e6eb;
   }
-  #saveProfileBtn {
+  #saveProfileBtn, #submitPasskeyBtn {
     width: 100%;
     padding: 10px;
     font-weight: 500;
@@ -581,9 +584,15 @@
     0% { opacity: 1; }
     100% { opacity: 0; display: none; }
   }
+  #passkeyError {
+    color: #f02849;
+    font-size: 0.85em;
+    margin-top: 5px;
+    display: none;
+  }
 </style>
 </head>
-<body>
+<body class="locked">
 <div id="welcomeMessage">Welcome to Fakebook</div>
 <header>
   <h1>Fakebook Chat</h1>
@@ -593,8 +602,10 @@
     <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
   </div>
 </header>
-<div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
-<div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
+<main>
+  <div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
+  <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
+</main>
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
   <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
@@ -613,6 +624,14 @@
 </div>
 <div id="avatarPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
   <div id="avatarPickerModal" tabindex="0"></div>
+</div>
+<div id="passkeyOverlay" role="dialog" aria-modal="true" aria-labelledby="passkeyTitle">
+  <div id="passkeyModal" tabindex="0">
+    <h2 id="passkeyTitle">Enter Passkey</h2>
+    <input type="password" id="passkeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter passkey..." />
+    <div id="passkeyError">Incorrect passkey. Please try again.</div>
+    <button id="submitPasskeyBtn">Submit</button>
+  </div>
 </div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -666,6 +685,10 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
   const replyPreview = document.getElementById("replyPreview");
+  const passkeyOverlay = document.getElementById("passkeyOverlay");
+  const passkeyInput = document.getElementById("passkeyInput");
+  const submitPasskeyBtn = document.getElementById("submitPasskeyBtn");
+  const passkeyError = document.getElementById("passkeyError");
 
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
 
@@ -723,6 +746,23 @@
       return localStorage.getItem("quickchat-nightmode") === "1";
     } catch (error) {
       console.error("Error loading night mode:", error);
+      return false;
+    }
+  }
+
+  function savePasskeyValidated(validated) {
+    try {
+      sessionStorage.setItem("quickchat-passkey-validated", validated ? "1" : "0");
+    } catch (error) {
+      console.error("Error saving passkey validation:", error);
+    }
+  }
+
+  function loadPasskeyValidated() {
+    try {
+      return sessionStorage.getItem("quickchat-passkey-validated") === "1";
+    } catch (error) {
+      console.error("Error loading passkey validation:", error);
       return false;
     }
   }
@@ -1179,7 +1219,6 @@
       picker = document.createElement("div");
       picker.className = "reaction-picker";
       picker.style.display = "flex";
-      // Position below the button to avoid overlap in vertical layout
       picker.style.left = `${button.offsetLeft}px`;
       picker.style.top = `${button.parentElement.offsetTop + button.offsetHeight + 5}px`;
       reactionEmojis.forEach(emoji => {
@@ -1189,7 +1228,7 @@
         span.setAttribute("aria-label", `React with ${emoji}`);
         span.addEventListener("click", () => {
           addReaction(messageId, emoji);
-          picker.remove(); // Close picker after selecting a reaction
+          picker.remove();
         });
         span.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1439,6 +1478,45 @@
     }
   }
 
+  function openPasskeyModal() {
+    try {
+      passkeyOverlay.style.display = "flex";
+      passkeyInput.focus();
+      passkeyError.style.display = "none";
+    } catch (error) {
+      console.error("Error opening passkey modal:", error);
+    }
+  }
+
+  function validatePasskey() {
+    try {
+      const passkey = passkeyInput.value.trim();
+      if (passkey === "DarkMessage") {
+        document.body.classList.remove("locked");
+        passkeyOverlay.style.display = "none";
+        savePasskeyValidated(true);
+        passkeyInput.value = "";
+        passkeyError.style.display = "none";
+      } else {
+        passkeyError.style.display = "block";
+        passkeyInput.focus();
+      }
+    } catch (error) {
+      console.error("Error validating passkey:", error);
+      passkeyError.textContent = "Error validating passkey. Please try again.";
+      passkeyError.style.display = "block";
+    }
+  }
+
+  submitPasskeyBtn.addEventListener("click", validatePasskey);
+
+  passkeyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      validatePasskey();
+    }
+  });
+
   nightModeBtn.addEventListener("click", () => {
     try {
       document.body.classList.toggle("night");
@@ -1595,6 +1673,11 @@
 
   async function init() {
     try {
+      if (!loadPasskeyValidated()) {
+        openPasskeyModal();
+      } else {
+        document.body.classList.remove("locked");
+      }
       if (loadNightMode()) document.body.classList.add("night");
       currentUser = loadUserFromLocal();
       if (!currentUser) {
