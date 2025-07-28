@@ -224,7 +224,6 @@
   .actions button.reply-btn::before {
     content: "↩️";
   }
-  }
   @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
@@ -447,20 +446,24 @@
   }
   .reactions {
     display: flex;
+    flex-direction: column;
     gap: 4px;
     margin-top: 4px;
     font-size: 0.9em;
-    justify-content: flex-end;
+    align-items: flex-end;
   }
   .message:not(.you) .reactions {
-    justify-content: flex-start;
+    align-items: flex-start;
   }
   .reaction {
     background: #e7f3ff;
     border-radius: 12px;
-    padding: 2px 6px;
+    padding: 4px 8px;
     cursor: pointer;
     transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   body.night .reaction {
     background: #4b4c4f;
@@ -472,17 +475,29 @@
     position: absolute;
     background: #fff;
     border: 1px solid #ddd;
-    padding: 6px;
+    padding: 8px;
     border-radius: 8px;
-    z-index: 10;
-    display: none;
+    z-index: 20;
     max-width: 200px;
     font-size: 0.8em;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
   }
   body.night .reaction-users {
     background: #3a3b3c;
     border: 1px solid #4b4c4f;
     color: #e4e6eb;
+  }
+  .reaction-users div {
+    padding: 4px;
+    border-radius: 4px;
+  }
+  .reaction-users div:hover {
+    background: #e7f3ff;
+  }
+  body.night .reaction-users div:hover {
+    background: #4b4c4f;
   }
   #modalOverlay, #avatarPickerOverlay {
     position: fixed;
@@ -785,6 +800,16 @@
     }
   }
 
+  function makeLinksClickable(text) {
+    try {
+      const urlRegex = /(https?:\/\/[^\s<>"']+)/g;
+      return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">$1</a>');
+    } catch (error) {
+      console.error("Error making links clickable:", error);
+      return text;
+    }
+  }
+
   function cacheUserInfo(msg) {
     try {
       if (msg && msg.userId && msg.username) {
@@ -888,7 +913,7 @@
           bubble.appendChild(link);
         }
       } else {
-        bubble.innerHTML = styleEmojis(escapeHTML(msg.text)).replace(/\n/g, "<br>");
+        bubble.innerHTML = styleEmojis(makeLinksClickable(escapeHTML(msg.text))).replace(/\n/g, "<br>");
       }
       content.appendChild(bubble);
 
@@ -961,12 +986,20 @@
   function showReactionUsers(emoji, userIds, element) {
     try {
       let userList = document.querySelector(".reaction-users");
+      if (userList && userList.dataset.emoji === emoji && userList.parentElement === element.parentElement) {
+        userList.remove();
+        return;
+      }
       if (userList) userList.remove();
       userList = document.createElement("div");
       userList.className = "reaction-users";
-      userList.style.display = "block";
-      userList.style.left = `${element.offsetLeft}px`;
-      userList.style.bottom = `${element.parentElement.offsetHeight + 10}px`;
+      userList.dataset.emoji = emoji;
+      userList.style.display = "flex";
+      userList.style.left = `${element.offsetLeft + element.offsetWidth + 10}px`;
+      userList.style.top = `${element.offsetTop}px`;
+      const countDiv = document.createElement("div");
+      countDiv.textContent = `${emoji} ${userIds.length}`;
+      userList.appendChild(countDiv);
       userIds.forEach(uid => {
         const user = usersMap.get(uid);
         if (user) {
@@ -978,6 +1011,12 @@
       if (userList.children.length > 0) {
         element.parentElement.appendChild(userList);
       }
+      userList.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          userList.remove();
+          element.focus();
+        }
+      });
     } catch (error) {
       console.error("Error showing reaction users:", error);
     }
@@ -1072,7 +1111,7 @@
       replyPreview.style.display = "none";
       replyPreview.innerHTML = "";
       stopTyping();
-      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom after sending
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Failed to send message:", error);
       alert("Failed to send message: " + error.message);
@@ -1147,7 +1186,7 @@
         span.setAttribute("aria-label", `React with ${emoji}`);
         span.addEventListener("click", () => {
           addReaction(messageId, emoji);
-          picker.remove();
+          picker.remove(); // Close picker after selecting a reaction
         });
         span.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1158,6 +1197,14 @@
         picker.appendChild(span);
       });
       button.parentElement.appendChild(picker);
+      picker.querySelector("span").focus();
+      // Add keyboard support for closing
+      picker.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          picker.remove();
+          button.focus();
+        }
+      });
     } catch (error) {
       console.error("Error toggling reaction picker:", error);
     }
@@ -1522,6 +1569,7 @@
       if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
         emojiPicker.style.display = "none";
       }
+      // Close reaction picker only if clicking outside both picker and react button
       if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn")) {
         document.querySelectorAll(".reaction-picker").forEach(picker => picker.remove());
       }
