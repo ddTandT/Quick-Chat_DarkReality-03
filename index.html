@@ -162,15 +162,6 @@
   body.night .bubble .file-link {
     color: #b0e0ff;
   }
-  .bubble .link-preview {
-    color: #0084ff;
-    text-decoration: underline;
-    cursor: pointer;
-    word-break: break-all;
-  }
-  body.night .bubble .link-preview {
-    color: #b0e0ff;
-  }
   .info {
     font-size: 0.7em;
     color: #65676b;
@@ -393,17 +384,17 @@
     outline: none;
   }
   .reply-quote {
-    background: #e4e6eb;
+    background: rgba(0, 132, 255, 0.1);
     border-left: 4px solid #0084ff;
-    padding: 8px 12px;
+    padding: 6px 10px;
     margin-bottom: 6px;
     font-size: 0.85em;
     color: #1c1e21;
-    border-radius: 12px;
+    border-radius: 8px;
     position: relative;
   }
   body.night .reply-quote {
-    background: #3a3b3c;
+    background: rgba(0, 88, 179, 0.2);
     border-left-color: #0058b3;
     color: #e4e6eb;
   }
@@ -540,7 +531,7 @@
 <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
-  <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+  <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
   <div id="replyPreview"></div>
   <textarea id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input"></textarea>
@@ -560,11 +551,11 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getDatabase, ref, push, onChildAdded, onChildChanged, get, set,
+    getDatabase, ref, push, onChildAdded, get, set,
     remove, onValue, onDisconnect, update
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import {
-    getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject, listAll
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject, listAll
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
@@ -716,7 +707,7 @@
     "🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥",
     "📽","🎞","📞","☎️","📟","📠","📺","📻","🎙","🎚",
     "🎛","⏱","⏲","⏰","🕰","⌛","⏳","📡","🔋","🔌",
-    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘","📙",
+    "💡","🔦","🕯","🪔","📔","📕","📖","📗","📘"," 19",
     "📚","📓","📒","📃","📜","📄","📰","🗞","📑","🔖",
     "🏷","💰","💴","💵","💶","💷","💸","💳","🧾","💹",
     "✉️","📧","📨","📩","📤","📥","📦","📫","📪","📬",
@@ -863,73 +854,6 @@
     }
   }
 
-  async function cleanupExpiredFilesAndMessages() {
-    try {
-      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-      const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
-
-      // Delete expired messages
-      const snapshot = await get(messagesRef);
-      const messages = snapshot.val() || {};
-      for (const [msgId, msg] of Object.entries(messages)) {
-        if (msg.timestamp < oneDayAgo) {
-          if (msg.filePath) {
-            const fileRef = storageRef(storage, msg.filePath);
-            await deleteObject(fileRef).catch(error => {
-              console.error("Failed to delete file from storage:", error);
-            });
-          }
-          const msgRef = ref(db, `messages/${msgId}`);
-          await remove(msgRef).catch(error => {
-            console.error("Failed to delete message:", error);
-          });
-        }
-      }
-
-      // Delete expired files from storage
-      const filesList = await listAll(storageRef(storage, `files/`));
-      for (const file of filesList.items) {
-        const metadata = await file.getMetadata();
-        const expiry = metadata.customMetadata?.expiry;
-        if (expiry && parseInt(expiry) < threeDaysAgo) {
-          await deleteObject(file).catch(error => {
-            console.error("Failed to delete expired file:", error);
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error cleaning up expired files and messages:", error);
-    }
-  }
-
-  async function updateUserAvatarInMessages(newAvatarUrl) {
-    try {
-      const snapshot = await get(messagesRef);
-      const messages = snapshot.val() || {};
-      for (const [msgId, msg] of Object.entries(messages)) {
-        if (msg.userId === userId) {
-          const msgRef = ref(db, `messages/${msgId}`);
-          await update(msgRef, { avatar: newAvatarUrl });
-          const msgIndex = messagesCache.findIndex(m => m.id === msgId);
-          if (msgIndex !== -1) {
-            messagesCache[msgIndex].avatar = newAvatarUrl;
-          }
-        }
-      }
-      // Re-render all messages to update avatars
-      messagesDiv.innerHTML = "";
-      messagesCache.forEach(msg => {
-        const dom = renderMessage(msg);
-        dom.dataset.userId = msg.userId;
-        messagesDiv.appendChild(dom);
-      });
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    } catch (error) {
-      console.error("Error updating user avatar in messages:", error);
-      alert("Failed to update avatar in messages: " + error.message);
-    }
-  }
-
   function renderMessage(msg) {
     try {
       const div = document.createElement("div");
@@ -979,7 +903,7 @@
           replySender.textContent = replyData.username || "Unknown User";
           replyQuote.appendChild(replySender);
           const replyText = document.createElement("div");
-          replyText.innerHTML = styleEmojis(escapeHTML(replyData.text || replyData.fileName || "File"));
+          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
           replyQuote.appendChild(replyText);
           bubble.appendChild(replyQuote);
         }
@@ -1003,16 +927,11 @@
           pdfFrame.src = msg.fileUrl + "#toolbar=0&navpanes=0&scrollbar=0";
           pdfFrame.className = "pdf-preview";
           pdfFrame.title = msg.fileName || "Uploaded PDF";
-          pdfFrame.setAttribute("aria-label", `Preview of ${msg.fileName || "uploaded PDF"}`);
           pdfFrame.onerror = () => {
             pdfFrame.src = "";
             pdfFrame.nextSibling.textContent = `Failed to load ${msg.fileName || "PDF"}`;
           };
           bubble.appendChild(pdfFrame);
-        } else if (["doc", "docx"].includes(ext)) {
-          const fileIcon = document.createElement("span");
-          fileIcon.textContent = "📄 ";
-          bubble.appendChild(fileIcon);
         }
         const fileLink = document.createElement("a");
         fileLink.href = msg.fileUrl;
@@ -1022,12 +941,7 @@
         fileLink.textContent = `View ${msg.fileName || "file"}`;
         bubble.appendChild(fileLink);
       } else {
-        const linkRegex = /(https?:\/\/[^\s]+)/g;
-        let messageText = styleEmojis(escapeHTML(msg.text)).replace(/\n/g, "<br>");
-        messageText = messageText.replace(linkRegex, (url) => {
-          return `<a href="${url}" class="link-preview" target="_blank" rel="noopener noreferrer" title="Open link">${url}</a>`;
-        });
-        bubble.innerHTML = messageText;
+        bubble.innerHTML = styleEmojis(escapeHTML(msg.text)).replace(/\n/g, "<br>");
       }
       content.appendChild(bubble);
 
@@ -1127,7 +1041,9 @@
       Array.from(messagesDiv.children).forEach(div => {
         const avatarWrapper = div.querySelector(".avatar");
         if (!avatarWrapper) return;
-        const userIdInMsg = div.dataset.userId;
+        const userIdInMsg = Array.from(usersMap).find(([uid, u]) => {
+          return div.getAttribute("aria-label")?.startsWith(u.username);
+        })?.[0];
         if (!userIdInMsg) return;
         avatarWrapper.classList.remove("presence-online", "presence-offline");
         const pres = presenceMap.get(userIdInMsg) === "online" ? "presence-online" : "presence-offline";
@@ -1138,23 +1054,12 @@
     }
   }
 
-  function addMessage(msg, isUpdate = false) {
+  function addMessage(msg) {
     try {
       cacheUserInfo(msg);
-      const existingIndex = messagesCache.findIndex(m => m.id === msg.id);
-      if (existingIndex !== -1) {
-        messagesCache[existingIndex] = msg;
-        const existingDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
-        if (existingDiv) {
-          const newDiv = renderMessage(msg);
-          existingDiv.replaceWith(newDiv);
-        }
-      } else {
-        messagesCache.push(msg);
-        const dom = renderMessage(msg);
-        dom.dataset.userId = msg.userId;
-        messagesDiv.appendChild(dom);
-      }
+      messagesCache.push(msg);
+      const dom = renderMessage(msg);
+      messagesDiv.appendChild(dom);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Error adding message:", error);
@@ -1163,46 +1068,47 @@
 
   async function uploadFileToFirebase(file) {
     try {
-      const maxSize = 5 * 1024 * 1024;
+      const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
         throw new Error("File size exceeds 5MB limit.");
       }
-      const allowedTypes = [
-        "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
-        "application/pdf", "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      ];
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "application/pdf"];
       if (!allowedTypes.includes(file.type)) {
-        throw new Error("Only images (jpg, png, gif, webp, bmp), PDFs, and Word files (doc, docx) are allowed.");
+        throw new Error("Only images (jpg, png, gif, webp, bmp) and PDFs are allowed.");
       }
       const fileName = `${Date.now()}_${file.name}`;
       const fileRef = storageRef(storage, `files/${userId}/${fileName}`);
       const metadata = {
-        contentType: file.type,
         customMetadata: {
-          expiry: (Date.now() + 3 * 24 * 60 * 60 * 1000).toString()
+          expiry: (Date.now() + 7 * 24 * 60 * 60 * 1000).toString()
         }
       };
-      const uploadTask = uploadBytesResumable(fileRef, file, metadata);
-      return new Promise((resolve, reject) => {
-        uploadTask.on('state_changed',
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log(`Upload is ${progress}% done`);
-          },
-          (error) => {
-            console.error("Upload failed:", error);
-            reject(error);
-          },
-          async () => {
-            const url = await getDownloadURL(fileRef);
-            resolve({ url, filePath: `files/${userId}/${fileName}` });
-          }
-        );
-      });
+      await uploadBytes(fileRef, file, metadata);
+      const url = await getDownloadURL(fileRef);
+      return { url, filePath: `files/${userId}/${fileName}` };
     } catch (error) {
       console.error("Error uploading file to Firebase:", error);
       throw error;
+    }
+  }
+
+  async function cleanupExpiredFiles() {
+    try {
+      const filesRef = storageRef(storage, `files`);
+      const listResult = await listAll(filesRef);
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      for (const folder of listResult.prefixes) {
+        const folderList = await listAll(folder);
+        for (const item of folderList.items) {
+          const metadata = await item.getMetadata();
+          const expiry = parseInt(metadata.customMetadata?.expiry || "0", 10);
+          if (expiry && expiry < sevenDaysAgo) {
+            await deleteObject(item);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error cleaning up expired files:", error);
     }
   }
 
@@ -1292,7 +1198,7 @@
       replyPreview.style.display = "block";
       replyPreview.innerHTML = `
         <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
-        <div>${styleEmojis(escapeHTML(msg.text || msg.fileName || "File"))}</div>
+        <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
         <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
       `;
       const closeBtn = replyPreview.querySelector(".close-reply");
@@ -1389,7 +1295,7 @@
     try {
       if (isTyping) return;
       isTyping = true;
-      set(ref(db, `typing/${userId}`), { state: true, timestamp: Date.now() }).catch(error => {
+      set(ref(db, `typing/${userId}`), true).catch(error => {
         console.error("Failed to set typing status:", error);
       });
       lastTypingTime = Date.now();
@@ -1424,7 +1330,7 @@
       onValue(typingRef, (snapshot) => {
         const typingUsers = [];
         snapshot.forEach(child => {
-          if (child.key !== userId && child.val()?.state) {
+          if (child.key !== userId && child.val()) {
             if (presenceMap.get(child.key) === "online") {
               typingUsers.push(child.key);
             }
@@ -1464,12 +1370,20 @@
         console.error("Error in onChildAdded:", error);
       });
 
-      onChildChanged(messagesRef, (data) => {
-        const msg = data.val();
-        msg.id = data.key;
-        addMessage(msg, true);
+      onValue(messagesRef, (snapshot) => {
+        messagesCache = [];
+        usersMap.clear();
+        messagesDiv.innerHTML = "";
+        snapshot.forEach(child => {
+          const m = child.val();
+          m.id = child.key;
+          cacheUserInfo(m);
+          messagesCache.push(m);
+          messagesDiv.appendChild(renderMessage(m));
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       }, (error) => {
-        console.error("Error in onChildChanged:", error);
+        console.error("Error in messages onValue:", error);
       });
     } catch (error) {
       console.error("Error setting up message listener:", error);
@@ -1484,10 +1398,18 @@
 
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
-          set(userPresenceRef, { state: "online", lastChanged: Date.now() });
-          onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() });
-          onDisconnect(userTypingRef).remove();
+          set(userPresenceRef, { state: "online", lastChanged: Date.now() }).catch(error => {
+            console.error("Failed to set presence:", error);
+          });
+          onDisconnect(userPresenceRef).set({ state: "offline", lastChanged: Date.now() }).catch(error => {
+            console.error("Failed to set onDisconnect presence:", error);
+          });
+          onDisconnect(userTypingRef).remove().catch(error => {
+            console.error("Failed to set onDisconnect typing:", error);
+          });
         }
+      }, (error) => {
+        console.error("Error in connectedRef listener:", error);
       });
 
       onValue(presenceRef, (snapshot) => {
@@ -1497,6 +1419,8 @@
           presenceMap.set(child.key, p.state);
         });
         renderAllMessagesPresence();
+      }, (error) => {
+        console.error("Error in presence listener:", error);
       });
     } catch (error) {
       console.error("Error setting up presence:", error);
@@ -1675,7 +1599,6 @@
       saveUserToLocal(currentUser);
       closeProfileModal();
       setupPresence();
-      updateUserAvatarInMessages(selectedAvatarUrl);
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Failed to save profile: " + error.message);
@@ -1718,7 +1641,6 @@
           selectedAvatarUrl = url;
           currentUser.avatar = url;
           saveUserToLocal(currentUser);
-          updateUserAvatarInMessages(url);
           avatarPickerOverlay.style.display = "none";
         });
         img.addEventListener("keydown", (e) => {
@@ -1760,11 +1682,9 @@
       } else {
         selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
         currentUser.avatar = selectedAvatarUrl;
-        saveUserToLocal(currentUser);
         setupPresence();
         setupTypingListener();
         setupMessageListener();
-        cleanupExpiredFilesAndMessages();
       }
       emojiPicker.style.display = "none";
     } catch (error) {
@@ -1774,6 +1694,7 @@
   }
 
   initUser();
+  setInterval(cleanupExpiredFiles, 24 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
