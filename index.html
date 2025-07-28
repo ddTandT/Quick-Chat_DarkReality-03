@@ -926,13 +926,13 @@
 
       const reactBtn = document.createElement("button");
       reactBtn.className = "react-btn";
-      reactBtn.setAttribute("aria-label", `React to message from ${msg.username}`);
+      reactBtn.setAttribute("aria-label", "React to message");
       reactBtn.title = "React";
       const userReaction = msg.reactions ? Object.entries(msg.reactions).find(([_, users]) => users.includes(userId))?.[0] : null;
-      reactBtn.textContent = userReaction || "😊";
+      reactBtn.textContent = userReaction || "👍";
       reactBtn.addEventListener("click", (e) => toggleReactionPicker(msg.id, e.target));
       actions.appendChild(reactBtn);
-
+      
       info.appendChild(actions);
       content.appendChild(info);
 
