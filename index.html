@@ -401,9 +401,10 @@
     background: #fff;
     border: 1px solid #ddd;
     padding: 6px;
-    border-radius: 20px;
+    border-radius: 12px; /* Adjusted for vertical layout */
     z-index: 10;
     display: none;
+    flex-direction: column; /* Changed to vertical */
     gap: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     animation: reactionPop 0.2s ease-out;
@@ -417,6 +418,7 @@
     font-size: 1.4em;
     padding: 4px;
     transition: transform 0.2s;
+    text-align: center; /* Center emojis in vertical layout */
   }
   .reaction-picker span:hover, .reaction-picker span:focus {
     transform: scale(1.2);
@@ -1177,8 +1179,9 @@
       picker = document.createElement("div");
       picker.className = "reaction-picker";
       picker.style.display = "flex";
+      // Position below the button to avoid overlap in vertical layout
       picker.style.left = `${button.offsetLeft}px`;
-      picker.style.top = `${button.parentElement.offsetTop - 36}px`;
+      picker.style.top = `${button.parentElement.offsetTop + button.offsetHeight + 5}px`;
       reactionEmojis.forEach(emoji => {
         const span = document.createElement("span");
         span.textContent = emoji;
@@ -1198,13 +1201,6 @@
       });
       button.parentElement.appendChild(picker);
       picker.querySelector("span").focus();
-      // Add keyboard support for closing
-      picker.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          picker.remove();
-          button.focus();
-        }
-      });
     } catch (error) {
       console.error("Error toggling reaction picker:", error);
     }
@@ -1569,7 +1565,6 @@
       if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
         emojiPicker.style.display = "none";
       }
-      // Close reaction picker only if clicking outside both picker and react button
       if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn")) {
         document.querySelectorAll(".reaction-picker").forEach(picker => picker.remove());
       }
