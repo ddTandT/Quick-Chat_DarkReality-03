@@ -33,7 +33,7 @@
     font-size: 1.4em;
     font-weight: 500;
   }
-  #logoutBtn, #nightModeBtn, #avatarPickerBtn {
+  #changeUserBtn, #nightModeBtn, #avatarPickerBtn {
     background: white;
     border: none;
     border-radius: 6px;
@@ -44,7 +44,7 @@
     color: #1877f2;
     font-size: 0.9em;
   }
-  #logoutBtn:hover, #nightModeBtn:hover, #avatarPickerBtn:hover {
+  #changeUserBtn:hover, #nightModeBtn:hover, #avatarPickerBtn:hover {
     background: #e7f3ff;
   }
   #messages {
@@ -401,10 +401,10 @@
     background: #fff;
     border: 1px solid #ddd;
     padding: 6px;
-    border-radius: 12px;
+    border-radius: 12px; /* Adjusted for vertical layout */
     z-index: 10;
     display: none;
-    flex-direction: column;
+    flex-direction: column; /* Changed to vertical */
     gap: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     animation: reactionPop 0.2s ease-out;
@@ -418,7 +418,7 @@
     font-size: 1.4em;
     padding: 4px;
     transition: transform 0.2s;
-    text-align: center;
+    text-align: center; /* Center emojis in vertical layout */
   }
   .reaction-picker span:hover, .reaction-picker span:focus {
     transform: scale(1.2);
@@ -531,7 +531,7 @@
     font-size: 1.2em;
     font-weight: 500;
   }
-  #usernameInput, #loginEmail, #loginPassword, #signupEmail, #signupPassword {
+  #usernameInput {
     width: 100%;
     padding: 10px;
     font-size: 0.95em;
@@ -539,12 +539,12 @@
     border-radius: 6px;
     border: 1px solid #ddd;
   }
-  body.night #usernameInput, body.night #loginEmail, body.night #loginPassword, body.night #signupEmail, body.night #signupPassword {
+  body.night #usernameInput {
     background: #4b4c4f;
     border: 1px solid #606770;
     color: #e4e6eb;
   }
-  #saveProfileBtn, #loginBtn, #signupBtn, #forgotPasswordBtn {
+  #saveProfileBtn {
     width: 100%;
     padding: 10px;
     font-weight: 500;
@@ -581,98 +581,21 @@
     0% { opacity: 1; }
     100% { opacity: 0; display: none; }
   }
-  #loginPage {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #f0f2f5;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  body.night #loginPage {
-    background: #18191a;
-  }
-  #loginContainer {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    width: 300px;
-    max-width: 90%;
-    box-sizing: border-box;
-    text-align: center;
-  }
-  body.night #loginContainer {
-    background: #3a3b3c;
-    color: #e4e6eb;
-  }
-  #loginContainer h2 {
-    margin: 0 0 20px;
-    font-size: 1.4em;
-    font-weight: 500;
-  }
-  #forgotPasswordLink {
-    display: block;
-    margin: 10px 0;
-    color: #1877f2;
-    text-decoration: none;
-    font-size: 0.9em;
-  }
-  body.night #forgotPasswordLink {
-    color: #2374e1;
-  }
-  #forgotPasswordLink:hover {
-    text-decoration: underline;
-  }
-  #toggleAuthMode {
-    background: none;
-    border: none;
-    color: #1877f2;
-    font-size: 0.9em;
-    cursor: pointer;
-    padding: 5px;
-  }
-  body.night #toggleAuthMode {
-    color: #2374e1;
-  }
-  #toggleAuthMode:hover {
-    text-decoration: underline;
-  }
-  #errorMessage {
-    color: #f02849;
-    font-size: 0.85em;
-    margin-bottom: 10px;
-    display: none;
-  }
 </style>
 </head>
 <body>
 <div id="welcomeMessage">Welcome to Fakebook</div>
-<div id="loginPage" role="dialog" aria-labelledby="loginTitle">
-  <div id="loginContainer">
-    <h2 id="loginTitle">Login to Fakebook</h2>
-    <div id="errorMessage" aria-live="assertive"></div>
-    <input type="email" id="loginEmail" placeholder="Email" aria-required="true" />
-    <input type="password" id="loginPassword" placeholder="Password" aria-required="true" />
-    <button id="loginBtn">Login</button>
-    <a href="#" id="forgotPasswordLink" aria-label="Forgot your password?">Forgot Password?</a>
-    <button id="toggleAuthMode">Need an account? Sign Up</button>
-  </div>
-</div>
-<header style="display: none;">
+<header>
   <h1>Fakebook Chat</h1>
   <div>
     <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">Avatar</button>
-    <button id="logoutBtn" title="Log Out" aria-label="Log Out">Log Out</button>
+    <button id="changeUserBtn" title="Change Username" aria-label="Change Username">Change User</button>
     <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
   </div>
 </header>
-<div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages" style="display: none;"></div>
-<div id="typingIndicator" aria-live="polite" aria-atomic="true" style="display: none;"></div>
-<footer style="display: none;">
+<div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
+<div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
+<footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
   <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
@@ -683,8 +606,8 @@
 <div id="emojiPicker" role="listbox" aria-label="Emoji picker"></div>
 <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div id="modalContent" tabindex="0">
-    <h2 id="modalTitle">Set Up Your Profile</h2>
-    <input type="text" id="usernameInput" placeholder="Enter username" aria-required="true" aria-describedby="modalTitle" />
+    <h2 id="modalTitle">Enter Username</h2>
+    <input type="text" id="usernameInput" aria-required="true" aria-describedby="modalTitle" />
     <button id="saveProfileBtn">Save</button>
   </div>
 </div>
@@ -697,10 +620,6 @@
     getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, get, set,
     remove, onValue, onDisconnect, update
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-  import {
-    getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    signOut, sendPasswordResetEmail
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCx_glObBqdqtOs64JhV3fyJW-q9DOqbl0",
@@ -712,11 +631,10 @@
     appId: "1:58710835031:web:9248de0eba59c09c0fc812"
   };
 
-  let app, db, auth, messagesRef, typingRef, presenceRef, connectedRef, usersRef;
+  let app, db, messagesRef, typingRef, presenceRef, connectedRef, usersRef;
   try {
     app = initializeApp(firebaseConfig);
     db = getDatabase(app);
-    auth = getAuth(app);
     messagesRef = ref(db, "messages");
     typingRef = ref(db, "typing");
     presenceRef = ref(db, "presence");
@@ -724,7 +642,11 @@
     usersRef = ref(db, "users");
   } catch (error) {
     console.error("Firebase initialization failed:", error);
-    showError("Unable to connect to the server. Please check your internet connection.");
+    const errorDiv = document.createElement("div");
+    errorDiv.textContent = "Unable to connect to the server. Please check your internet connection.";
+    errorDiv.style.color = "red";
+    errorDiv.style.padding = "10px";
+    document.body.prepend(errorDiv);
   }
 
   const textInput = document.getElementById("text");
@@ -735,7 +657,7 @@
   const emojiPicker = document.getElementById("emojiPicker");
   const messagesDiv = document.getElementById("messages");
   const nightModeBtn = document.getElementById("nightModeBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
+  const changeUserBtn = document.getElementById("changeUserBtn");
   const typingIndicator = document.getElementById("typingIndicator");
   const modalOverlay = document.getElementById("modalOverlay");
   const usernameInput = document.getElementById("usernameInput");
@@ -744,15 +666,6 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
   const replyPreview = document.getElementById("replyPreview");
-  const welcomeMessage = document.getElementById("welcomeMessage");
-  const loginPage = document.getElementById("loginPage");
-  const loginContainer = document.getElementById("loginContainer");
-  const loginEmail = document.getElementById("loginEmail");
-  const loginPassword = document.getElementById("loginPassword");
-  const loginBtn = document.getElementById("loginBtn");
-  const forgotPasswordLink = document.getElementById("forgotPasswordLink");
-  const toggleAuthMode = document.getElementById("toggleAuthMode");
-  const errorMessage = document.getElementById("errorMessage");
 
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
 
@@ -778,7 +691,24 @@
   let replyToMessage = null;
   const usersMap = new Map();
   let isScrolledToBottom = true;
-  let isSignupMode = false;
+
+  function saveUserToLocal(user) {
+    try {
+      localStorage.setItem("quickchat-user", JSON.stringify(user));
+    } catch (error) {
+      console.error("Error saving user to localStorage:", error);
+    }
+  }
+
+  function loadUserFromLocal() {
+    try {
+      const userStr = localStorage.getItem("quickchat-user");
+      return userStr ? JSON.parse(userStr) : null;
+    } catch (error) {
+      console.error("Error loading user from localStorage:", error);
+      return null;
+    }
+  }
 
   function saveNightMode(enabled) {
     try {
@@ -797,10 +727,18 @@
     }
   }
 
-  function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.style.display = "block";
-    setTimeout(() => errorMessage.style.display = "none", 5000);
+  function generateUserId() {
+    try {
+      let id = localStorage.getItem("quickchat-userid");
+      if (!id) {
+        id = 'user_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem("quickchat-userid", id);
+      }
+      return id;
+    } catch (error) {
+      console.error("Error generating userId:", error);
+      return 'user_' + Date.now();
+    }
   }
 
   function escapeHTML(str) {
@@ -1155,7 +1093,8 @@
     try {
       if (!text && !fileUrl) return;
       if (!currentUser || !userId) {
-        showError("Please log in to send messages.");
+        alert("Please set up your profile first.");
+        openProfileModal();
         return;
       }
       const msg = {
@@ -1177,7 +1116,7 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Failed to send message:", error);
-      showError("Failed to send message: " + error.message);
+      alert("Failed to send message: " + error.message);
     }
   }
 
@@ -1190,7 +1129,7 @@
       messagesCache = messagesCache.filter(m => m.id !== messageId);
     } catch (error) {
       console.error("Failed to delete message:", error);
-      showError("Failed to delete message: " + error.message);
+      alert("Failed to delete message: " + error.message);
     }
   }
 
@@ -1202,7 +1141,7 @@
       await update(ref(db, `messages/${msg.id}`), { text: newText.trim() });
     } catch (error) {
       console.error("Failed to edit message:", error);
-      showError("Failed to edit message: " + error.message);
+      alert("Failed to edit message: " + error.message);
     }
   }
 
@@ -1240,6 +1179,7 @@
       picker = document.createElement("div");
       picker.className = "reaction-picker";
       picker.style.display = "flex";
+      // Position below the button to avoid overlap in vertical layout
       picker.style.left = `${button.offsetLeft}px`;
       picker.style.top = `${button.parentElement.offsetTop + button.offsetHeight + 5}px`;
       reactionEmojis.forEach(emoji => {
@@ -1249,7 +1189,7 @@
         span.setAttribute("aria-label", `React with ${emoji}`);
         span.addEventListener("click", () => {
           addReaction(messageId, emoji);
-          picker.remove();
+          picker.remove(); // Close picker after selecting a reaction
         });
         span.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1286,7 +1226,7 @@
       await set(msgRef, reactions);
     } catch (error) {
       console.error("Failed to add/remove reaction:", error);
-      showError("Failed to add/remove reaction: " + error.message);
+      alert("Failed to add/remove reaction: " + error.message);
     }
   }
 
@@ -1418,6 +1358,15 @@
     }
   }
 
+  function openProfileModal() {
+    try {
+      modalOverlay.style.display = "flex";
+      usernameInput.focus();
+    } catch (error) {
+      console.error("Error opening profile modal:", error);
+    }
+  }
+
   async function checkUsernameUnique(username) {
     try {
       const snapshot = await get(usersRef);
@@ -1429,14 +1378,30 @@
     }
   }
 
-  function openProfileModal() {
+  saveProfileBtn.addEventListener("click", async () => {
     try {
-      modalOverlay.style.display = "flex";
-      usernameInput.focus();
+      const val = usernameInput.value.trim();
+      if (val.length < 2) {
+        alert("Username must be at least 2 characters long.");
+        return;
+      }
+      if (!(await checkUsernameUnique(val))) {
+        alert("Username already taken. Please choose another.");
+        return;
+      }
+      currentUser = { username: val };
+      userId = generateUserId();
+      selectedAvatarUrl = maleAvatars[hashCode(val + userId) % maleAvatars.length];
+      currentUser.avatar = selectedAvatarUrl;
+      await set(ref(db, `users/${userId}`), currentUser);
+      saveUserToLocal(currentUser);
+      modalOverlay.style.display = "none";
+      setupPresence();
     } catch (error) {
-      console.error("Error opening profile modal:", error);
+      console.error("Error saving profile:", error);
+      alert("Failed to save profile: " + error.message);
     }
-  }
+  });
 
   function openAvatarPicker() {
     try {
@@ -1465,6 +1430,7 @@
         if (selectedAvatarUrl && currentUser) {
           currentUser.avatar = selectedAvatarUrl;
           await set(ref(db, `users/${userId}`), currentUser);
+          saveUserToLocal(currentUser);
           avatarPickerOverlay.style.display = "none";
         }
       });
@@ -1472,109 +1438,6 @@
       console.error("Error opening avatar picker:", error);
     }
   }
-
-  function showChatInterface() {
-    loginPage.style.display = "none";
-    document.querySelector("header").style.display = "flex";
-    messagesDiv.style.display = "flex";
-    typingIndicator.style.display = "flex";
-    document.querySelector("footer").style.display = "flex";
-  }
-
-  saveProfileBtn.addEventListener("click", async () => {
-    try {
-      const val = usernameInput.value.trim();
-      if (val.length < 2) {
-        showError("Username must be at least 2 characters long.");
-        return;
-      }
-      if (!(await checkUsernameUnique(val))) {
-        showError("Username already taken. Please choose another.");
-        return;
-      }
-      currentUser = { username: val, avatar: selectedAvatarUrl || maleAvatars[hashCode(val + userId) % maleAvatars.length] };
-      selectedAvatarUrl = currentUser.avatar;
-      await set(ref(db, `users/${userId}`), currentUser);
-      modalOverlay.style.display = "none";
-      showChatInterface();
-      setupPresence();
-      setupTypingListener();
-      setupMessageListener();
-      setupUserListener();
-      await cleanupOldMessages();
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      showError("Failed to save profile: " + error.message);
-    }
-  });
-
-  loginBtn.addEventListener("click", async () => {
-    try {
-      const email = loginEmail.value.trim();
-      const password = loginPassword.value.trim();
-      if (!email || !password) {
-        showError("Please enter both email and password.");
-        return;
-      }
-      if (isSignupMode) {
-        if (password.length < 6) {
-          showError("Password must be at least 6 characters long.");
-          return;
-        }
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-    } catch (error) {
-      console.error("Authentication error:", error);
-      showError(error.code === "auth/email-already-in-use" ? "Email already in use. Try logging in." :
-        error.code === "auth/user-not-found" || error.code === "auth/wrong-password" ?
-        "Invalid email or password." : "Authentication failed: " + error.message);
-    }
-  });
-
-  forgotPasswordLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    const email = prompt("Enter your email to receive a password reset link:");
-    if (email) {
-      sendPasswordResetEmail(auth, email)
-        .then(() => {
-          alert("Password reset email sent. Check your inbox (and spam folder).");
-        })
-        .catch(error => {
-          console.error("Error sending password reset email:", error);
-          showError("Failed to send reset email: " + error.message);
-        });
-    }
-  });
-
-  toggleAuthMode.addEventListener("click", () => {
-    isSignupMode = !isSignupMode;
-    loginContainer.querySelector("h2").textContent = isSignupMode ? "Sign Up for Fakebook" : "Login to Fakebook";
-    loginBtn.textContent = isSignupMode ? "Sign Up" : "Login";
-    toggleAuthMode.textContent = isSignupMode ? "Already have an account? Login" : "Need an account? Sign Up";
-    loginEmail.value = "";
-    loginPassword.value = "";
-    errorMessage.style.display = "none";
-  });
-
-  logoutBtn.addEventListener("click", async () => {
-    try {
-      await signOut(auth);
-      localStorage.removeItem("quickchat-userid");
-      userId = null;
-      currentUser = null;
-      selectedAvatarUrl = null;
-      messagesCache = [];
-      usersMap.clear();
-      presenceMap.clear();
-      messagesDiv.innerHTML = "";
-      showLoginPage();
-    } catch (error) {
-      console.error("Error logging out:", error);
-      showError("Failed to log out: " + error.message);
-    }
-  });
 
   nightModeBtn.addEventListener("click", () => {
     try {
@@ -1585,6 +1448,7 @@
     }
   });
 
+  changeUserBtn.addEventListener("click", openProfileModal);
   avatarPickerBtn.addEventListener("click", openAvatarPicker);
 
   sendBtn.addEventListener("click", () => sendMessage(textInput.value.trim()));
@@ -1614,7 +1478,7 @@
       }
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        showError("File size exceeds 5MB limit.");
+        alert("File size exceeds 5MB limit.");
         fileInput.value = "";
         return;
       }
@@ -1624,7 +1488,7 @@
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ];
       if (!allowedTypes.includes(file.type)) {
-        showError("Only images (jpg, png, gif, webp, bmp), PDFs, and Docs (doc, docx) are allowed.");
+        alert("Only images (jpg, png, gif, webp, bmp), PDFs, and Docs (doc, docx) are allowed.");
         fileInput.value = "";
         return;
       }
@@ -1634,13 +1498,13 @@
         fileInput.value = "";
       };
       reader.onerror = () => {
-        showError("Failed to read file: " + file.name);
+        alert("Failed to read file: " + file.name);
         fileInput.value = "";
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error("Failed to process file:", error);
-      showError("Failed to process file: " + error.message);
+      alert("Failed to process file: " + error.message);
       fileInput.value = "";
     }
   });
@@ -1729,46 +1593,28 @@
     }
   });
 
-  function showLoginPage() {
-    welcomeMessage.style.display = "none";
-    loginPage.style.display = "flex";
-    document.querySelector("header").style.display = "none";
-    messagesDiv.style.display = "none";
-    typingIndicator.style.display = "none";
-    document.querySelector("footer").style.display = "none";
-    loginEmail.focus();
-  }
-
   async function init() {
     try {
       if (loadNightMode()) document.body.classList.add("night");
-      welcomeMessage.style.display = "block";
-      setTimeout(showLoginPage, 3000);
-
-      onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          userId = user.uid;
-          const userSnapshot = await get(ref(db, `users/${userId}`));
-          currentUser = userSnapshot.val();
-          if (!currentUser || !currentUser.username) {
-            selectedAvatarUrl = maleAvatars[Math.floor(Math.random() * maleAvatars.length)];
-            openProfileModal();
-          } else {
-            selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
-            showChatInterface();
-            setupPresence();
-            setupTypingListener();
-            setupMessageListener();
-            setupUserListener();
-            await cleanupOldMessages();
-          }
-        } else {
-          showLoginPage();
-        }
-      });
+      currentUser = loadUserFromLocal();
+      if (!currentUser) {
+        openProfileModal();
+      } else {
+        userId = generateUserId();
+        const userSnapshot = await get(ref(db, `users/${userId}`));
+        selectedAvatarUrl = userSnapshot.val()?.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
+        currentUser.avatar = selectedAvatarUrl;
+        saveUserToLocal(currentUser);
+        await set(ref(db, `users/${userId}`), currentUser);
+        setupPresence();
+        await cleanupOldMessages();
+        setupTypingListener();
+        setupMessageListener();
+        setupUserListener();
+      }
     } catch (error) {
       console.error("Initialization error:", error);
-      showError("Failed to initialize app: " + error.message);
+      alert("Failed to initialize app: " + error.message);
     }
   }
   init();
