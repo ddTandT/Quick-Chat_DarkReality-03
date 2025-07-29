@@ -1066,10 +1066,7 @@
       messagesCache.push(msg);
       const dom = renderMessage(msg);
       messagesDiv.appendChild(dom);
-      // Scroll to bottom with smooth behavior if user hasn't scrolled up significantly
-      if (isScrolledToBottom) {
-        messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: "smooth" });
-      }
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Error adding message:", error);
     }
@@ -1114,7 +1111,7 @@
       replyPreview.style.display = "none";
       replyPreview.innerHTML = "";
       stopTyping();
-      messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: "smooth" });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Failed to send message:", error);
       alert("Failed to send message: " + error.message);
@@ -1298,9 +1295,7 @@
           if (msgDiv) {
             const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
-            if (isScrolledToBottom) {
-              messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: "smooth" });
-            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
           }
         }
       });
@@ -1578,8 +1573,7 @@
 
   messagesDiv.addEventListener("scroll", () => {
     try {
-      // Consider the user scrolled to bottom if within 100 pixels of the bottom
-      const isNearBottom = messagesDiv.scrollTop + messagesDiv.clientHeight >= messagesDiv.scrollHeight - 100;
+      const isNearBottom = messagesDiv.scrollTop + messagesDiv.clientHeight >= messagesDiv.scrollHeight - 10;
       isScrolledToBottom = isNearBottom;
     } catch (error) {
       console.error("Error in scroll event:", error);
@@ -1612,6 +1606,9 @@
         setupTypingListener();
         setupMessageListener();
         setupUserListener();
+        setTimeout(() => {
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }, 0);
       }
     } catch (error) {
       console.error("Initialization error:", error);
