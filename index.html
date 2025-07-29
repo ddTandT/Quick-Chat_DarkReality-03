@@ -8,25 +8,21 @@
   /* Reset & basics */
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f0f2f5;
     display: flex;
     flex-direction: column;
     height: 100vh;
     color: #1c1e21;
-    overflow: hidden;
   }
   body.night {
-    background: #242526;
+    background: #18191a;
     color: #e4e6eb;
   }
-  body.locked main, body.locked header, body.locked footer, body.locked #welcomeMessage {
-    display: none;
-  }
   header {
-    background: #0084ff;
+    background: #1877f2;
     color: white;
-    padding: 10px 16px;
+    padding: 8px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -34,31 +30,22 @@
   }
   header h1 {
     margin: 0;
-    font-size: 1.5em;
-    font-weight: 600;
+    font-size: 1.4em;
+    font-weight: 500;
   }
   #changeUserBtn, #nightModeBtn, #avatarPickerBtn {
-    background: rgba(255, 255, 255, 0.1);
+    background: white;
     border: none;
-    border-radius: 20px;
-    padding: 8px 12px;
+    border-radius: 6px;
+    padding: 6px 12px;
     cursor: pointer;
     margin-left: 8px;
     font-weight: 500;
-    color: white;
+    color: #1877f2;
     font-size: 0.9em;
-    transition: background 0.2s;
   }
   #changeUserBtn:hover, #nightModeBtn:hover, #avatarPickerBtn:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    max-width: 900px;
-    margin: 0 auto;
-    width: 100%;
+    background: #e7f3ff;
   }
   #messages {
     flex: 1;
@@ -66,7 +53,7 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     background: #fff;
   }
   body.night #messages {
@@ -75,23 +62,17 @@
   .message {
     display: flex;
     gap: 8px;
-    max-width: 70%;
+    outline: none;
     position: relative;
-    margin-bottom: 2px;
+    max-width: 80%;
   }
   .message.you {
-    align-self: flex-end;
     flex-direction: row-reverse;
-  }
-  .message.consecutive {
-    margin-top: -2px;
-  }
-  .message.consecutive .avatar, .message.consecutive .sender {
-    display: none;
+    align-self: flex-end;
   }
   .avatar {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     position: relative;
   }
@@ -100,8 +81,8 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     background: #31a24c;
     border: 2px solid white;
     border-radius: 50%;
@@ -111,8 +92,8 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     background: #b0b3b8;
     border: 2px solid white;
     border-radius: 50%;
@@ -123,41 +104,33 @@
   }
   .sender {
     font-weight: 500;
-    font-size: 0.8em;
+    font-size: 0.85em;
     margin-bottom: 2px;
-    color: #65676b;
-  }
-  body.night .sender {
-    color: #b0b3b8;
   }
   .bubble {
-    background: #e4f0fb;
+    background: #e7f3ff;
     color: #1c1e21;
     border-radius: 18px;
     padding: 8px 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
     font-size: 0.95em;
     line-height: 1.4;
-    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
-    word-break: break-word;
+    position: relative;
   }
   body.night .bubble {
     background: #3a3b3c;
     color: #e4e6eb;
   }
   .message.you .bubble {
-    background: #0084ff;
+    background: #1877f2;
     color: white;
   }
   body.night .message.you .bubble {
     background: #2374e1;
   }
   .bubble .emoji {
-    font-size: 1.2em;
-    vertical-align: middle;
-  }
-  .bubble .sticker {
-    width: 2.8em;
-    height: 2.8em;
+    font-size: 1.4em;
     vertical-align: middle;
   }
   .bubble .file-preview {
@@ -229,7 +202,7 @@
     right: 8px;
   }
   .message:not(.you) .actions {
-    left: 40px;
+    left: 48px;
   }
   .actions button {
     background: transparent;
@@ -238,7 +211,6 @@
     font-size: 1em;
     margin: 0 4px;
     color: #e4e6eb;
-    padding: 4px;
   }
   .actions button:hover {
     color: #f02849;
@@ -298,22 +270,18 @@
     align-items: center;
     flex-wrap: wrap;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
-    max-width: 900px;
-    margin: 0 auto;
-    width: 100%;
   }
   body.night footer {
     background: #242526;
   }
   #text {
     flex: 1;
-    padding: 10px 16px;
+    padding: 10px;
     font-size: 0.95em;
     border-radius: 20px;
     border: none;
     background: #f0f2f5;
     color: #1c1e21;
-    resize: none;
   }
   body.night #text {
     background: #3a3b3c;
@@ -329,7 +297,7 @@
     position: relative;
     width: 100%;
     box-sizing: border-box;
-    border-left: 4px solid #0084ff;
+    border-left: 4px solid #1877f2;
   }
   body.night #replyPreview {
     background: #3a3b3c;
@@ -346,7 +314,6 @@
     right: 10px;
     cursor: pointer;
     color: #65676b;
-    font-size: 0.9em;
   }
   body.night #replyPreview .close-reply {
     color: #b0b3b8;
@@ -357,102 +324,89 @@
   button {
     cursor: pointer;
     border: none;
-    background: #0084ff;
+    background: #1877f2;
     color: white;
-    border-radius: 20px;
+    border-radius: 6px;
     padding: 8px 12px;
     font-weight: 500;
     font-size: 0.9em;
-    transition: background 0.2s;
   }
   button:hover {
-    background: #006adc;
+    background: #1659b7;
   }
   #fileInput {
     display: none;
   }
-  #fileBtn, #emojiBtn, #stickerBtn, #sendBtn {
+  #fileBtn, #emojiBtn, #sendBtn {
     background: none;
     color: #65676b;
-    font-size: 1.3em;
+    font-size: 1.2em;
     padding: 8px;
-    border-radius: 50%;
-    transition: color 0.2s, background 0.2s;
   }
-  body.night #fileBtn, body.night #emojiBtn, body.night #stickerBtn, body.night #sendBtn {
+  body.night #fileBtn, body.night #emojiBtn, body.night #sendBtn {
     color: #b0b3b8;
   }
-  #fileBtn:hover, #emojiBtn:hover, #stickerBtn:hover, #sendBtn:hover {
-    color: #0084ff;
-    background: rgba(0, 132, 255, 0.1);
+  #fileBtn:hover, #emojiBtn:hover, #sendBtn:hover {
+    color: #1877f2;
   }
-  body.night #fileBtn:hover, body.night #emojiBtn:hover, body.night #stickerBtn:hover, body.night #sendBtn:hover {
+  body.night #fileBtn:hover, body.night #emojiBtn:hover, body.night #sendBtn:hover {
     color: #2374e1;
-    background: rgba(35, 116, 225, 0.2);
   }
-  #emojiPicker, #stickerPicker {
+  #emojiPicker {
     position: absolute;
-    bottom: 60px;
     background: #fff;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #ddd;
     border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     width: 300px;
     max-height: 200px;
     overflow-y: auto;
     padding: 10px;
     z-index: 10;
     display: none;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
   }
-  body.night #emojiPicker, body.night #stickerPicker {
+  body.night #emojiPicker {
     background: #3a3b3c;
     border: 1px solid #4b4c4f;
     color: #e4e6eb;
   }
-  #emojiPicker::-webkit-scrollbar, #stickerPicker::-webkit-scrollbar {
+  #emojiPicker::-webkit-scrollbar {
     width: 6px;
   }
-  #emojiPicker::-webkit-scrollbar-thumb, #stickerPicker::-webkit-scrollbar-thumb {
+  #emojiPicker::-webkit-scrollbar-thumb {
     background: #b0b3b8;
     border-radius: 3px;
   }
-  body.night #emojiPicker::-webkit-scrollbar-thumb, body.night #stickerPicker::-webkit-scrollbar-thumb {
+  body.night #emojiPicker::-webkit-scrollbar-thumb {
     background: #606770;
   }
-  #emojiPicker span, #stickerPicker img {
-    cursor: pointer;
-    padding: 6px;
-    text-align: center;
-    border-radius: 8px;
-    transition: background 0.2s;
-  }
   #emojiPicker span {
-    font-size: 1.5em;
+    cursor: pointer;
+    font-size: 1.4em;
+    padding: 4px;
+    text-align: center;
   }
-  #stickerPicker img {
-    width: 40px;
-    height: 40px;
-  }
-  #emojiPicker span:hover, #emojiPicker span:focus, #stickerPicker img:hover, #stickerPicker img:focus {
-    background: #e4f0fb;
+  #emojiPicker span:hover, #emojiPicker span:focus {
+    background: #e7f3ff;
+    border-radius: 6px;
     outline: none;
   }
-  body.night #emojiPicker span:hover, body.night #emojiPicker span:focus, body.night #stickerPicker img:hover, body.night #stickerPicker img:focus {
+  body.night #emojiPicker span:hover, body.night #emojiPicker span:focus {
     background: #4b4c4f;
   }
   .reaction-picker {
     position: absolute;
     background: #fff;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #ddd;
     padding: 6px;
-    border-radius: 20px;
+    border-radius: 12px; /* Adjusted for vertical layout */
     z-index: 10;
     display: none;
-    flex-direction: row;
+    flex-direction: column; /* Changed to vertical */
     gap: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     animation: reactionPop 0.2s ease-out;
   }
   body.night .reaction-picker {
@@ -461,9 +415,10 @@
   }
   .reaction-picker span {
     cursor: pointer;
-    font-size: 1.5em;
-    padding: 4px 8px;
+    font-size: 1.4em;
+    padding: 4px;
     transition: transform 0.2s;
+    text-align: center; /* Center emojis in vertical layout */
   }
   .reaction-picker span:hover, .reaction-picker span:focus {
     transform: scale(1.2);
@@ -475,10 +430,10 @@
   }
   .reply-quote {
     background: #f0f2f5;
-    border-left: 4px solid #0084ff;
-    padding: 6px 10px;
-    margin-bottom: 6px;
-    font-size: 0.8em;
+    border-left: 4px solid #1877f2;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 0.85em;
     color: #1c1e21;
     border-radius: 8px;
   }
@@ -493,25 +448,24 @@
   }
   .reactions {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 4px;
-    margin-top: 2px;
+    margin-top: 4px;
     font-size: 0.9em;
-    align-items: center;
+    align-items: flex-end;
   }
   .message:not(.you) .reactions {
     align-items: flex-start;
   }
   .reaction {
-    background: #e4f0fb;
+    background: #e7f3ff;
     border-radius: 12px;
-    padding: 2px 6px;
+    padding: 4px 8px;
     cursor: pointer;
     transition: transform 0.2s;
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 0.8em;
+    gap: 6px;
   }
   body.night .reaction {
     background: #4b4c4f;
@@ -522,7 +476,7 @@
   .reaction-users {
     position: absolute;
     background: #fff;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #ddd;
     padding: 8px;
     border-radius: 8px;
     z-index: 20;
@@ -531,7 +485,6 @@
     display: none;
     flex-direction: column;
     gap: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
   body.night .reaction-users {
     background: #3a3b3c;
@@ -543,12 +496,12 @@
     border-radius: 4px;
   }
   .reaction-users div:hover {
-    background: #e4f0fb;
+    background: #e7f3ff;
   }
   body.night .reaction-users div:hover {
     background: #4b4c4f;
   }
-  #modalOverlay, #avatarPickerOverlay, #passkeyOverlay {
+  #modalOverlay, #avatarPickerOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -560,7 +513,7 @@
     align-items: center;
     z-index: 1000;
   }
-  #modalContent, #avatarPickerModal, #passkeyModal {
+  #modalContent, #avatarPickerModal {
     background: white;
     padding: 20px;
     border-radius: 12px;
@@ -569,34 +522,32 @@
     box-sizing: border-box;
     outline: none;
   }
-  body.night #modalContent, body.night #avatarPickerModal, body.night #passkeyModal {
+  body.night #modalContent, body.night #avatarPickerModal {
     background: #3a3b3c;
     color: #e4e6eb;
   }
-  #modalContent h2, #avatarPickerModal h2, #passkeyModal h2 {
-    margin: 0 0 12px;
+  #modalContent h2, #avatarPickerModal h2 {
+    margin: 0 0 10px;
     font-size: 1.2em;
-    font-weight: 600;
+    font-weight: 500;
   }
-  #usernameInput, #passkeyInput {
+  #usernameInput {
     width: 100%;
     padding: 10px;
     font-size: 0.95em;
     margin-bottom: 12px;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    box-sizing: border-box;
+    border-radius: 6px;
+    border: 1px solid #ddd;
   }
-  body.night #usernameInput, body.night #passkeyInput {
+  body.night #usernameInput {
     background: #4b4c4f;
     border: 1px solid #606770;
     color: #e4e6eb;
   }
-  #saveProfileBtn, #submitPasskeyBtn {
+  #saveProfileBtn {
     width: 100%;
     padding: 10px;
     font-weight: 500;
-    border-radius: 8px;
   }
   .avatar-option {
     width: 48px;
@@ -608,10 +559,10 @@
     transition: border-color 0.2s;
   }
   .avatar-option.selected {
-    border-color: #0084ff;
+    border-color: #1877f2;
   }
   .avatar-option:hover, .avatar-option:focus {
-    border-color: #006adc;
+    border-color: #1659b7;
     outline: none;
   }
   #welcomeMessage {
@@ -620,28 +571,19 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 1.8em;
-    font-weight: 600;
-    color: #0084ff;
+    font-weight: bold;
+    color: #1877f2;
     text-align: center;
-    animation: fadeOut 2.5s forwards;
+    animation: fadeOut 3s forwards;
     z-index: 1000;
-    display: none;
   }
   @keyframes fadeOut {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); display: none; }
-  }
-  #passkeyError {
-    color: #f02849;
-    font-size: 0.85em;
-    margin-top: 5px;
-    display: none;
+    0% { opacity: 1; }
+    100% { opacity: 0; display: none; }
   }
 </style>
 </head>
-<body class="locked">
+<body>
 <div id="welcomeMessage">Welcome to Fakebook</div>
 <header>
   <h1>Fakebook Chat</h1>
@@ -651,21 +593,17 @@
     <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
   </div>
 </header>
-<main>
-  <div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
-  <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
-</main>
+<div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
+<div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
 <footer>
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
   <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
-  <button id="stickerBtn" title="Sticker Picker" aria-label="Sticker Picker">🎉</button>
   <div id="replyPreview"></div>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
   <button id="sendBtn" title="Send Message" aria-label="Send Message">➤</button>
 </footer>
 <div id="emojiPicker" role="listbox" aria-label="Emoji picker"></div>
-<div id="stickerPicker" role="listbox" aria-label="Sticker picker"></div>
 <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div id="modalContent" tabindex="0">
     <h2 id="modalTitle">Enter Username</h2>
@@ -675,14 +613,6 @@
 </div>
 <div id="avatarPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
   <div id="avatarPickerModal" tabindex="0"></div>
-</div>
-<div id="passkeyOverlay" role="dialog" aria-modal="true" aria-labelledby="passkeyTitle">
-  <div id="passkeyModal" tabindex="0">
-    <h2 id="passkeyTitle">Enter Passkey</h2>
-    <input type="password" id="passkeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter passkey..." />
-    <div id="passkeyError">Incorrect passkey. Please try again.</div>
-    <button id="submitPasskeyBtn">Submit</button>
-  </div>
 </div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -724,9 +654,7 @@
   const fileInput = document.getElementById("fileInput");
   const fileBtn = document.getElementById("fileBtn");
   const emojiBtn = document.getElementById("emojiBtn");
-  const stickerBtn = document.getElementById("stickerBtn");
   const emojiPicker = document.getElementById("emojiPicker");
-  const stickerPicker = document.getElementById("stickerPicker");
   const messagesDiv = document.getElementById("messages");
   const nightModeBtn = document.getElementById("nightModeBtn");
   const changeUserBtn = document.getElementById("changeUserBtn");
@@ -738,20 +666,8 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
   const replyPreview = document.getElementById("replyPreview");
-  const passkeyOverlay = document.getElementById("passkeyOverlay");
-  const passkeyInput = document.getElementById("passkeyInput");
-  const submitPasskeyBtn = document.getElementById("submitPasskeyBtn");
-  const passkeyError = document.getElementById("passkeyError");
-  const welcomeMessage = document.getElementById("welcomeMessage");
 
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
-  const stickerIds = [
-    "3o7btPCcdNniYF1o4k", "l0Iyl55kTeh71nTWw", "3o6Zt6KHxJTWiG6Uk8",
-    "26FPy3QZQqGtD3qRs", "3o7TKz2b3h6fZ8Kj2Q", "3o7TKtdJDH84pw4Z3a",
-    "xT5LMWq7z5i8z6x2b6", "3o6ZtjZ5R7ZfYfK8Qo", "26FPy3QZQqGtD3qRs",
-    "l0MYt5jPRBRUsFGek"
-  ];
-  const stickers = Array.from({ length: stickerIds.length }, (_, i) => `https://media.giphy.com/media/${stickerIds[i]}/giphy.gif`);
 
   const emojis = [
     "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
@@ -775,7 +691,6 @@
   let replyToMessage = null;
   const usersMap = new Map();
   let isScrolledToBottom = true;
-  let lastMessageUserId = null;
 
   function saveUserToLocal(user) {
     try {
@@ -809,14 +724,6 @@
     } catch (error) {
       console.error("Error loading night mode:", error);
       return false;
-    }
-  }
-
-  function savePasskeyValidated(validated) {
-    try {
-      sessionStorage.setItem("quickchat-passkey-validated", validated ? "1" : "0");
-    } catch (error) {
-      console.error("Error saving passkey validation:", error);
     }
   }
 
@@ -915,13 +822,13 @@
     }
   }
 
-  function renderMessage(msg, isConsecutive = false) {
+  function renderMessage(msg) {
     try {
       const div = document.createElement("div");
-      div.className = "message " + (msg.userId === userId ? "you" : "") + (isConsecutive ? " consecutive" : "");
+      div.className = "message " + (msg.userId === userId ? "you" : "");
       div.setAttribute("tabindex", "0");
       div.setAttribute("role", "article");
-      div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || msg.stickerUrl || "file"}`);
+      div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || "file"}`);
       div.dataset.messageId = msg.id;
 
       div.addEventListener("mouseenter", () => div.classList.add("touched"));
@@ -937,8 +844,8 @@
       const img = document.createElement("img");
       img.src = msg.avatar || getAvatarForUser(msg);
       img.alt = `${msg.username} avatar`;
-      img.width = 32;
-      img.height = 32;
+      img.width = 36;
+      img.height = 36;
       img.style.borderRadius = "50%";
       avatarWrapper.appendChild(img);
 
@@ -964,7 +871,7 @@
           replySender.textContent = replyData.username || "Unknown User";
           replyQuote.appendChild(replySender);
           const replyText = document.createElement("div");
-          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || replyData.stickerUrl || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
+          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
           replyQuote.appendChild(replyText);
           bubble.appendChild(replyQuote);
         }
@@ -1007,12 +914,6 @@
           link.appendChild(downloadIcon);
           bubble.appendChild(link);
         }
-      } else if (msg.stickerUrl) {
-        const sticker = document.createElement("img");
-        sticker.src = msg.stickerUrl;
-        sticker.className = "sticker";
-        sticker.alt = "Sticker";
-        bubble.appendChild(sticker);
       } else {
         bubble.innerHTML = styleEmojis(makeLinksClickable(escapeHTML(msg.text))).replace(/\n/g, "<br>");
       }
@@ -1034,14 +935,12 @@
         deleteBtn.addEventListener("click", () => deleteMessage(msg.id));
         actions.appendChild(deleteBtn);
 
-        if (msg.text) {
-          const editBtn = document.createElement("button");
-          editBtn.className = "edit-btn";
-          editBtn.setAttribute("aria-label", `Edit message from ${msg.username} at ${formatTime(msg.timestamp)}`);
-          editBtn.title = "Edit";
-          editBtn.addEventListener("click", () => editMessage(msg));
-          actions.appendChild(editBtn);
-        }
+        const editBtn = document.createElement("button");
+        editBtn.className = "edit-btn";
+        editBtn.setAttribute("aria-label", `Edit message from ${msg.username} at ${formatTime(msg.timestamp)}`);
+        editBtn.title = "Edit";
+        editBtn.addEventListener("click", () => editMessage(msg));
+        actions.appendChild(editBtn);
       }
       const replyBtn = document.createElement("button");
       replyBtn.className = "reply-btn";
@@ -1127,13 +1026,12 @@
 
   function updateUserAvatars(userId, newAvatar) {
     try {
-      messagesCache.forEach((msg, index) => {
+      messagesCache.forEach(msg => {
         if (msg.userId === userId) {
           msg.avatar = newAvatar;
           const msgDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
           if (msgDiv) {
-            const isConsecutive = index > 0 && messagesCache[index - 1].userId === msg.userId;
-            const newDiv = renderMessage(msg, isConsecutive);
+            const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
           }
         }
@@ -1166,14 +1064,11 @@
     try {
       cacheUserInfo(msg);
       messagesCache.push(msg);
-      const index = messagesCache.length - 1;
-      const isConsecutive = index > 0 && messagesCache[index - 1].userId === msg.userId;
-      const dom = renderMessage(msg, isConsecutive);
+      const dom = renderMessage(msg);
       messagesDiv.appendChild(dom);
       if (isScrolledToBottom) {
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       }
-      lastMessageUserId = msg.userId;
     } catch (error) {
       console.error("Error adding message:", error);
     }
@@ -1194,9 +1089,9 @@
     }
   }
 
-  async function sendMessage(text, fileUrl = null, fileName = null, stickerUrl = null) {
+  async function sendMessage(text, fileUrl = null, fileName = null) {
     try {
-      if (!text && !fileUrl && !stickerUrl) return;
+      if (!text && !fileUrl) return;
       if (!currentUser || !userId) {
         alert("Please set up your profile first.");
         openProfileModal();
@@ -1206,7 +1101,6 @@
         text: text || "",
         fileUrl: fileUrl || null,
         fileName: fileName || null,
-        stickerUrl: stickerUrl || null,
         timestamp: Date.now(),
         userId,
         username: currentUser.username,
@@ -1220,7 +1114,6 @@
       replyPreview.innerHTML = "";
       stopTyping();
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      isScrolledToBottom = true;
     } catch (error) {
       console.error("Failed to send message:", error);
       alert("Failed to send message: " + error.message);
@@ -1259,7 +1152,7 @@
       replyPreview.style.display = "block";
       replyPreview.innerHTML = `
         <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
-        <div>${escapeHTML(msg.text || msg.fileName || msg.stickerUrl || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
+        <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
         <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
       `;
       const closeBtn = replyPreview.querySelector(".close-reply");
@@ -1286,6 +1179,7 @@
       picker = document.createElement("div");
       picker.className = "reaction-picker";
       picker.style.display = "flex";
+      // Position below the button to avoid overlap in vertical layout
       picker.style.left = `${button.offsetLeft}px`;
       picker.style.top = `${button.parentElement.offsetTop + button.offsetHeight + 5}px`;
       reactionEmojis.forEach(emoji => {
@@ -1295,7 +1189,7 @@
         span.setAttribute("aria-label", `React with ${emoji}`);
         span.addEventListener("click", () => {
           addReaction(messageId, emoji);
-          picker.remove();
+          picker.remove(); // Close picker after selecting a reaction
         });
         span.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1402,8 +1296,7 @@
           messagesCache[index] = msg;
           const msgDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
           if (msgDiv) {
-            const isConsecutive = index > 0 && messagesCache[index - 1].userId === msg.userId;
-            const newDiv = renderMessage(msg, isConsecutive);
+            const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
             if (isScrolledToBottom) {
               messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -1504,8 +1397,6 @@
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
       setupPresence();
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      isScrolledToBottom = true;
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Failed to save profile: " + error.message);
@@ -1547,51 +1438,6 @@
       console.error("Error opening avatar picker:", error);
     }
   }
-
-  function openPasskeyModal() {
-    try {
-      passkeyOverlay.style.display = "flex";
-      passkeyInput.focus();
-      passkeyError.style.display = "none";
-    } catch (error) {
-      console.error("Error opening passkey modal:", error);
-    }
-  }
-
-  function validatePasskey() {
-    try {
-      const passkey = passkeyInput.value.trim();
-      if (passkey === "DarkMessage") {
-        passkeyOverlay.style.display = "none";
-        savePasskeyValidated(true);
-        passkeyInput.value = "";
-        passkeyError.style.display = "none";
-        welcomeMessage.style.display = "block";
-        setTimeout(() => {
-          document.body.classList.remove("locked");
-          welcomeMessage.style.display = "none";
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-          isScrolledToBottom = true;
-        }, 2500);
-      } else {
-        passkeyError.style.display = "block";
-        passkeyInput.focus();
-      }
-    } catch (error) {
-      console.error("Error validating passkey:", error);
-      passkeyError.textContent = "Error validating passkey. Please try again.";
-      passkeyError.style.display = "block";
-    }
-  }
-
-  submitPasskeyBtn.addEventListener("click", validatePasskey);
-
-  passkeyInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      validatePasskey();
-    }
-  });
 
   nightModeBtn.addEventListener("click", () => {
     try {
@@ -1697,50 +1543,13 @@
       console.error("Error populating emoji picker:", error);
     }
   }
-
-  function populateStickerPicker() {
-    try {
-      stickerPicker.innerHTML = "";
-      stickers.forEach(url => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = "Sticker";
-        img.tabIndex = 0;
-        img.addEventListener("click", () => {
-          sendMessage("", null, null, url);
-          stickerPicker.style.display = "none";
-        });
-        img.addEventListener("keydown", (ev) => {
-          if (ev.key === "Enter" || ev.key === " ") {
-            ev.preventDefault();
-            img.click();
-          } else if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
-            const imgs = Array.from(stickerPicker.querySelectorAll("img"));
-            const currentIndex = imgs.indexOf(document.activeElement);
-            if (ev.key === "ArrowRight" && currentIndex < imgs.length - 1) {
-              imgs[currentIndex + 1].focus();
-              ev.preventDefault();
-            } else if (ev.key === "ArrowLeft" && currentIndex > 0) {
-              imgs[currentIndex - 1].focus();
-              ev.preventDefault();
-            }
-          }
-        });
-        stickerPicker.appendChild(img);
-      });
-    } catch (error) {
-      console.error("Error populating sticker picker:", error);
-    }
-  }
   populateEmojiPicker();
-  populateStickerPicker();
 
   emojiBtn.addEventListener("click", () => {
     try {
       if (emojiPicker.style.display === "none") {
         const rect = emojiBtn.getBoundingClientRect();
         emojiPicker.style.display = "grid";
-        stickerPicker.style.display = "none";
         emojiPicker.style.left = `${rect.left}px`;
         emojiPicker.style.bottom = `${window.innerHeight - rect.top + 10}px`;
       } else {
@@ -1751,29 +1560,10 @@
     }
   });
 
-  stickerBtn.addEventListener("click", () => {
-    try {
-      if (stickerPicker.style.display === "none") {
-        const rect = stickerBtn.getBoundingClientRect();
-        stickerPicker.style.display = "grid";
-        emojiPicker.style.display = "none";
-        stickerPicker.style.left = `${rect.left}px`;
-        stickerPicker.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-      } else {
-        stickerPicker.style.display = "none";
-      }
-    } catch (error) {
-      console.error("Error toggling sticker picker:", error);
-    }
-  });
-
   document.addEventListener("click", (e) => {
     try {
       if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
         emojiPicker.style.display = "none";
-      }
-      if (!stickerPicker.contains(e.target) && e.target !== stickerBtn) {
-        stickerPicker.style.display = "none";
       }
       if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn")) {
         document.querySelectorAll(".reaction-picker").forEach(picker => picker.remove());
@@ -1805,7 +1595,6 @@
 
   async function init() {
     try {
-      openPasskeyModal();
       if (loadNightMode()) document.body.classList.add("night");
       currentUser = loadUserFromLocal();
       if (!currentUser) {
@@ -1822,8 +1611,6 @@
         setupTypingListener();
         setupMessageListener();
         setupUserListener();
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        isScrolledToBottom = true;
       }
     } catch (error) {
       console.error("Initialization error:", error);
