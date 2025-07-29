@@ -1131,7 +1131,9 @@
       messagesCache.push(msg);
       const dom = renderMessage(msg);
       messagesDiv.appendChild(dom);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      if (isScrolledToBottom) {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
       isScrolledToBottom = true;
     } catch (error) {
       console.error("Error adding message:", error);
@@ -1363,8 +1365,9 @@
           if (msgDiv) {
             const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            isScrolledToBottom = true;
+            if (isScrolledToBottom) {
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
           }
         }
       });
