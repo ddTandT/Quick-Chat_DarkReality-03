@@ -401,10 +401,10 @@
     background: #fff;
     border: 1px solid #ddd;
     padding: 6px;
-    border-radius: 12px; /* Adjusted for vertical layout */
+    border-radius: 12px;
     z-index: 10;
     display: none;
-    flex-direction: column; /* Changed to vertical */
+    flex-direction: column;
     gap: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     animation: reactionPop 0.2s ease-out;
@@ -418,7 +418,7 @@
     font-size: 1.4em;
     padding: 4px;
     transition: transform 0.2s;
-    text-align: center; /* Center emojis in vertical layout */
+    text-align: center;
   }
   .reaction-picker span:hover, .reaction-picker span:focus {
     transform: scale(1.2);
@@ -1066,8 +1066,9 @@
       messagesCache.push(msg);
       const dom = renderMessage(msg);
       messagesDiv.appendChild(dom);
+      // Scroll to bottom with smooth behavior if user hasn't scrolled up significantly
       if (isScrolledToBottom) {
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: "smooth" });
       }
     } catch (error) {
       console.error("Error adding message:", error);
@@ -1113,7 +1114,7 @@
       replyPreview.style.display = "none";
       replyPreview.innerHTML = "";
       stopTyping();
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: "smooth" });
     } catch (error) {
       console.error("Failed to send message:", error);
       alert("Failed to send message: " + error.message);
@@ -1179,7 +1180,6 @@
       picker = document.createElement("div");
       picker.className = "reaction-picker";
       picker.style.display = "flex";
-      // Position below the button to avoid overlap in vertical layout
       picker.style.left = `${button.offsetLeft}px`;
       picker.style.top = `${button.parentElement.offsetTop + button.offsetHeight + 5}px`;
       reactionEmojis.forEach(emoji => {
@@ -1189,7 +1189,7 @@
         span.setAttribute("aria-label", `React with ${emoji}`);
         span.addEventListener("click", () => {
           addReaction(messageId, emoji);
-          picker.remove(); // Close picker after selecting a reaction
+          picker.remove();
         });
         span.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1299,7 +1299,7 @@
             const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
             if (isScrolledToBottom) {
-              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+              messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: "smooth" });
             }
           }
         }
@@ -1578,7 +1578,8 @@
 
   messagesDiv.addEventListener("scroll", () => {
     try {
-      const isNearBottom = messagesDiv.scrollTop + messagesDiv.clientHeight >= messagesDiv.scrollHeight - 10;
+      // Consider the user scrolled to bottom if within 100 pixels of the bottom
+      const isNearBottom = messagesDiv.scrollTop + messagesDiv.clientHeight >= messagesDiv.scrollHeight - 100;
       isScrolledToBottom = isNearBottom;
     } catch (error) {
       console.error("Error in scroll event:", error);
