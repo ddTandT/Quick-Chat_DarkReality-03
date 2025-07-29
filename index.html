@@ -136,6 +136,11 @@
     font-size: 1.4em;
     vertical-align: middle;
   }
+  .bubble .sticker {
+    width: 2.8em;
+    height: 2.8em;
+    vertical-align: middle;
+  }
   .bubble .file-preview {
     max-width: 200px;
     border-radius: 12px;
@@ -340,22 +345,22 @@
   #fileInput {
     display: none;
   }
-  #fileBtn, #emojiBtn, #sendBtn {
+  #fileBtn, #emojiBtn, #stickerBtn, #sendBtn {
     background: none;
     color: #65676b;
     font-size: 1.2em;
     padding: 8px;
   }
-  body.night #fileBtn, body.night #emojiBtn, body.night #sendBtn {
+  body.night #fileBtn, body.night #emojiBtn, body.night #stickerBtn, body.night #sendBtn {
     color: #b0b3b8;
   }
-  #fileBtn:hover, #emojiBtn:hover, #sendBtn:hover {
+  #fileBtn:hover, #emojiBtn:hover, #stickerBtn:hover, #sendBtn:hover {
     color: #1877f2;
   }
-  body.night #fileBtn:hover, body.night #emojiBtn:hover, body.night #sendBtn:hover {
+  body.night #fileBtn:hover, body.night #emojiBtn:hover, body.night #stickerBtn:hover, body.night #sendBtn:hover {
     color: #2374e1;
   }
-  #emojiPicker {
+  #emojiPicker, #stickerPicker {
     position: absolute;
     background: #fff;
     border: 1px solid #ddd;
@@ -370,33 +375,39 @@
     grid-template-columns: repeat(8, 1fr);
     gap: 4px;
   }
-  body.night #emojiPicker {
+  body.night #emojiPicker, body.night #stickerPicker {
     background: #3a3b3c;
     border: 1px solid #4b4c4f;
     color: #e4e6eb;
   }
-  #emojiPicker::-webkit-scrollbar {
+  #emojiPicker::-webkit-scrollbar, #stickerPicker::-webkit-scrollbar {
     width: 6px;
   }
-  #emojiPicker::-webkit-scrollbar-thumb {
+  #emojiPicker::-webkit-scrollbar-thumb, #stickerPicker::-webkit-scrollbar-thumb {
     background: #b0b3b8;
     border-radius: 3px;
   }
-  body.night #emojiPicker::-webkit-scrollbar-thumb {
+  body.night #emojiPicker::-webkit-scrollbar-thumb, body.night #stickerPicker::-webkit-scrollbar-thumb {
     background: #606770;
   }
-  #emojiPicker span {
+  #emojiPicker span, #stickerPicker img {
     cursor: pointer;
-    font-size: 1.4em;
     padding: 4px;
     text-align: center;
   }
-  #emojiPicker span:hover, #emojiPicker span:focus {
+  #emojiPicker span {
+    font-size: 1.4em;
+  }
+  #stickerPicker img {
+    width: 2.8em;
+    height: 2.8em;
+  }
+  #emojiPicker span:hover, #emojiPicker span:focus, #stickerPicker img:hover, #stickerPicker img:focus {
     background: #e7f3ff;
     border-radius: 6px;
     outline: none;
   }
-  body.night #emojiPicker span:hover, body.night #emojiPicker span:focus {
+  body.night #emojiPicker span:hover, body.night #emojiPicker span:focus, body.night #stickerPicker img:hover, body.night #stickerPicker img:focus {
     background: #4b4c4f;
   }
   .reaction-picker {
@@ -577,13 +588,15 @@
     font-weight: bold;
     color: #1877f2;
     text-align: center;
-    animation: fadeOut 3s forwards;
+    animation: fadeOut 2.5s forwards;
     z-index: 1000;
-    display: none; /* Hidden by default */
+    display: none;
   }
   @keyframes fadeOut {
-    0% { opacity: 1; }
-    100% { opacity: 0; }
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); display: none; }
   }
   #passkeyError {
     color: #f02849;
@@ -611,11 +624,13 @@
   <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
   <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
   <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
+  <button id="stickerBtn" title="Sticker Picker" aria-label="Sticker Picker">🎉</button>
   <div id="replyPreview"></div>
   <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
   <button id="sendBtn" title="Send Message" aria-label="Send Message">➤</button>
 </footer>
 <div id="emojiPicker" role="listbox" aria-label="Emoji picker"></div>
+<div id="stickerPicker" role="listbox" aria-label="Sticker picker"></div>
 <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div id="modalContent" tabindex="0">
     <h2 id="modalTitle">Enter Username</h2>
@@ -674,7 +689,9 @@
   const fileInput = document.getElementById("fileInput");
   const fileBtn = document.getElementById("fileBtn");
   const emojiBtn = document.getElementById("emojiBtn");
+  const stickerBtn = document.getElementById("stickerBtn");
   const emojiPicker = document.getElementById("emojiPicker");
+  const stickerPicker = document.getElementById("stickerPicker");
   const messagesDiv = document.getElementById("messages");
   const nightModeBtn = document.getElementById("nightModeBtn");
   const changeUserBtn = document.getElementById("changeUserBtn");
@@ -693,6 +710,13 @@
   const welcomeMessage = document.getElementById("welcomeMessage");
 
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
+  const stickerIds = [
+    "3o7btPCcdNniYF1o4k", "l0Iyl55kTeh71nTWw", "3o6Zt6KHxJTWiG6Uk8",
+    "26FPy3QZQqGtD3qRs", "3o7TKz2b3h6fZ8Kj2Q", "3o7TKtdJDH84pw4Z3a",
+    "xT5LMWq7z5i8z6x2b6", "3o6ZtjZ5R7ZfYfK8Qo", "26FPy3QZQqGtD3qRs",
+    "l0MYt5jPRBRUsFGek"
+  ];
+  const stickers = Array.from({ length: stickerIds.length }, (_, i) => `https://media.giphy.com/media/${stickerIds[i]}/giphy.gif`);
 
   const emojis = [
     "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
@@ -757,15 +781,6 @@
       sessionStorage.setItem("quickchat-passkey-validated", validated ? "1" : "0");
     } catch (error) {
       console.error("Error saving passkey validation:", error);
-    }
-  }
-
-  function loadPasskeyValidated() {
-    try {
-      return sessionStorage.getItem("quickchat-passkey-validated") === "1";
-    } catch (error) {
-      console.error("Error loading passkey validation:", error);
-      return false;
     }
   }
 
@@ -870,7 +885,7 @@
       div.className = "message " + (msg.userId === userId ? "you" : "");
       div.setAttribute("tabindex", "0");
       div.setAttribute("role", "article");
-      div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || "file"}`);
+      div.setAttribute("aria-label", `${msg.username} said: ${msg.text || msg.fileName || msg.stickerUrl || "file"}`);
       div.dataset.messageId = msg.id;
 
       div.addEventListener("mouseenter", () => div.classList.add("touched"));
@@ -913,7 +928,7 @@
           replySender.textContent = replyData.username || "Unknown User";
           replyQuote.appendChild(replySender);
           const replyText = document.createElement("div");
-          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
+          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || replyData.stickerUrl || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
           replyQuote.appendChild(replyText);
           bubble.appendChild(replyQuote);
         }
@@ -956,6 +971,12 @@
           link.appendChild(downloadIcon);
           bubble.appendChild(link);
         }
+      } else if (msg.stickerUrl) {
+        const sticker = document.createElement("img");
+        sticker.src = msg.stickerUrl;
+        sticker.className = "sticker";
+        sticker.alt = "Sticker";
+        bubble.appendChild(sticker);
       } else {
         bubble.innerHTML = styleEmojis(makeLinksClickable(escapeHTML(msg.text))).replace(/\n/g, "<br>");
       }
@@ -977,12 +998,14 @@
         deleteBtn.addEventListener("click", () => deleteMessage(msg.id));
         actions.appendChild(deleteBtn);
 
-        const editBtn = document.createElement("button");
-        editBtn.className = "edit-btn";
-        editBtn.setAttribute("aria-label", `Edit message from ${msg.username} at ${formatTime(msg.timestamp)}`);
-        editBtn.title = "Edit";
-        editBtn.addEventListener("click", () => editMessage(msg));
-        actions.appendChild(editBtn);
+        if (msg.text) {
+          const editBtn = document.createElement("button");
+          editBtn.className = "edit-btn";
+          editBtn.setAttribute("aria-label", `Edit message from ${msg.username} at ${formatTime(msg.timestamp)}`);
+          editBtn.title = "Edit";
+          editBtn.addEventListener("click", () => editMessage(msg));
+          actions.appendChild(editBtn);
+        }
       }
       const replyBtn = document.createElement("button");
       replyBtn.className = "reply-btn";
@@ -1108,7 +1131,6 @@
       messagesCache.push(msg);
       const dom = renderMessage(msg);
       messagesDiv.appendChild(dom);
-      // Always scroll to bottom for new messages
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
       isScrolledToBottom = true;
     } catch (error) {
@@ -1131,9 +1153,9 @@
     }
   }
 
-  async function sendMessage(text, fileUrl = null, fileName = null) {
+  async function sendMessage(text, fileUrl = null, fileName = null, stickerUrl = null) {
     try {
-      if (!text && !fileUrl) return;
+      if (!text && !fileUrl && !stickerUrl) return;
       if (!currentUser || !userId) {
         alert("Please set up your profile first.");
         openProfileModal();
@@ -1143,6 +1165,7 @@
         text: text || "",
         fileUrl: fileUrl || null,
         fileName: fileName || null,
+        stickerUrl: stickerUrl || null,
         timestamp: Date.now(),
         userId,
         username: currentUser.username,
@@ -1156,6 +1179,7 @@
       replyPreview.innerHTML = "";
       stopTyping();
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      isScrolledToBottom = true;
     } catch (error) {
       console.error("Failed to send message:", error);
       alert("Failed to send message: " + error.message);
@@ -1194,7 +1218,7 @@
       replyPreview.style.display = "block";
       replyPreview.innerHTML = `
         <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
-        <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
+        <div>${escapeHTML(msg.text || msg.fileName || msg.stickerUrl || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
         <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
       `;
       const closeBtn = replyPreview.querySelector(".close-reply");
@@ -1339,7 +1363,7 @@
           if (msgDiv) {
             const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll for updated messages
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
             isScrolledToBottom = true;
           }
         }
@@ -1437,6 +1461,8 @@
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
       setupPresence();
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      isScrolledToBottom = true;
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Failed to save profile: " + error.message);
@@ -1484,8 +1510,6 @@
       passkeyOverlay.style.display = "flex";
       passkeyInput.focus();
       passkeyError.style.display = "none";
-      // Ensure welcome message is hidden initially
-      welcomeMessage.style.display = "none";
     } catch (error) {
       console.error("Error opening passkey modal:", error);
     }
@@ -1494,20 +1518,18 @@
   function validatePasskey() {
     try {
       const passkey = passkeyInput.value.trim();
-      if (passkey === "DarkChat") {
-        savePasskeyValidated(true);
+      if (passkey === "DarkMessage") {
         passkeyOverlay.style.display = "none";
+        savePasskeyValidated(true);
         passkeyInput.value = "";
         passkeyError.style.display = "none";
-        // Show welcome message with 2-second delay
+        welcomeMessage.style.display = "block";
         setTimeout(() => {
-          welcomeMessage.style.display = "block";
-          // Unlock chat page after animation (3 seconds)
-          setTimeout(() => {
-            document.body.classList.remove("locked");
-            welcomeMessage.style.display = "none";
-          }, 3000);
-        }, 2000);
+          document.body.classList.remove("locked");
+          welcomeMessage.style.display = "none";
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          isScrolledToBottom = true;
+        }, 2500);
       } else {
         passkeyError.style.display = "block";
         passkeyInput.focus();
@@ -1632,13 +1654,50 @@
       console.error("Error populating emoji picker:", error);
     }
   }
+
+  function populateStickerPicker() {
+    try {
+      stickerPicker.innerHTML = "";
+      stickers.forEach(url => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Sticker";
+        img.tabIndex = 0;
+        img.addEventListener("click", () => {
+          sendMessage("", null, null, url);
+          stickerPicker.style.display = "none";
+        });
+        img.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            img.click();
+          } else if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+            const imgs = Array.from(stickerPicker.querySelectorAll("img"));
+            const currentIndex = imgs.indexOf(document.activeElement);
+            if (ev.key === "ArrowRight" && currentIndex < imgs.length - 1) {
+              imgs[currentIndex + 1].focus();
+              ev.preventDefault();
+            } else if (ev.key === "ArrowLeft" && currentIndex > 0) {
+              imgs[currentIndex - 1].focus();
+              ev.preventDefault();
+            }
+          }
+        });
+        stickerPicker.appendChild(img);
+      });
+    } catch (error) {
+      console.error("Error populating sticker picker:", error);
+    }
+  }
   populateEmojiPicker();
+  populateStickerPicker();
 
   emojiBtn.addEventListener("click", () => {
     try {
       if (emojiPicker.style.display === "none") {
         const rect = emojiBtn.getBoundingClientRect();
         emojiPicker.style.display = "grid";
+        stickerPicker.style.display = "none";
         emojiPicker.style.left = `${rect.left}px`;
         emojiPicker.style.bottom = `${window.innerHeight - rect.top + 10}px`;
       } else {
@@ -1649,10 +1708,29 @@
     }
   });
 
+  stickerBtn.addEventListener("click", () => {
+    try {
+      if (stickerPicker.style.display === "none") {
+        const rect = stickerBtn.getBoundingClientRect();
+        stickerPicker.style.display = "grid";
+        emojiPicker.style.display = "none";
+        stickerPicker.style.left = `${rect.left}px`;
+        stickerPicker.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+      } else {
+        stickerPicker.style.display = "none";
+      }
+    } catch (error) {
+      console.error("Error toggling sticker picker:", error);
+    }
+  });
+
   document.addEventListener("click", (e) => {
     try {
       if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
         emojiPicker.style.display = "none";
+      }
+      if (!stickerPicker.contains(e.target) && e.target !== stickerBtn) {
+        stickerPicker.style.display = "none";
       }
       if (!e.target.closest(".reaction-picker") && !e.target.classList.contains("react-btn")) {
         document.querySelectorAll(".reaction-picker").forEach(picker => picker.remove());
@@ -1684,19 +1762,7 @@
 
   async function init() {
     try {
-      if (!loadPasskeyValidated()) {
-        openPasskeyModal();
-      } else {
-        // Show welcome message with 2-second delay
-        setTimeout(() => {
-          welcomeMessage.style.display = "block";
-          // Unlock chat page after animation (3 seconds)
-          setTimeout(() => {
-            document.body.classList.remove("locked");
-            welcomeMessage.style.display = "none";
-          }, 3000);
-        }, 2000);
-      }
+      openPasskeyModal();
       if (loadNightMode()) document.body.classList.add("night");
       currentUser = loadUserFromLocal();
       if (!currentUser) {
@@ -1713,6 +1779,8 @@
         setupTypingListener();
         setupMessageListener();
         setupUserListener();
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        isScrolledToBottom = true;
       }
     } catch (error) {
       console.error("Initialization error:", error);
