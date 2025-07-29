@@ -579,10 +579,11 @@
     text-align: center;
     animation: fadeOut 3s forwards;
     z-index: 1000;
+    display: none; /* Hidden by default */
   }
   @keyframes fadeOut {
     0% { opacity: 1; }
-    100% { opacity: 0; display: none; }
+    100% { opacity: 0; }
   }
   #passkeyError {
     color: #f02849;
@@ -689,6 +690,7 @@
   const passkeyInput = document.getElementById("passkeyInput");
   const submitPasskeyBtn = document.getElementById("submitPasskeyBtn");
   const passkeyError = document.getElementById("passkeyError");
+  const welcomeMessage = document.getElementById("welcomeMessage");
 
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
 
@@ -1106,9 +1108,9 @@
       messagesCache.push(msg);
       const dom = renderMessage(msg);
       messagesDiv.appendChild(dom);
-      if (isScrolledToBottom) {
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }
+      // Always scroll to bottom for new messages
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      isScrolledToBottom = true;
     } catch (error) {
       console.error("Error adding message:", error);
     }
@@ -1337,9 +1339,8 @@
           if (msgDiv) {
             const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
-            if (isScrolledToBottom) {
-              messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll for updated messages
+            isScrolledToBottom = true;
           }
         }
       });
@@ -1483,6 +1484,8 @@
       passkeyOverlay.style.display = "flex";
       passkeyInput.focus();
       passkeyError.style.display = "none";
+      // Ensure welcome message is hidden initially
+      welcomeMessage.style.display = "none";
     } catch (error) {
       console.error("Error opening passkey modal:", error);
     }
@@ -1491,12 +1494,20 @@
   function validatePasskey() {
     try {
       const passkey = passkeyInput.value.trim();
-      if (passkey === "DarkMessage") {
-        document.body.classList.remove("locked");
-        passkeyOverlay.style.display = "none";
+      if (passkey === "DarkChat") {
         savePasskeyValidated(true);
+        passkeyOverlay.style.display = "none";
         passkeyInput.value = "";
         passkeyError.style.display = "none";
+        // Show welcome message with 2-second delay
+        setTimeout(() => {
+          welcomeMessage.style.display = "block";
+          // Unlock chat page after animation (3 seconds)
+          setTimeout(() => {
+            document.body.classList.remove("locked");
+            welcomeMessage.style.display = "none";
+          }, 3000);
+        }, 2000);
       } else {
         passkeyError.style.display = "block";
         passkeyInput.focus();
@@ -1676,7 +1687,15 @@
       if (!loadPasskeyValidated()) {
         openPasskeyModal();
       } else {
-        document.body.classList.remove("locked");
+        // Show welcome message with 2-second delay
+        setTimeout(() => {
+          welcomeMessage.style.display = "block";
+          // Unlock chat page after animation (3 seconds)
+          setTimeout(() => {
+            document.body.classList.remove("locked");
+            welcomeMessage.style.display = "none";
+          }, 3000);
+        }, 2000);
       }
       if (loadNightMode()) document.body.classList.add("night");
       currentUser = loadUserFromLocal();
