@@ -565,6 +565,24 @@
     border-color: #1659b7;
     outline: none;
   }
+  #avatarOptions {
+    max-height: 200px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 10px;
+  }
+  #avatarOptions::-webkit-scrollbar {
+    width: 6px;
+  }
+  #avatarOptions::-webkit-scrollbar-thumb {
+    background: #b0b3b8;
+    border-radius: 3px;
+  }
+  body.night #avatarOptions::-webkit-scrollbar-thumb {
+    background: #606770;
+  }
   #welcomeMessage {
     position: fixed;
     top: 50%;
@@ -1403,7 +1421,7 @@
       avatarPickerModal.innerHTML = `
         <h2 id="avatarPickerTitle">Choose Avatar</h2>
         <div id="avatarOptions"></div>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
           <button id="saveAvatarBtn">Save</button>
           <button id="closeAvatarBtn">Close</button>
         </div>
@@ -1424,7 +1442,6 @@
       });
       avatarPickerOverlay.style.display = "flex";
       const saveAvatarBtn = avatarPickerModal.querySelector("#saveAvatarBtn");
-      const closeAvatarBtn = avatarPickerModal.querySelector("#closeAvatarBtn");
       saveAvatarBtn.addEventListener("click", async () => {
         if (selectedAvatarUrl && currentUser) {
           currentUser.avatar = selectedAvatarUrl;
@@ -1433,6 +1450,7 @@
           avatarPickerOverlay.style.display = "none";
         }
       });
+      const closeAvatarBtn = avatarPickerModal.querySelector("#closeAvatarBtn");
       closeAvatarBtn.addEventListener("click", () => {
         avatarPickerOverlay.style.display = "none";
       });
