@@ -33,7 +33,7 @@
     font-size: 1.4em;
     font-weight: 500;
   }
-  #changeUserBtn, #nightModeBtn, #avatarPickerBtn {
+  #changeUserBtn, #nightModeBtn, #avatarPickerBtn, #changePasskeyBtn {
     background: white;
     border: none;
     border-radius: 6px;
@@ -44,7 +44,7 @@
     color: #1877f2;
     font-size: 0.9em;
   }
-  #changeUserBtn:hover, #nightModeBtn:hover, #avatarPickerBtn:hover {
+  #changeUserBtn:hover, #nightModeBtn:hover, #avatarPickerBtn:hover, #changePasskeyBtn:hover {
     background: #e7f3ff;
   }
   #messages {
@@ -501,7 +501,7 @@
   body.night .reaction-users div:hover {
     background: #4b4c4f;
   }
-  #modalOverlay, #avatarPickerOverlay {
+  #modalOverlay, #avatarPickerOverlay, #passkeyOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -513,7 +513,7 @@
     align-items: center;
     z-index: 1000;
   }
-  #modalContent, #avatarPickerModal {
+  #modalContent, #avatarPickerModal, #passkeyModal {
     background: white;
     padding: 20px;
     border-radius: 12px;
@@ -522,16 +522,16 @@
     box-sizing: border-box;
     outline: none;
   }
-  body.night #modalContent, body.night #avatarPickerModal {
+  body.night #modalContent, body.night #avatarPickerModal, body.night #passkeyModal {
     background: #3a3b3c;
     color: #e4e6eb;
   }
-  #modalContent h2, #avatarPickerModal h2 {
+  #modalContent h2, #avatarPickerModal h2, #passkeyModal h2 {
     margin: 0 0 10px;
     font-size: 1.2em;
     font-weight: 500;
   }
-  #usernameInput {
+  #usernameInput, #passkeyInput, #oldPasskeyInput {
     width: 100%;
     padding: 10px;
     font-size: 0.95em;
@@ -539,12 +539,12 @@
     border-radius: 6px;
     border: 1px solid #ddd;
   }
-  body.night #usernameInput {
+  body.night #usernameInput, body.night #passkeyInput, body.night #oldPasskeyInput {
     background: #4b4c4f;
     border: 1px solid #606770;
     color: #e4e6eb;
   }
-  #saveProfileBtn {
+  #saveProfileBtn, #savePasskeyBtn, #resetPasskeyBtn {
     width: 100%;
     padding: 10px;
     font-weight: 500;
@@ -595,6 +595,11 @@
     animation: fadeOut 3s forwards;
     z-index: 1000;
   }
+  #chatContainer {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+  }
   @keyframes fadeOut {
     0% { opacity: 1; }
     100% { opacity: 0; display: none; }
@@ -602,25 +607,38 @@
 </style>
 </head>
 <body>
-<div id="welcomeMessage">Welcome to Fakebook</div>
-<header>
-  <h1>Fakebook Chat</h1>
-  <div>
-    <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">Avatar</button>
-    <button id="changeUserBtn" title="Change Username" aria-label="Change Username">Change User</button>
-    <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
+<div id="passkeyOverlay" role="dialog" aria-modal="true" aria-labelledby="passkeyTitle">
+  <div id="passkeyModal" tabindex="0">
+    <h2 id="passkeyTitle">Enter Passkey</h2>
+    <input type="password" id="passkeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter your passkey" />
+    <input type="password" id="oldPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter old passkey (for reset)" style="display: none;" />
+    <button id="savePasskeyBtn">Submit</button>
+    <button id="resetPasskeyBtn" style="background: #f02849; margin-top: 10px;">Reset Passkey</button>
+    <div id="passkeyError" style="color: red; font-size: 0.8em; margin-top: 10px; display: none;"></div>
   </div>
-</header>
-<div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
-<div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
-<footer>
-  <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
-  <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-  <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
-  <div id="replyPreview"></div>
-  <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
-  <button id="sendBtn" title="Send Message" aria-label="Send Message">➤</button>
-</footer>
+</div>
+<div id="welcomeMessage" style="display: none;">Welcome to Fakebook</div>
+<div id="chatContainer">
+  <header>
+    <h1>Fakebook Chat</h1>
+    <div>
+      <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">Avatar</button>
+      <button id="changeUserBtn" title="Change Username" aria-label="Change Username">Change User</button>
+      <button id="changePasskeyBtn" title="Change Passkey" aria-label="Change Passkey">Passkey</button>
+      <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
+    </div>
+  </header>
+  <div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
+  <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
+  <footer>
+    <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
+    <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
+    <div id="replyPreview"></div>
+    <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
+    <button id="sendBtn" title="Send Message" aria-label="Send Message">➤</button>
+  </footer>
+</div>
 <div id="emojiPicker" role="listbox" aria-label="Emoji picker"></div>
 <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div id="modalContent" tabindex="0">
@@ -676,6 +694,7 @@
   const messagesDiv = document.getElementById("messages");
   const nightModeBtn = document.getElementById("nightModeBtn");
   const changeUserBtn = document.getElementById("changeUserBtn");
+  const changePasskeyBtn = document.getElementById("changePasskeyBtn");
   const typingIndicator = document.getElementById("typingIndicator");
   const modalOverlay = document.getElementById("modalOverlay");
   const usernameInput = document.getElementById("usernameInput");
@@ -684,6 +703,15 @@
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
   const replyPreview = document.getElementById("replyPreview");
+  const passkeyOverlay = document.getElementById("passkeyOverlay");
+  const passkeyModal = document.getElementById("passkeyModal");
+  const passkeyInput = document.getElementById("passkeyInput");
+  const oldPasskeyInput = document.getElementById("oldPasskeyInput");
+  const savePasskeyBtn = document.getElementById("savePasskeyBtn");
+  const resetPasskeyBtn = document.getElementById("resetPasskeyBtn");
+  const passkeyError = document.getElementById("passkeyError");
+  const welcomeMessage = document.getElementById("welcomeMessage");
+  const chatContainer = document.getElementById("chatContainer");
 
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
 
@@ -709,6 +737,10 @@
   let replyToMessage = null;
   const usersMap = new Map();
   let isScrolledToBottom = true;
+  let isPasskeyVerified = false;
+  let isPasskeySet = false;
+  let isResetPasskeyMode = false;
+  let sessionVerified = false;
 
   function saveUserToLocal(user) {
     try {
@@ -742,6 +774,48 @@
     } catch (error) {
       console.error("Error loading night mode:", error);
       return false;
+    }
+  }
+
+  function savePasskeyToLocal(passkey) {
+    try {
+      localStorage.setItem("quickchat-passkey", passkey);
+    } catch (error) {
+      console.error("Error saving passkey to localStorage:", error);
+    }
+  }
+
+  function loadPasskeyFromLocal() {
+    try {
+      return localStorage.getItem("quickchat-passkey");
+    } catch (error) {
+      console.error("Error loading passkey from localStorage:", error);
+      return null;
+    }
+  }
+
+  function saveSessionVerified() {
+    try {
+      sessionStorage.setItem("quickchat-session-verified", "true");
+    } catch (error) {
+      console.error("Error saving session verified:", error);
+    }
+  }
+
+  function loadSessionVerified() {
+    try {
+      return sessionStorage.getItem("quickchat-session-verified") === "true";
+    } catch (error) {
+      console.error("Error loading session verified:", error);
+      return false;
+    }
+  }
+
+  function clearSessionVerified() {
+    try {
+      sessionStorage.removeItem("quickchat-session-verified");
+    } catch (error) {
+      console.error("Error clearing session verified:", error);
     }
   }
 
@@ -1084,7 +1158,7 @@
       messagesCache.push(msg);
       const dom = renderMessage(msg);
       messagesDiv.appendChild(dom);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      if (isScrolledToBottom) messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Error adding message:", error);
     }
@@ -1108,9 +1182,10 @@
   async function sendMessage(text, fileUrl = null, fileName = null) {
     try {
       if (!text && !fileUrl) return;
-      if (!currentUser || !userId) {
-        alert("Please set up your profile first.");
-        openProfileModal();
+      if (!currentUser || !userId || !isPasskeyVerified) {
+        passkeyError.textContent = "Please set up your profile and passkey first.";
+        passkeyError.style.display = "block";
+        openPasskeyModal();
         return;
       }
       const msg = {
@@ -1132,7 +1207,8 @@
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
       console.error("Failed to send message:", error);
-      alert("Failed to send message: " + error.message);
+      passkeyError.textContent = "Failed to send message: " + error.message;
+      passkeyError.style.display = "block";
     }
   }
 
@@ -1145,7 +1221,8 @@
       messagesCache = messagesCache.filter(m => m.id !== messageId);
     } catch (error) {
       console.error("Failed to delete message:", error);
-      alert("Failed to delete message: " + error.message);
+      passkeyError.textContent = "Failed to delete message: " + error.message;
+      passkeyError.style.display = "block";
     }
   }
 
@@ -1157,7 +1234,8 @@
       await update(ref(db, `messages/${msg.id}`), { text: newText.trim() });
     } catch (error) {
       console.error("Failed to edit message:", error);
-      alert("Failed to edit message: " + error.message);
+      passkeyError.textContent = "Failed to edit message: " + error.message;
+      passkeyError.style.display = "block";
     }
   }
 
@@ -1241,7 +1319,8 @@
       await set(msgRef, reactions);
     } catch (error) {
       console.error("Failed to add/remove reaction:", error);
-      alert("Failed to add/remove reaction: " + error.message);
+      passkeyError.textContent = "Failed to add/remove reaction: " + error.message;
+      passkeyError.style.display = "block";
     }
   }
 
@@ -1313,7 +1392,7 @@
           if (msgDiv) {
             const newDiv = renderMessage(msg);
             msgDiv.replaceWith(newDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            if (isScrolledToBottom) messagesDiv.scrollTop = messagesDiv.scrollHeight;
           }
         }
       });
@@ -1380,6 +1459,34 @@
     }
   }
 
+  function openPasskeyModal(mode = "enter") {
+    try {
+      passkeyOverlay.style.display = "flex";
+      passkeyInput.value = "";
+      oldPasskeyInput.value = "";
+      passkeyError.style.display = "none";
+      isResetPasskeyMode = mode === "reset";
+      if (mode === "set") {
+        passkeyModal.querySelector("h2").textContent = "Set Your Passkey";
+        oldPasskeyInput.style.display = "none";
+        resetPasskeyBtn.style.display = "none";
+      } else if (mode === "reset") {
+        passkeyModal.querySelector("h2").textContent = "Reset Passkey";
+        oldPasskeyInput.style.display = "block";
+        oldPasskeyInput.placeholder = "Enter old passkey";
+        passkeyInput.placeholder = "Enter new passkey";
+        resetPasskeyBtn.style.display = "none";
+      } else {
+        passkeyModal.querySelector("h2").textContent = "Enter Your Passkey";
+        oldPasskeyInput.style.display = "none";
+        resetPasskeyBtn.style.display = isPasskeySet ? "block" : "none";
+      }
+      passkeyInput.focus();
+    } catch (error) {
+      console.error("Error opening passkey modal:", error);
+    }
+  }
+
   async function checkUsernameUnique(username) {
     try {
       const snapshot = await get(usersRef);
@@ -1391,15 +1498,55 @@
     }
   }
 
+  async function verifyPasskey(userId, passkey) {
+    try {
+      const userSnapshot = await get(ref(db, `users/${userId}`));
+      const userData = userSnapshot.val();
+      return userData && userData.passkey === passkey;
+    } catch (error) {
+      console.error("Error verifying passkey:", error);
+      return false;
+    }
+  }
+
+  async function savePasskey(userId, passkey, isReset = false, oldPasskey = null) {
+    try {
+      if (passkey.length < 4) {
+        passkeyError.textContent = "Passkey must be at least 4 characters long.";
+        passkeyError.style.display = "block";
+        return false;
+      }
+      if (isReset) {
+        const isValid = await verifyPasskey(userId, oldPasskey);
+        if (!isValid) {
+          passkeyError.textContent = "Incorrect old passkey.";
+          passkeyError.style.display = "block";
+          return false;
+        }
+      }
+      await update(ref(db, `users/${userId}`), { passkey });
+      savePasskeyToLocal(passkey);
+      isPasskeySet = true;
+      return true;
+    } catch (error) {
+      console.error("Error saving passkey:", error);
+      passkeyError.textContent = "Failed to save passkey: " + error.message;
+      passkeyError.style.display = "block";
+      return false;
+    }
+  }
+
   saveProfileBtn.addEventListener("click", async () => {
     try {
       const val = usernameInput.value.trim();
       if (val.length < 2) {
-        alert("Username must be at least 2 characters long.");
+        passkeyError.textContent = "Username must be at least 2 characters long.";
+        passkeyError.style.display = "block";
         return;
       }
       if (!(await checkUsernameUnique(val))) {
-        alert("Username already taken. Please choose another.");
+        passkeyError.textContent = "Username already taken. Please choose another.";
+        passkeyError.style.display = "block";
         return;
       }
       currentUser = { username: val };
@@ -1409,12 +1556,85 @@
       await set(ref(db, `users/${userId}`), currentUser);
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
-      setupPresence();
+      openPasskeyModal("set");
     } catch (error) {
       console.error("Error saving profile:", error);
-      alert("Failed to save profile: " + error.message);
+      passkeyError.textContent = "Failed to save profile: " + error.message;
+      passkeyError.style.display = "block";
     }
   });
+
+  savePasskeyBtn.addEventListener("click", async () => {
+    try {
+      const passkey = passkeyInput.value.trim();
+      const oldPasskey = oldPasskeyInput.value.trim();
+      const mode = passkeyModal.querySelector("h2").textContent;
+      if (!currentUser || !userId) {
+        passkeyError.textContent = "Please set up your profile first.";
+        passkeyError.style.display = "block";
+        return;
+      }
+      if (mode === "Set Your Passkey") {
+        if (await savePasskey(userId, passkey)) {
+          passkeyOverlay.style.display = "none";
+          openPasskeyModal("enter");
+        }
+      } else if (mode === "Reset Passkey") {
+        if (await savePasskey(userId, passkey, true, oldPasskey)) {
+          passkeyOverlay.style.display = "none";
+          isPasskeyVerified = true;
+          sessionVerified = true;
+          saveSessionVerified();
+          showChatInterface();
+        }
+      } else {
+        const isValid = await verifyPasskey(userId, passkey);
+        if (isValid) {
+          savePasskeyToLocal(passkey);
+          isPasskeyVerified = true;
+          sessionVerified = true;
+          saveSessionVerified();
+          passkeyOverlay.style.display = "none";
+          showChatInterface();
+        } else {
+          passkeyError.textContent = "Invalid passkey. Try again or reset your passkey.";
+          passkeyError.style.display = "block";
+        }
+      }
+    } catch (error) {
+      console.error("Error handling passkey:", error);
+      passkeyError.textContent = "Error: " + error.message;
+      passkeyError.style.display = "block";
+    }
+  });
+
+  resetPasskeyBtn.addEventListener("click", () => {
+    openPasskeyModal("reset");
+  });
+
+  changePasskeyBtn.addEventListener("click", () => openPasskeyModal("reset"));
+
+  function showChatInterface() {
+    try {
+      welcomeMessage.style.display = "block";
+      setTimeout(() => {
+        welcomeMessage.style.display = "none";
+        chatContainer.style.display = "flex";
+        setupTypingListener();
+        setupMessageListener();
+        setupUserListener();
+        setupPresence();
+        setTimeout(() => {
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }, 0);
+        cleanupOldMessages();
+      }, 3000);
+    } catch (error) {
+      console.error("Error showing chat interface:", error);
+      passkeyError.textContent = "Error showing chat interface: " + error.message;
+      passkeyError.style.display = "block";
+    }
+  }
 
   function openAvatarPicker() {
     try {
@@ -1498,7 +1718,8 @@
       }
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        alert("File size exceeds 5MB limit.");
+        passkeyError.textContent = "File size exceeds 5MB limit.";
+        passkeyError.style.display = "block";
         fileInput.value = "";
         return;
       }
@@ -1508,7 +1729,8 @@
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ];
       if (!allowedTypes.includes(file.type)) {
-        alert("Only images (jpg, png, gif, webp, bmp), PDFs, and Docs (doc, docx) are allowed.");
+        passkeyError.textContent = "Only images (jpg, png, gif, webp, bmp), PDFs, and Docs (doc, docx) are allowed.";
+        passkeyError.style.display = "block";
         fileInput.value = "";
         return;
       }
@@ -1518,13 +1740,15 @@
         fileInput.value = "";
       };
       reader.onerror = () => {
-        alert("Failed to read file: " + file.name);
+        passkeyError.textContent = "Failed to read file: " + file.name;
+        passkeyError.style.display = "block";
         fileInput.value = "";
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error("Failed to process file:", error);
-      alert("Failed to process file: " + error.message);
+      passkeyError.textContent = "Failed to process file: " + error.message;
+      passkeyError.style.display = "block";
       fileInput.value = "";
     }
   });
@@ -1617,27 +1841,28 @@
     try {
       if (loadNightMode()) document.body.classList.add("night");
       currentUser = loadUserFromLocal();
+      sessionVerified = loadSessionVerified();
+
       if (!currentUser) {
         openProfileModal();
       } else {
         userId = generateUserId();
         const userSnapshot = await get(ref(db, `users/${userId}`));
-        selectedAvatarUrl = userSnapshot.val()?.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
+        const userData = userSnapshot.val();
+        selectedAvatarUrl = userData?.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
         currentUser.avatar = selectedAvatarUrl;
-        saveUserToLocal(currentUser);
-        await set(ref(db, `users/${userId}`), currentUser);
-        setupPresence();
-        await cleanupOldMessages();
-        setupTypingListener();
-        setupMessageListener();
-        setupUserListener();
-        setTimeout(() => {
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }, 0);
+        isPasskeySet = !!userData?.passkey;
+        if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
+          isPasskeyVerified = true;
+          showChatInterface();
+        } else {
+          openPasskeyModal(isPasskeySet ? "enter" : "set");
+        }
       }
     } catch (error) {
       console.error("Initialization error:", error);
-      alert("Failed to initialize app: " + error.message);
+      passkeyError.textContent = "Failed to initialize app: " + error.message;
+      passkeyError.style.display = "block";
     }
   }
   init();
