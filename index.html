@@ -611,7 +611,7 @@
   <div id="passkeyModal" tabindex="0">
     <h2 id="passkeyTitle">Enter Passkey</h2>
     <input type="password" id="passkeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter your passkey" />
-    <input type="password" id="oldPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter old passkey (for reset)" style="display: none;" />
+    <input type="password" id="oldPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter reset code" style="display: none;" />
     <button id="savePasskeyBtn">Submit</button>
     <button id="resetPasskeyBtn" style="background: #f02849; margin-top: 10px;">Reset Passkey</button>
     <div id="passkeyError" style="color: red; font-size: 0.8em; margin-top: 10px; display: none;"></div>
@@ -712,6 +712,8 @@
   const passkeyError = document.getElementById("passkeyError");
   const welcomeMessage = document.getElementById("welcomeMessage");
   const chatContainer = document.getElementById("chatContainer");
+
+  const BUILT_IN_RESET_PASSKEY = "DarkChat";
 
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
 
@@ -1473,7 +1475,7 @@
       } else if (mode === "reset") {
         passkeyModal.querySelector("h2").textContent = "Reset Passkey";
         oldPasskeyInput.style.display = "block";
-        oldPasskeyInput.placeholder = "Enter old passkey";
+        oldPasskeyInput.placeholder = "Enter reset code";
         passkeyInput.placeholder = "Enter new passkey";
         resetPasskeyBtn.style.display = "none";
       } else {
@@ -1509,20 +1511,17 @@
     }
   }
 
-  async function savePasskey(userId, passkey, isReset = false, oldPasskey = null) {
+  async function savePasskey(userId, passkey, isReset = false, resetCode = null) {
     try {
       if (passkey.length < 4) {
         passkeyError.textContent = "Passkey must be at least 4 characters long.";
         passkeyError.style.display = "block";
         return false;
       }
-      if (isReset) {
-        const isValid = await verifyPasskey(userId, oldPasskey);
-        if (!isValid) {
-          passkeyError.textContent = "Incorrect old passkey.";
-          passkeyError.style.display = "block";
-          return false;
-        }
+      if (isReset && resetCode !== BUILT_IN_RESET_PASSKEY) {
+        passkeyError.textContent = "Incorrect reset code.";
+        passkeyError.style.display = "block";
+        return false;
       }
       await update(ref(db, `users/${userId}`), { passkey });
       savePasskeyToLocal(passkey);
@@ -1567,7 +1566,7 @@
   savePasskeyBtn.addEventListener("click", async () => {
     try {
       const passkey = passkeyInput.value.trim();
-      const oldPasskey = oldPasskeyInput.value.trim();
+      const resetCode = oldPasskeyInput.value.trim();
       const mode = passkeyModal.querySelector("h2").textContent;
       if (!currentUser || !userId) {
         passkeyError.textContent = "Please set up your profile first.";
@@ -1580,7 +1579,7 @@
           openPasskeyModal("enter");
         }
       } else if (mode === "Reset Passkey") {
-        if (await savePasskey(userId, passkey, true, oldPasskey)) {
+        if (await savePasskey(userId, passkey, true, resetCode)) {
           passkeyOverlay.style.display = "none";
           isPasskeyVerified = true;
           sessionVerified = true;
