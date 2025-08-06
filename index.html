@@ -544,10 +544,14 @@
     border: 1px solid #606770;
     color: #e4e6eb;
   }
-  #saveProfileBtn, #savePasskeyBtn, #resetPasskeyBtn {
+  #saveProfileBtn, #savePasskeyBtn, #resetPasskeyBtn, #closeProfileBtn {
     width: 100%;
     padding: 10px;
     font-weight: 500;
+  }
+  #closeProfileBtn {
+    background: #f02849;
+    margin-top: 10px;
   }
   .avatar-option {
     width: 48px;
@@ -645,6 +649,7 @@
     <h2 id="modalTitle">Enter Username</h2>
     <input type="text" id="usernameInput" aria-required="true" aria-describedby="modalTitle" />
     <button id="saveProfileBtn">Save</button>
+    <button id="closeProfileBtn">Close</button>
   </div>
 </div>
 <div id="avatarPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="avatarPickerTitle">
@@ -699,6 +704,7 @@
   const modalOverlay = document.getElementById("modalOverlay");
   const usernameInput = document.getElementById("usernameInput");
   const saveProfileBtn = document.getElementById("saveProfileBtn");
+  const closeProfileBtn = document.getElementById("closeProfileBtn");
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
@@ -1118,11 +1124,11 @@
     }
   }
 
-  function updateUserAvatars(userId, newAvatar) {
+  function updateUserMessages(userId, newUsername) {
     try {
       messagesCache.forEach(msg => {
         if (msg.userId === userId) {
-          msg.avatar = newAvatar;
+          msg.username = newUsername;
           const msgDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
           if (msgDiv) {
             const newDiv = renderMessage(msg);
@@ -1130,9 +1136,9 @@
           }
         }
       });
-      usersMap.set(userId, { ...usersMap.get(userId), avatar: newAvatar });
+      usersMap.set(userId, { ...usersMap.get(userId), username: newUsername });
     } catch (error) {
-      console.error("Error updating user avatars:", error);
+      console.error("Error updating user messages:", error);
     }
   }
 
@@ -1445,6 +1451,9 @@
           if (usersMap.get(child.key)?.avatar !== user.avatar) {
             updateUserAvatars(child.key, user.avatar);
           }
+          if (usersMap.get(child.key)?.username !== user.username) {
+            updateUserMessages(child.key, user.username);
+          }
         });
       });
     } catch (error) {
@@ -1456,6 +1465,7 @@
     try {
       modalOverlay.style.display = "flex";
       usernameInput.focus();
+      usernameInput.value = currentUser ? currentUser.username : "";
     } catch (error) {
       console.error("Error opening profile modal:", error);
     }
@@ -1493,7 +1503,7 @@
     try {
       const snapshot = await get(usersRef);
       const users = snapshot.val() || {};
-      return !Object.values(users).some(u => u.username === username);
+      return !Object.values(users).some(u => u.username === username && u.userId !== userId);
     } catch (error) {
       console.error("Error checking username uniqueness:", error);
       return false;
@@ -1548,18 +1558,35 @@
         passkeyError.style.display = "block";
         return;
       }
-      currentUser = { username: val };
-      userId = generateUserId();
-      selectedAvatarUrl = maleAvatars[hashCode(val + userId) % maleAvatars.length];
+      currentUser = { username: val, avatar: currentUser?.avatar };
+      userId = userId || generateUserId();
+      selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(val + userId) % maleAvatars.length];
       currentUser.avatar = selectedAvatarUrl;
       await set(ref(db, `users/${userId}`), currentUser);
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
-      openPasskeyModal("set");
+      if (!isPasskeySet) {
+        openPasskeyModal("set");
+      } else {
+        updateUserMessages(userId, val);
+      }
     } catch (error) {
       console.error("Error saving profile:", error);
       passkeyError.textContent = "Failed to save profile: " + error.message;
       passkeyError.style.display = "block";
+    }
+  });
+
+  closeProfileBtn.addEventListener("click", () => {
+    try {
+      modalOverlay.style.display = "none";
+      usernameInput.value = "";
+      passkeyError.style.display = "none";
+      if (!currentUser) {
+        openProfileModal();
+      }
+    } catch (error) {
+      console.error("Error closing profile modal:", error);
     }
   });
 
@@ -1868,6 +1895,3 @@
 </script>
 </body>
 </html>
-
-
-
