@@ -544,12 +544,12 @@
     border: 1px solid #606770;
     color: #e4e6eb;
   }
-  #saveProfileBtn, #savePasskeyBtn, #resetPasskeyBtn, #closeProfileBtn {
+  #saveProfileBtn, #savePasskeyBtn, #resetPasskeyBtn, #closeProfileBtn, #closePasskeyBtn {
     width: 100%;
     padding: 10px;
     font-weight: 500;
   }
-  #closeProfileBtn {
+  #closeProfileBtn, #closePasskeyBtn {
     background: #f02849;
     margin-top: 10px;
   }
@@ -618,6 +618,7 @@
     <input type="password" id="oldPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter reset code" style="display: none;" />
     <button id="savePasskeyBtn">Submit</button>
     <button id="resetPasskeyBtn" style="background: #f02849; margin-top: 10px;">Reset Passkey</button>
+    <button id="closePasskeyBtn" style="background: #f02849; margin-top: 10px;">Close</button>
     <div id="passkeyError" style="color: red; font-size: 0.8em; margin-top: 10px; display: none;"></div>
   </div>
 </div>
@@ -715,6 +716,7 @@
   const oldPasskeyInput = document.getElementById("oldPasskeyInput");
   const savePasskeyBtn = document.getElementById("savePasskeyBtn");
   const resetPasskeyBtn = document.getElementById("resetPasskeyBtn");
+  const closePasskeyBtn = document.getElementById("closePasskeyBtn");
   const passkeyError = document.getElementById("passkeyError");
   const welcomeMessage = document.getElementById("welcomeMessage");
   const chatContainer = document.getElementById("chatContainer");
@@ -1482,16 +1484,19 @@
         passkeyModal.querySelector("h2").textContent = "Set Your Passkey";
         oldPasskeyInput.style.display = "none";
         resetPasskeyBtn.style.display = "none";
+        closePasskeyBtn.style.display = "block";
       } else if (mode === "reset") {
         passkeyModal.querySelector("h2").textContent = "Reset Passkey";
         oldPasskeyInput.style.display = "block";
         oldPasskeyInput.placeholder = "Enter Built-In Passkey";
         passkeyInput.placeholder = "Enter new passkey";
         resetPasskeyBtn.style.display = "none";
+        closePasskeyBtn.style.display = "block";
       } else {
         passkeyModal.querySelector("h2").textContent = "Enter Your Passkey";
         oldPasskeyInput.style.display = "none";
         resetPasskeyBtn.style.display = isPasskeySet ? "block" : "none";
+        closePasskeyBtn.style.display = "block";
       }
       passkeyInput.focus();
     } catch (error) {
@@ -1558,18 +1563,14 @@
         passkeyError.style.display = "block";
         return;
       }
-      currentUser = { username: val, avatar: currentUser?.avatar };
+      currentUser = { username: val, avatar: currentUser?.avatar, passkey: currentUser?.passkey };
       userId = userId || generateUserId();
       selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(val + userId) % maleAvatars.length];
       currentUser.avatar = selectedAvatarUrl;
       await set(ref(db, `users/${userId}`), currentUser);
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
-      if (!isPasskeySet) {
-        openPasskeyModal("set");
-      } else {
-        updateUserMessages(userId, val);
-      }
+      updateUserMessages(userId, val);
     } catch (error) {
       console.error("Error saving profile:", error);
       passkeyError.textContent = "Failed to save profile: " + error.message;
@@ -1587,6 +1588,22 @@
       }
     } catch (error) {
       console.error("Error closing profile modal:", error);
+    }
+  });
+
+  closePasskeyBtn.addEventListener("click", () => {
+    try {
+      passkeyOverlay.style.display = "none";
+      passkeyInput.value = "";
+      oldPasskeyInput.value = "";
+      passkeyError.style.display = "none";
+      if (!isPasskeySet) {
+        openPasskeyModal("set");
+      } else if (!currentUser) {
+        openProfileModal();
+      }
+    } catch (error) {
+      console.error("Error closing passkey modal:", error);
     }
   });
 
@@ -1877,6 +1894,7 @@
         const userData = userSnapshot.val();
         selectedAvatarUrl = userData?.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
         currentUser.avatar = selectedAvatarUrl;
+        currentUser.passkey = userData?.passkey;
         isPasskeySet = !!userData?.passkey;
         if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
           isPasskeyVerified = true;
