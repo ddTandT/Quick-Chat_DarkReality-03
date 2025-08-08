@@ -76,27 +76,6 @@
     border-radius: 50%;
     position: relative;
   }
-  .avatar-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  .sender {
-    font-weight: 500;
-    font-size: 0.75em;
-    color: #050505;
-    margin-bottom: 2px;
-  }
-  body.night .sender {
-    color: #e4e6eb;
-  }
-  .message.you .sender {
-    text-align: right;
-  }
-  .message:not(.you) .sender {
-    text-align: left;
-  }
   .presence-online::after {
     content: "";
     position: absolute;
@@ -122,6 +101,11 @@
   .message-content {
     display: flex;
     flex-direction: column;
+  }
+  .sender {
+    font-weight: 500;
+    font-size: 0.85em;
+    margin-bottom: 2px;
   }
   .bubble {
     background: #e7f3ff;
@@ -237,6 +221,9 @@
   .actions button.edit-btn::before {
     content: "✎";
   }
+  .actions button.reply-btn::before {
+    content: "↩️";
+  }
   @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
@@ -299,6 +286,40 @@
   body.night #text {
     background: #3a3b3c;
     color: #e4e6eb;
+  }
+  #replyPreview {
+    background: #f0f2f5;
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-bottom: 5px;
+    display: none;
+    font-size: 0.85em;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    border-left: 4px solid #1877f2;
+  }
+  body.night #replyPreview {
+    background: #3a3b3c;
+    color: #e4e6eb;
+    border-left-color: #2374e1;
+  }
+  #replyPreview .quote-sender {
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  #replyPreview .close-reply {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    color: #65676b;
+  }
+  body.night #replyPreview .close-reply {
+    color: #b0b3b8;
+  }
+  #replyPreview .close-reply:hover {
+    color: #f02849;
   }
   button {
     cursor: pointer;
@@ -407,6 +428,24 @@
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
   }
+  .reply-quote {
+    background: #f0f2f5;
+    border-left: 4px solid #1877f2;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 0.85em;
+    color: #1c1e21;
+    border-radius: 8px;
+  }
+  body.night .reply-quote {
+    background: #3a3b3c;
+    border-left-color: #2374e1;
+    color: #e4e6eb;
+  }
+  .reply-quote .quote-sender {
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
   .reactions {
     display: flex;
     flex-direction: column;
@@ -492,7 +531,7 @@
     font-size: 1.2em;
     font-weight: 500;
   }
-  #usernameInput, #passkeyInput, #oldPasskeyInput, #builtinPasskeyInput {
+  #usernameInput, #passkeyInput, #oldPasskeyInput {
     width: 100%;
     padding: 10px;
     font-size: 0.95em;
@@ -500,7 +539,7 @@
     border-radius: 6px;
     border: 1px solid #ddd;
   }
-  body.night #usernameInput, body.night #passkeyInput, body.night #oldPasskeyInput, body.night #builtinPasskeyInput {
+  body.night #usernameInput, body.night #passkeyInput, body.night #oldPasskeyInput {
     background: #4b4c4f;
     border: 1px solid #606770;
     color: #e4e6eb;
@@ -576,7 +615,6 @@
   <div id="passkeyModal" tabindex="0">
     <h2 id="passkeyTitle">Enter Passkey</h2>
     <input type="password" id="passkeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter your passkey" />
-    <input type="password" id="builtinPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter built-in passkey" style="display: none;" />
     <input type="password" id="oldPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter reset code" style="display: none;" />
     <button id="savePasskeyBtn">Submit</button>
     <button id="resetPasskeyBtn" style="background: #f02849; margin-top: 10px;">Reset Passkey</button>
@@ -601,6 +639,7 @@
     <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
     <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
     <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
+    <div id="replyPreview"></div>
     <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
     <button id="sendBtn" title="Send Message" aria-label="Send Message">➤</button>
   </footer>
@@ -670,11 +709,11 @@
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
+  const replyPreview = document.getElementById("replyPreview");
   const passkeyOverlay = document.getElementById("passkeyOverlay");
   const passkeyModal = document.getElementById("passkeyModal");
   const passkeyInput = document.getElementById("passkeyInput");
   const oldPasskeyInput = document.getElementById("oldPasskeyInput");
-  const builtinPasskeyInput = document.getElementById("builtinPasskeyInput");
   const savePasskeyBtn = document.getElementById("savePasskeyBtn");
   const resetPasskeyBtn = document.getElementById("resetPasskeyBtn");
   const closePasskeyBtn = document.getElementById("closePasskeyBtn");
@@ -705,13 +744,13 @@
   let messagesCache = [];
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
+  let replyToMessage = null;
   const usersMap = new Map();
   let isScrolledToBottom = true;
   let isPasskeyVerified = false;
   let isPasskeySet = false;
   let isResetPasskeyMode = false;
   let sessionVerified = false;
-  let isFreshUser = false;
 
   function saveUserToLocal(user) {
     try {
@@ -899,9 +938,6 @@
       div.addEventListener("touchstart", () => div.classList.add("touched"));
       div.addEventListener("touchend", () => setTimeout(() => div.classList.remove("touched"), 2000));
 
-      const avatarContainer = document.createElement("div");
-      avatarContainer.className = "avatar-container";
-
       const avatarWrapper = document.createElement("div");
       avatarWrapper.className = "avatar";
       const presence = presenceMap.get(msg.userId) === "online" ? "presence-online" : "presence-offline";
@@ -925,6 +961,23 @@
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
+
+      if (msg.replyTo) {
+        const replyData = messagesCache.find(m => m.id === msg.replyTo);
+        if (replyData) {
+          cacheUserInfo(replyData);
+          const replyQuote = document.createElement("div");
+          replyQuote.className = "reply-quote";
+          const replySender = document.createElement("div");
+          replySender.className = "quote-sender";
+          replySender.textContent = replyData.username || "Unknown User";
+          replyQuote.appendChild(replySender);
+          const replyText = document.createElement("div");
+          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
+          replyQuote.appendChild(replyText);
+          bubble.appendChild(replyQuote);
+        }
+      }
 
       if (msg.fileUrl) {
         const ext = msg.fileName?.split('.').pop().toLowerCase();
@@ -991,6 +1044,13 @@
         editBtn.addEventListener("click", () => editMessage(msg));
         actions.appendChild(editBtn);
       }
+      const replyBtn = document.createElement("button");
+      replyBtn.className = "reply-btn";
+      replyBtn.setAttribute("aria-label", `Reply to message from ${msg.username}`);
+      replyBtn.title = "Reply";
+      replyBtn.addEventListener("click", () => setReplyTo(msg));
+      actions.appendChild(replyBtn);
+
       const reactBtn = document.createElement("button");
       reactBtn.className = "react-btn";
       reactBtn.setAttribute("aria-label", "React to message");
@@ -1017,7 +1077,7 @@
       }
       content.appendChild(reactionsDiv);
 
-      div.appendChild(avatarContainer);
+      div.appendChild(avatarWrapper);
       div.appendChild(content);
 
       return div;
@@ -1145,10 +1205,14 @@
         timestamp: Date.now(),
         userId,
         username: currentUser.username,
-        avatar: selectedAvatarUrl
+        avatar: selectedAvatarUrl,
+        replyTo: replyToMessage ? replyToMessage.id : null
       };
       await push(messagesRef, msg);
       textInput.value = "";
+      replyToMessage = null;
+      replyPreview.style.display = "none";
+      replyPreview.innerHTML = "";
       stopTyping();
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
@@ -1182,6 +1246,30 @@
       console.error("Failed to edit message:", error);
       passkeyError.textContent = "Failed to edit message: " + error.message;
       passkeyError.style.display = "block";
+    }
+  }
+
+  function setReplyTo(msg) {
+    try {
+      replyToMessage = msg;
+      cacheUserInfo(msg);
+      replyPreview.style.display = "block";
+      replyPreview.innerHTML = `
+        <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
+        <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
+        <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
+      `;
+      const closeBtn = replyPreview.querySelector(".close-reply");
+      closeBtn.addEventListener("click", () => {
+        replyToMessage = null;
+        replyPreview.style.display = "none";
+        replyPreview.innerHTML = "";
+        textInput.placeholder = "Type a message...";
+      });
+      textInput.placeholder = `Replying to ${msg.username}...`;
+      textInput.focus();
+    } catch (error) {
+      console.error("Error setting reply:", error);
     }
   }
 
@@ -1266,7 +1354,7 @@
         clearTimeout(typingTimeout);
         typingTimeout = null;
       }
-      textInput.placeholder = "Type a message...";
+      if (!replyToMessage) textInput.placeholder = "Type a message...";
     } catch (error) {
       console.error("Error stopping typing:", error);
     }
@@ -1390,19 +1478,16 @@
       passkeyOverlay.style.display = "flex";
       passkeyInput.value = "";
       oldPasskeyInput.value = "";
-      builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
       isResetPasskeyMode = mode === "reset";
       if (mode === "set") {
         passkeyModal.querySelector("h2").textContent = "Set Your Passkey";
         oldPasskeyInput.style.display = "none";
-        builtinPasskeyInput.style.display = "none";
         resetPasskeyBtn.style.display = "none";
         closePasskeyBtn.style.display = "block";
       } else if (mode === "reset") {
         passkeyModal.querySelector("h2").textContent = "Reset Passkey";
         oldPasskeyInput.style.display = "block";
-        builtinPasskeyInput.style.display = "none";
         oldPasskeyInput.placeholder = "Enter Built-In Passkey";
         passkeyInput.placeholder = "Enter new passkey";
         resetPasskeyBtn.style.display = "none";
@@ -1410,8 +1495,7 @@
       } else {
         passkeyModal.querySelector("h2").textContent = "Enter Your Passkey";
         oldPasskeyInput.style.display = "none";
-        builtinPasskeyInput.style.display = isFreshUser ? "block" : "none";
-        resetPasskeyBtn.style.display = isPasskeySet && !isFreshUser ? "block" : "none";
+        resetPasskeyBtn.style.display = isPasskeySet ? "block" : "none";
         closePasskeyBtn.style.display = "block";
       }
       passkeyInput.focus();
@@ -1486,12 +1570,7 @@
       await set(ref(db, `users/${userId}`), currentUser);
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
-      isFreshUser = !loadUserFromLocal();
-      if (!isPasskeySet) {
-        openPasskeyModal("set");
-      } else if (!isPasskeyVerified) {
-        openPasskeyModal("enter");
-      }
+      updateUserMessages(userId, val);
     } catch (error) {
       console.error("Error saving profile:", error);
       passkeyError.textContent = "Failed to save profile: " + error.message;
@@ -1517,7 +1596,6 @@
       passkeyOverlay.style.display = "none";
       passkeyInput.value = "";
       oldPasskeyInput.value = "";
-      builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
       if (!isPasskeySet) {
         openPasskeyModal("set");
@@ -1533,18 +1611,15 @@
     try {
       const passkey = passkeyInput.value.trim();
       const resetCode = oldPasskeyInput.value.trim();
-      const builtinPasskey = builtinPasskeyInput.value.trim();
       const mode = passkeyModal.querySelector("h2").textContent;
       if (!currentUser || !userId) {
         passkeyError.textContent = "Please set up your profile first.";
         passkeyError.style.display = "block";
-        openProfileModal();
         return;
       }
       if (mode === "Set Your Passkey") {
         if (await savePasskey(userId, passkey)) {
           passkeyOverlay.style.display = "none";
-          isFreshUser = true;
           openPasskeyModal("enter");
         }
       } else if (mode === "Reset Passkey") {
@@ -1557,8 +1632,7 @@
         }
       } else {
         const isValid = await verifyPasskey(userId, passkey);
-        const isValidBuiltin = isFreshUser ? builtinPasskey === BUILT_IN_RESET_PASSKEY : true;
-        if (isValid && isValidBuiltin) {
+        if (isValid) {
           savePasskeyToLocal(passkey);
           isPasskeyVerified = true;
           sessionVerified = true;
@@ -1566,7 +1640,7 @@
           passkeyOverlay.style.display = "none";
           showChatInterface();
         } else {
-          passkeyError.textContent = isValid ? "Invalid built-in passkey." : "Invalid passkey. Try again or reset your passkey.";
+          passkeyError.textContent = "Invalid passkey. Try again or reset your passkey.";
           passkeyError.style.display = "block";
         }
       }
@@ -1813,7 +1887,6 @@
       sessionVerified = loadSessionVerified();
 
       if (!currentUser) {
-        isFreshUser = true;
         openProfileModal();
       } else {
         userId = generateUserId();
@@ -1823,13 +1896,11 @@
         currentUser.avatar = selectedAvatarUrl;
         currentUser.passkey = userData?.passkey;
         isPasskeySet = !!userData?.passkey;
-        if (!isPasskeySet) {
-          openPasskeyModal("set");
-        } else if (!sessionVerified || !(await verifyPasskey(userId, loadPasskeyFromLocal()))) {
-          openPasskeyModal("enter");
-        } else {
+        if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
           isPasskeyVerified = true;
           showChatInterface();
+        } else {
+          openPasskeyModal(isPasskeySet ? "enter" : "set");
         }
       }
     } catch (error) {
