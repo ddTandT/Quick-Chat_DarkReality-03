@@ -76,6 +76,23 @@
     border-radius: 50%;
     position: relative;
   }
+  .avatar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .sender {
+    font-weight: 500;
+    font-size: 0.85em;
+    text-align: center;
+  }
+  .message.you .sender {
+    text-align: right;
+  }
+  .message:not(.you) .sender {
+    text-align: left;
+  }
   .presence-online::after {
     content: "";
     position: absolute;
@@ -101,11 +118,6 @@
   .message-content {
     display: flex;
     flex-direction: column;
-  }
-  .sender {
-    font-weight: 500;
-    font-size: 0.85em;
-    margin-bottom: 2px;
   }
   .bubble {
     background: #e7f3ff;
@@ -221,9 +233,6 @@
   .actions button.edit-btn::before {
     content: "✎";
   }
-  .actions button.reply-btn::before {
-    content: "↩️";
-  }
   @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
@@ -286,40 +295,6 @@
   body.night #text {
     background: #3a3b3c;
     color: #e4e6eb;
-  }
-  #replyPreview {
-    background: #f0f2f5;
-    padding: 8px 12px;
-    border-radius: 12px;
-    margin-bottom: 5px;
-    display: none;
-    font-size: 0.85em;
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
-    border-left: 4px solid #1877f2;
-  }
-  body.night #replyPreview {
-    background: #3a3b3c;
-    color: #e4e6eb;
-    border-left-color: #2374e1;
-  }
-  #replyPreview .quote-sender {
-    font-weight: 500;
-    margin-bottom: 2px;
-  }
-  #replyPreview .close-reply {
-    position: absolute;
-    top: 5px;
-    right: 10px;
-    cursor: pointer;
-    color: #65676b;
-  }
-  body.night #replyPreview .close-reply {
-    color: #b0b3b8;
-  }
-  #replyPreview .close-reply:hover {
-    color: #f02849;
   }
   button {
     cursor: pointer;
@@ -427,24 +402,6 @@
   @keyframes reactionPop {
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
-  }
-  .reply-quote {
-    background: #f0f2f5;
-    border-left: 4px solid #1877f2;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    font-size: 0.85em;
-    color: #1c1e21;
-    border-radius: 8px;
-  }
-  body.night .reply-quote {
-    background: #3a3b3c;
-    border-left-color: #2374e1;
-    color: #e4e6eb;
-  }
-  .reply-quote .quote-sender {
-    font-weight: 500;
-    margin-bottom: 2px;
   }
   .reactions {
     display: flex;
@@ -639,7 +596,6 @@
     <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
     <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
     <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
-    <div id="replyPreview"></div>
     <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
     <button id="sendBtn" title="Send Message" aria-label="Send Message">➤</button>
   </footer>
@@ -709,7 +665,6 @@
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
-  const replyPreview = document.getElementById("replyPreview");
   const passkeyOverlay = document.getElementById("passkeyOverlay");
   const passkeyModal = document.getElementById("passkeyModal");
   const passkeyInput = document.getElementById("passkeyInput");
@@ -744,7 +699,6 @@
   let messagesCache = [];
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
-  let replyToMessage = null;
   const usersMap = new Map();
   let isScrolledToBottom = true;
   let isPasskeyVerified = false;
@@ -938,6 +892,9 @@
       div.addEventListener("touchstart", () => div.classList.add("touched"));
       div.addEventListener("touchend", () => setTimeout(() => div.classList.remove("touched"), 2000));
 
+      const avatarContainer = document.createElement("div");
+      avatarContainer.className = "avatar-container";
+
       const avatarWrapper = document.createElement("div");
       avatarWrapper.className = "avatar";
       const presence = presenceMap.get(msg.userId) === "online" ? "presence-online" : "presence-offline";
@@ -951,33 +908,17 @@
       img.style.borderRadius = "50%";
       avatarWrapper.appendChild(img);
 
-      const content = document.createElement("div");
-      content.className = "message-content";
-
       const sender = document.createElement("div");
       sender.className = "sender";
       sender.textContent = msg.username;
-      content.appendChild(sender);
+      avatarContainer.appendChild(avatarWrapper);
+      avatarContainer.appendChild(sender);
+
+      const content = document.createElement("div");
+      content.className = "message-content";
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
-
-      if (msg.replyTo) {
-        const replyData = messagesCache.find(m => m.id === msg.replyTo);
-        if (replyData) {
-          cacheUserInfo(replyData);
-          const replyQuote = document.createElement("div");
-          replyQuote.className = "reply-quote";
-          const replySender = document.createElement("div");
-          replySender.className = "quote-sender";
-          replySender.textContent = replyData.username || "Unknown User";
-          replyQuote.appendChild(replySender);
-          const replyText = document.createElement("div");
-          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
-          replyQuote.appendChild(replyText);
-          bubble.appendChild(replyQuote);
-        }
-      }
 
       if (msg.fileUrl) {
         const ext = msg.fileName?.split('.').pop().toLowerCase();
@@ -1044,13 +985,6 @@
         editBtn.addEventListener("click", () => editMessage(msg));
         actions.appendChild(editBtn);
       }
-      const replyBtn = document.createElement("button");
-      replyBtn.className = "reply-btn";
-      replyBtn.setAttribute("aria-label", `Reply to message from ${msg.username}`);
-      replyBtn.title = "Reply";
-      replyBtn.addEventListener("click", () => setReplyTo(msg));
-      actions.appendChild(replyBtn);
-
       const reactBtn = document.createElement("button");
       reactBtn.className = "react-btn";
       reactBtn.setAttribute("aria-label", "React to message");
@@ -1077,7 +1011,7 @@
       }
       content.appendChild(reactionsDiv);
 
-      div.appendChild(avatarWrapper);
+      div.appendChild(avatarContainer);
       div.appendChild(content);
 
       return div;
@@ -1205,14 +1139,10 @@
         timestamp: Date.now(),
         userId,
         username: currentUser.username,
-        avatar: selectedAvatarUrl,
-        replyTo: replyToMessage ? replyToMessage.id : null
+        avatar: selectedAvatarUrl
       };
       await push(messagesRef, msg);
       textInput.value = "";
-      replyToMessage = null;
-      replyPreview.style.display = "none";
-      replyPreview.innerHTML = "";
       stopTyping();
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
@@ -1246,30 +1176,6 @@
       console.error("Failed to edit message:", error);
       passkeyError.textContent = "Failed to edit message: " + error.message;
       passkeyError.style.display = "block";
-    }
-  }
-
-  function setReplyTo(msg) {
-    try {
-      replyToMessage = msg;
-      cacheUserInfo(msg);
-      replyPreview.style.display = "block";
-      replyPreview.innerHTML = `
-        <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
-        <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
-        <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
-      `;
-      const closeBtn = replyPreview.querySelector(".close-reply");
-      closeBtn.addEventListener("click", () => {
-        replyToMessage = null;
-        replyPreview.style.display = "none";
-        replyPreview.innerHTML = "";
-        textInput.placeholder = "Type a message...";
-      });
-      textInput.placeholder = `Replying to ${msg.username}...`;
-      textInput.focus();
-    } catch (error) {
-      console.error("Error setting reply:", error);
     }
   }
 
@@ -1354,7 +1260,7 @@
         clearTimeout(typingTimeout);
         typingTimeout = null;
       }
-      if (!replyToMessage) textInput.placeholder = "Type a message...";
+      textInput.placeholder = "Type a message...";
     } catch (error) {
       console.error("Error stopping typing:", error);
     }
@@ -1571,6 +1477,11 @@
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
       updateUserMessages(userId, val);
+      if (!isPasskeySet) {
+        openPasskeyModal("set");
+      } else if (!isPasskeyVerified) {
+        openPasskeyModal("enter");
+      }
     } catch (error) {
       console.error("Error saving profile:", error);
       passkeyError.textContent = "Failed to save profile: " + error.message;
@@ -1615,6 +1526,7 @@
       if (!currentUser || !userId) {
         passkeyError.textContent = "Please set up your profile first.";
         passkeyError.style.display = "block";
+        openProfileModal();
         return;
       }
       if (mode === "Set Your Passkey") {
@@ -1896,11 +1808,13 @@
         currentUser.avatar = selectedAvatarUrl;
         currentUser.passkey = userData?.passkey;
         isPasskeySet = !!userData?.passkey;
-        if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
+        if (!isPasskeySet) {
+          openPasskeyModal("set");
+        } else if (!sessionVerified || !(await verifyPasskey(userId, loadPasskeyFromLocal()))) {
+          openPasskeyModal("enter");
+        } else {
           isPasskeyVerified = true;
           showChatInterface();
-        } else {
-          openPasskeyModal(isPasskeySet ? "enter" : "set");
         }
       }
     } catch (error) {
