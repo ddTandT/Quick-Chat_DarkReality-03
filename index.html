@@ -70,11 +70,22 @@
     flex-direction: row-reverse;
     align-self: flex-end;
   }
+  .avatar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   .avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
     position: relative;
+  }
+  .avatar-username {
+    font-weight: 500;
+    font-size: 0.85em;
+    margin-bottom: 4px;
+    text-align: center;
   }
   .presence-online::after {
     content: "";
@@ -101,11 +112,6 @@
   .message-content {
     display: flex;
     flex-direction: column;
-  }
-  .sender {
-    font-weight: 500;
-    font-size: 0.85em;
-    margin-bottom: 2px;
   }
   .bubble {
     background: #e7f3ff;
@@ -221,9 +227,6 @@
   .actions button.edit-btn::before {
     content: "✎";
   }
-  .actions button.reply-btn::before {
-    content: "↩️";
-  }
   @keyframes fadeIn {
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
@@ -286,40 +289,6 @@
   body.night #text {
     background: #3a3b3c;
     color: #e4e6eb;
-  }
-  #replyPreview {
-    background: #f0f2f5;
-    padding: 8px 12px;
-    border-radius: 12px;
-    margin-bottom: 5px;
-    display: none;
-    font-size: 0.85em;
-    position: relative;
-    width: 100%;
-    box-sizing: border-box;
-    border-left: 4px solid #1877f2;
-  }
-  body.night #replyPreview {
-    background: #3a3b3c;
-    color: #e4e6eb;
-    border-left-color: #2374e1;
-  }
-  #replyPreview .quote-sender {
-    font-weight: 500;
-    margin-bottom: 2px;
-  }
-  #replyPreview .close-reply {
-    position: absolute;
-    top: 5px;
-    right: 10px;
-    cursor: pointer;
-    color: #65676b;
-  }
-  body.night #replyPreview .close-reply {
-    color: #b0b3b8;
-  }
-  #replyPreview .close-reply:hover {
-    color: #f02849;
   }
   button {
     cursor: pointer;
@@ -428,24 +397,6 @@
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
   }
-  .reply-quote {
-    background: #f0f2f5;
-    border-left: 4px solid #1877f2;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    font-size: 0.85em;
-    color: #1c1e21;
-    border-radius: 8px;
-  }
-  body.night .reply-quote {
-    background: #3a3b3c;
-    border-left-color: #2374e1;
-    color: #e4e6eb;
-  }
-  .reply-quote .quote-sender {
-    font-weight: 500;
-    margin-bottom: 2px;
-  }
   .reactions {
     display: flex;
     flex-direction: column;
@@ -531,7 +482,7 @@
     font-size: 1.2em;
     font-weight: 500;
   }
-  #usernameInput, #passkeyInput, #oldPasskeyInput {
+  #usernameInput, #passkeyInput, #oldPasskeyInput, #builtinPasskeyInput {
     width: 100%;
     padding: 10px;
     font-size: 0.95em;
@@ -539,7 +490,7 @@
     border-radius: 6px;
     border: 1px solid #ddd;
   }
-  body.night #usernameInput, body.night #passkeyInput, body.night #oldPasskeyInput {
+  body.night #usernameInput, body.night #passkeyInput, body.night #oldPasskeyInput, body.night #builtinPasskeyInput {
     background: #4b4c4f;
     border: 1px solid #606770;
     color: #e4e6eb;
@@ -613,9 +564,10 @@
 <body>
 <div id="passkeyOverlay" role="dialog" aria-modal="true" aria-labelledby="passkeyTitle">
   <div id="passkeyModal" tabindex="0">
-    <h2 id="passkeyTitle">Enter Passkey</h2>
+    <h2 id="passkeyTitle">Set Your Passkey</h2>
     <input type="password" id="passkeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter your passkey" />
     <input type="password" id="oldPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter reset code" style="display: none;" />
+    <input type="password" id="builtinPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter built-in passkey" style="display: none;" />
     <button id="savePasskeyBtn">Submit</button>
     <button id="resetPasskeyBtn" style="background: #f02849; margin-top: 10px;">Reset Passkey</button>
     <button id="closePasskeyBtn" style="background: #f02849; margin-top: 10px;">Close</button>
@@ -639,7 +591,6 @@
     <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
     <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
     <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
-    <div id="replyPreview"></div>
     <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
     <button id="sendBtn" title="Send Message" aria-label="Send Message">➤</button>
   </footer>
@@ -709,11 +660,11 @@
   const avatarPickerOverlay = document.getElementById("avatarPickerOverlay");
   const avatarPickerModal = document.getElementById("avatarPickerModal");
   const avatarPickerBtn = document.getElementById("avatarPickerBtn");
-  const replyPreview = document.getElementById("replyPreview");
   const passkeyOverlay = document.getElementById("passkeyOverlay");
   const passkeyModal = document.getElementById("passkeyModal");
   const passkeyInput = document.getElementById("passkeyInput");
   const oldPasskeyInput = document.getElementById("oldPasskeyInput");
+  const builtinPasskeyInput = document.getElementById("builtinPasskeyInput");
   const savePasskeyBtn = document.getElementById("savePasskeyBtn");
   const resetPasskeyBtn = document.getElementById("resetPasskeyBtn");
   const closePasskeyBtn = document.getElementById("closePasskeyBtn");
@@ -744,11 +695,11 @@
   let messagesCache = [];
   let presenceMap = new Map();
   let selectedAvatarUrl = null;
-  let replyToMessage = null;
   const usersMap = new Map();
   let isScrolledToBottom = true;
-  let isPasskeyVerified = false;
   let isPasskeySet = false;
+  let isPasskeyVerified = false;
+  let isBuiltinPasskeyVerified = false;
   let isResetPasskeyMode = false;
   let sessionVerified = false;
 
@@ -938,6 +889,14 @@
       div.addEventListener("touchstart", () => div.classList.add("touched"));
       div.addEventListener("touchend", () => setTimeout(() => div.classList.remove("touched"), 2000));
 
+      const avatarContainer = document.createElement("div");
+      avatarContainer.className = "avatar-container";
+
+      const avatarUsername = document.createElement("div");
+      avatarUsername.className = "avatar-username";
+      avatarUsername.textContent = msg.username;
+      avatarContainer.appendChild(avatarUsername);
+
       const avatarWrapper = document.createElement("div");
       avatarWrapper.className = "avatar";
       const presence = presenceMap.get(msg.userId) === "online" ? "presence-online" : "presence-offline";
@@ -950,34 +909,13 @@
       img.height = 36;
       img.style.borderRadius = "50%";
       avatarWrapper.appendChild(img);
+      avatarContainer.appendChild(avatarWrapper);
 
       const content = document.createElement("div");
       content.className = "message-content";
 
-      const sender = document.createElement("div");
-      sender.className = "sender";
-      sender.textContent = msg.username;
-      content.appendChild(sender);
-
       const bubble = document.createElement("div");
       bubble.className = "bubble";
-
-      if (msg.replyTo) {
-        const replyData = messagesCache.find(m => m.id === msg.replyTo);
-        if (replyData) {
-          cacheUserInfo(replyData);
-          const replyQuote = document.createElement("div");
-          replyQuote.className = "reply-quote";
-          const replySender = document.createElement("div");
-          replySender.className = "quote-sender";
-          replySender.textContent = replyData.username || "Unknown User";
-          replyQuote.appendChild(replySender);
-          const replyText = document.createElement("div");
-          replyText.innerHTML = escapeHTML(replyData.text || replyData.fileName || "File").slice(0, 50) + (replyData.text?.length > 50 ? "..." : "");
-          replyQuote.appendChild(replyText);
-          bubble.appendChild(replyQuote);
-        }
-      }
 
       if (msg.fileUrl) {
         const ext = msg.fileName?.split('.').pop().toLowerCase();
@@ -1044,13 +982,6 @@
         editBtn.addEventListener("click", () => editMessage(msg));
         actions.appendChild(editBtn);
       }
-      const replyBtn = document.createElement("button");
-      replyBtn.className = "reply-btn";
-      replyBtn.setAttribute("aria-label", `Reply to message from ${msg.username}`);
-      replyBtn.title = "Reply";
-      replyBtn.addEventListener("click", () => setReplyTo(msg));
-      actions.appendChild(replyBtn);
-
       const reactBtn = document.createElement("button");
       reactBtn.className = "react-btn";
       reactBtn.setAttribute("aria-label", "React to message");
@@ -1077,7 +1008,7 @@
       }
       content.appendChild(reactionsDiv);
 
-      div.appendChild(avatarWrapper);
+      div.appendChild(avatarContainer);
       div.appendChild(content);
 
       return div;
@@ -1144,6 +1075,24 @@
     }
   }
 
+  function updateUserAvatars(userId, newAvatar) {
+    try {
+      messagesCache.forEach(msg => {
+        if (msg.userId === userId) {
+          msg.avatar = newAvatar;
+          const msgDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
+          if (msgDiv) {
+            const newDiv = renderMessage(msg);
+            msgDiv.replaceWith(newDiv);
+          }
+        }
+      });
+      usersMap.set(userId, { ...usersMap.get(userId), avatar: newAvatar });
+    } catch (error) {
+      console.error("Error updating user avatars:", error);
+    }
+  }
+
   function renderAllMessagesPresence() {
     try {
       Array.from(messagesDiv.children).forEach(div => {
@@ -1192,10 +1141,10 @@
   async function sendMessage(text, fileUrl = null, fileName = null) {
     try {
       if (!text && !fileUrl) return;
-      if (!currentUser || !userId || !isPasskeyVerified) {
-        passkeyError.textContent = "Please set up your profile and passkey first.";
+      if (!currentUser || !userId || !isPasskeyVerified || !isBuiltinPasskeyVerified) {
+        passkeyError.textContent = "Please complete the setup process.";
         passkeyError.style.display = "block";
-        openPasskeyModal();
+        openPasskeyModal(isPasskeySet ? "verify" : "set");
         return;
       }
       const msg = {
@@ -1205,14 +1154,10 @@
         timestamp: Date.now(),
         userId,
         username: currentUser.username,
-        avatar: selectedAvatarUrl,
-        replyTo: replyToMessage ? replyToMessage.id : null
+        avatar: selectedAvatarUrl
       };
       await push(messagesRef, msg);
       textInput.value = "";
-      replyToMessage = null;
-      replyPreview.style.display = "none";
-      replyPreview.innerHTML = "";
       stopTyping();
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (error) {
@@ -1246,66 +1191,6 @@
       console.error("Failed to edit message:", error);
       passkeyError.textContent = "Failed to edit message: " + error.message;
       passkeyError.style.display = "block";
-    }
-  }
-
-  function setReplyTo(msg) {
-    try {
-      replyToMessage = msg;
-      cacheUserInfo(msg);
-      replyPreview.style.display = "block";
-      replyPreview.innerHTML = `
-        <div class="quote-sender">${escapeHTML(msg.username || "Unknown User")}</div>
-        <div>${escapeHTML(msg.text || msg.fileName || "File").slice(0, 50)}${msg.text?.length > 50 ? "..." : ""}</div>
-        <span class="close-reply" title="Cancel reply" aria-label="Cancel reply">✕</span>
-      `;
-      const closeBtn = replyPreview.querySelector(".close-reply");
-      closeBtn.addEventListener("click", () => {
-        replyToMessage = null;
-        replyPreview.style.display = "none";
-        replyPreview.innerHTML = "";
-        textInput.placeholder = "Type a message...";
-      });
-      textInput.placeholder = `Replying to ${msg.username}...`;
-      textInput.focus();
-    } catch (error) {
-      console.error("Error setting reply:", error);
-    }
-  }
-
-  function toggleReactionPicker(messageId, button) {
-    try {
-      let picker = button.parentElement.querySelector(".reaction-picker");
-      if (picker) {
-        picker.remove();
-        return;
-      }
-      picker = document.createElement("div");
-      picker.className = "reaction-picker";
-      picker.style.display = "flex";
-      picker.style.left = `${button.offsetLeft}px`;
-      picker.style.top = `${button.parentElement.offsetTop + button.offsetHeight + 5}px`;
-      reactionEmojis.forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = emoji;
-        span.tabIndex = 0;
-        span.setAttribute("aria-label", `React with ${emoji}`);
-        span.addEventListener("click", () => {
-          addReaction(messageId, emoji);
-          picker.remove();
-        });
-        span.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            span.click();
-          }
-        });
-        picker.appendChild(span);
-      });
-      button.parentElement.appendChild(picker);
-      picker.querySelector("span").focus();
-    } catch (error) {
-      console.error("Error toggling reaction picker:", error);
     }
   }
 
@@ -1354,7 +1239,7 @@
         clearTimeout(typingTimeout);
         typingTimeout = null;
       }
-      if (!replyToMessage) textInput.placeholder = "Type a message...";
+      textInput.placeholder = "Type a message...";
     } catch (error) {
       console.error("Error stopping typing:", error);
     }
@@ -1473,29 +1358,35 @@
     }
   }
 
-  function openPasskeyModal(mode = "enter") {
+  function openPasskeyModal(mode = "set") {
     try {
       passkeyOverlay.style.display = "flex";
       passkeyInput.value = "";
       oldPasskeyInput.value = "";
+      builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
       isResetPasskeyMode = mode === "reset";
       if (mode === "set") {
         passkeyModal.querySelector("h2").textContent = "Set Your Passkey";
         oldPasskeyInput.style.display = "none";
+        builtinPasskeyInput.style.display = "none";
         resetPasskeyBtn.style.display = "none";
         closePasskeyBtn.style.display = "block";
       } else if (mode === "reset") {
         passkeyModal.querySelector("h2").textContent = "Reset Passkey";
         oldPasskeyInput.style.display = "block";
-        oldPasskeyInput.placeholder = "Enter Built-In Passkey";
-        passkeyInput.placeholder = "Enter new passkey";
+        oldPasskeyInput.placeholder = "Enter old passkey";
+        builtinPasskeyInput.style.display = "block";
+        builtinPasskeyInput.placeholder = "Enter built-in passkey";
         resetPasskeyBtn.style.display = "none";
         closePasskeyBtn.style.display = "block";
-      } else {
-        passkeyModal.querySelector("h2").textContent = "Enter Your Passkey";
-        oldPasskeyInput.style.display = "none";
-        resetPasskeyBtn.style.display = isPasskeySet ? "block" : "none";
+      } else if (mode === "verify") {
+        passkeyModal.querySelector("h2").textContent = "Verify Passkey";
+        oldPasskeyInput.style.display = "block";
+        oldPasskeyInput.placeholder = "Enter your passkey";
+        builtinPasskeyInput.style.display = "block";
+        builtinPasskeyInput.placeholder = "Enter built-in passkey";
+        resetPasskeyBtn.style.display = "block";
         closePasskeyBtn.style.display = "block";
       }
       passkeyInput.focus();
@@ -1526,15 +1417,15 @@
     }
   }
 
-  async function savePasskey(userId, passkey, isReset = false, resetCode = null) {
+  async function savePasskey(userId, passkey, isReset = false, oldPasskey = null, builtinPasskey = null) {
     try {
       if (passkey.length < 4) {
         passkeyError.textContent = "Passkey must be at least 4 characters long.";
         passkeyError.style.display = "block";
         return false;
       }
-      if (isReset && resetCode !== BUILT_IN_RESET_PASSKEY) {
-        passkeyError.textContent = "Incorrect reset code.";
+      if (isReset && (!(await verifyPasskey(userId, oldPasskey)) || builtinPasskey !== BUILT_IN_RESET_PASSKEY)) {
+        passkeyError.textContent = "Incorrect old passkey or built-in passkey.";
         passkeyError.style.display = "block";
         return false;
       }
@@ -1545,6 +1436,28 @@
     } catch (error) {
       console.error("Error saving passkey:", error);
       passkeyError.textContent = "Failed to save passkey: " + error.message;
+      passkeyError.style.display = "block";
+      return false;
+    }
+  }
+
+  async function verifyBothPasskeys(userId, passkey, builtinPasskey) {
+    try {
+      if (builtinPasskey !== BUILT_IN_RESET_PASSKEY) {
+        passkeyError.textContent = "Incorrect built-in passkey.";
+        passkeyError.style.display = "block";
+        return false;
+      }
+      const isValid = await verifyPasskey(userId, passkey);
+      if (!isValid) {
+        passkeyError.textContent = "Invalid passkey.";
+        passkeyError.style.display = "block";
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error verifying passkeys:", error);
+      passkeyError.textContent = "Error verifying passkeys: " + error.message;
       passkeyError.style.display = "block";
       return false;
     }
@@ -1563,14 +1476,14 @@
         passkeyError.style.display = "block";
         return;
       }
-      currentUser = { username: val, avatar: currentUser?.avatar, passkey: currentUser?.passkey };
+      currentUser = { username: val };
       userId = userId || generateUserId();
-      selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(val + userId) % maleAvatars.length];
+      selectedAvatarUrl = maleAvatars[hashCode(val + userId) % maleAvatars.length];
       currentUser.avatar = selectedAvatarUrl;
       await set(ref(db, `users/${userId}`), currentUser);
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
-      updateUserMessages(userId, val);
+      openPasskeyModal("set");
     } catch (error) {
       console.error("Error saving profile:", error);
       passkeyError.textContent = "Failed to save profile: " + error.message;
@@ -1596,6 +1509,7 @@
       passkeyOverlay.style.display = "none";
       passkeyInput.value = "";
       oldPasskeyInput.value = "";
+      builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
       if (!isPasskeySet) {
         openPasskeyModal("set");
@@ -1610,7 +1524,8 @@
   savePasskeyBtn.addEventListener("click", async () => {
     try {
       const passkey = passkeyInput.value.trim();
-      const resetCode = oldPasskeyInput.value.trim();
+      const oldPasskey = oldPasskeyInput.value.trim();
+      const builtinPasskey = builtinPasskeyInput.value.trim();
       const mode = passkeyModal.querySelector("h2").textContent;
       if (!currentUser || !userId) {
         passkeyError.textContent = "Please set up your profile first.";
@@ -1620,28 +1535,26 @@
       if (mode === "Set Your Passkey") {
         if (await savePasskey(userId, passkey)) {
           passkeyOverlay.style.display = "none";
-          openPasskeyModal("enter");
+          openPasskeyModal("verify");
         }
       } else if (mode === "Reset Passkey") {
-        if (await savePasskey(userId, passkey, true, resetCode)) {
+        if (await savePasskey(userId, passkey, true, oldPasskey, builtinPasskey)) {
           passkeyOverlay.style.display = "none";
           isPasskeyVerified = true;
+          isBuiltinPasskeyVerified = true;
           sessionVerified = true;
           saveSessionVerified();
           showChatInterface();
         }
-      } else {
-        const isValid = await verifyPasskey(userId, passkey);
-        if (isValid) {
+      } else if (mode === "Verify Passkey") {
+        if (await verifyBothPasskeys(userId, passkey, builtinPasskey)) {
           savePasskeyToLocal(passkey);
           isPasskeyVerified = true;
+          isBuiltinPasskeyVerified = true;
           sessionVerified = true;
           saveSessionVerified();
           passkeyOverlay.style.display = "none";
           showChatInterface();
-        } else {
-          passkeyError.textContent = "Invalid passkey. Try again or reset your passkey.";
-          passkeyError.style.display = "block";
         }
       }
     } catch (error) {
@@ -1719,6 +1632,42 @@
       });
     } catch (error) {
       console.error("Error opening avatar picker:", error);
+    }
+  }
+
+  function toggleReactionPicker(messageId, button) {
+    try {
+      let picker = button.parentElement.querySelector(".reaction-picker");
+      if (picker) {
+        picker.remove();
+        return;
+      }
+      picker = document.createElement("div");
+      picker.className = "reaction-picker";
+      picker.style.display = "flex";
+      picker.style.left = `${button.offsetLeft}px`;
+      picker.style.top = `${button.parentElement.offsetTop + button.offsetHeight + 5}px`;
+      reactionEmojis.forEach(emoji => {
+        const span = document.createElement("span");
+        span.textContent = emoji;
+        span.tabIndex = 0;
+        span.setAttribute("aria-label", `React with ${emoji}`);
+        span.addEventListener("click", () => {
+          addReaction(messageId, emoji);
+          picker.remove();
+        });
+        span.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            span.click();
+          }
+        });
+        picker.appendChild(span);
+      });
+      button.parentElement.appendChild(picker);
+      picker.querySelector("span").focus();
+    } catch (error) {
+      console.error("Error toggling reaction picker:", error);
     }
   }
 
@@ -1898,9 +1847,10 @@
         isPasskeySet = !!userData?.passkey;
         if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
           isPasskeyVerified = true;
+          isBuiltinPasskeyVerified = true;
           showChatInterface();
         } else {
-          openPasskeyModal(isPasskeySet ? "enter" : "set");
+          openPasskeyModal(isPasskeySet ? "verify" : "set");
         }
       }
     } catch (error) {
