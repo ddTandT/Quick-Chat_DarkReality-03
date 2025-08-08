@@ -1065,11 +1065,12 @@
           const msgDiv = messagesDiv.querySelector(`[data-message-id="${msg.id}"]`);
           if (msgDiv) {
             const newDiv = renderMessage(msg);
+            newDiv.setAttribute("aria-label", `${newUsername} said: ${msg.text || msg.fileName || "file"}`);
             msgDiv.replaceWith(newDiv);
           }
         }
       });
-      usersMap.set(userId, { ...usersMap.get(userId), username: newUsername });
+      usersMap.set(userId, { ...usersMap.get(userId) || {}, username: newUsername });
     } catch (error) {
       console.error("Error updating user messages:", error);
     }
@@ -1335,11 +1336,11 @@
       onValue(usersRef, (snapshot) => {
         snapshot.forEach(child => {
           const user = child.val();
-          if (usersMap.get(child.key)?.avatar !== user.avatar) {
-            updateUserAvatars(child.key, user.avatar);
-          }
-          if (usersMap.get(child.key)?.username !== user.username) {
+          if (child.key !== userId && usersMap.get(child.key)?.username !== user.username) {
             updateUserMessages(child.key, user.username);
+          }
+          if (child.key !== userId && usersMap.get(child.key)?.avatar !== user.avatar) {
+            updateUserAvatars(child.key, user.avatar);
           }
         });
       });
@@ -1476,14 +1477,21 @@
         passkeyError.style.display = "block";
         return;
       }
-      currentUser = { username: val };
+      const oldUsername = currentUser ? currentUser.username : null;
+      currentUser = { username: val, avatar: currentUser?.avatar, passkey: currentUser?.passkey };
       userId = userId || generateUserId();
-      selectedAvatarUrl = maleAvatars[hashCode(val + userId) % maleAvatars.length];
+      selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(val + userId) % maleAvatars.length];
       currentUser.avatar = selectedAvatarUrl;
       await set(ref(db, `users/${userId}`), currentUser);
       saveUserToLocal(currentUser);
+      usersMap.set(userId, { username: val, avatar: selectedAvatarUrl });
+      if (oldUsername && oldUsername !== val) {
+        updateUserMessages(userId, val);
+      }
       modalOverlay.style.display = "none";
-      openPasskeyModal("set");
+      if (!isPasskeySet) {
+        openPasskeyModal("set");
+      }
     } catch (error) {
       console.error("Error saving profile:", error);
       passkeyError.textContent = "Failed to save profile: " + error.message;
@@ -1623,6 +1631,7 @@
           currentUser.avatar = selectedAvatarUrl;
           await set(ref(db, `users/${userId}`), currentUser);
           saveUserToLocal(currentUser);
+          updateUserAvatars(userId, selectedAvatarUrl);
           avatarPickerOverlay.style.display = "none";
         }
       });
@@ -1845,6 +1854,7 @@
         currentUser.avatar = selectedAvatarUrl;
         currentUser.passkey = userData?.passkey;
         isPasskeySet = !!userData?.passkey;
+        usersMap.set(userId, { username: currentUser.username, avatar: selectedAvatarUrl });
         if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
           isPasskeyVerified = true;
           isBuiltinPasskeyVerified = true;
@@ -1863,5 +1873,3 @@
 </script>
 </body>
 </html>
-
-
