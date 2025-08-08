@@ -84,8 +84,12 @@
   }
   .sender {
     font-weight: 500;
-    font-size: 0.85em;
-    text-align: center;
+    font-size: 0.75em;
+    color: #050505;
+    margin-bottom: 2px;
+  }
+  body.night .sender {
+    color: #e4e6eb;
   }
   .message.you .sender {
     text-align: right;
@@ -488,7 +492,7 @@
     font-size: 1.2em;
     font-weight: 500;
   }
-  #usernameInput, #passkeyInput, #oldPasskeyInput {
+  #usernameInput, #passkeyInput, #oldPasskeyInput, #builtinPasskeyInput {
     width: 100%;
     padding: 10px;
     font-size: 0.95em;
@@ -496,7 +500,7 @@
     border-radius: 6px;
     border: 1px solid #ddd;
   }
-  body.night #usernameInput, body.night #passkeyInput, body.night #oldPasskeyInput {
+  body.night #usernameInput, body.night #passkeyInput, body.night #oldPasskeyInput, body.night #builtinPasskeyInput {
     background: #4b4c4f;
     border: 1px solid #606770;
     color: #e4e6eb;
@@ -572,6 +576,7 @@
   <div id="passkeyModal" tabindex="0">
     <h2 id="passkeyTitle">Enter Passkey</h2>
     <input type="password" id="passkeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter your passkey" />
+    <input type="password" id="builtinPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter built-in passkey" style="display: none;" />
     <input type="password" id="oldPasskeyInput" aria-required="true" aria-describedby="passkeyTitle" placeholder="Enter reset code" style="display: none;" />
     <button id="savePasskeyBtn">Submit</button>
     <button id="resetPasskeyBtn" style="background: #f02849; margin-top: 10px;">Reset Passkey</button>
@@ -669,6 +674,7 @@
   const passkeyModal = document.getElementById("passkeyModal");
   const passkeyInput = document.getElementById("passkeyInput");
   const oldPasskeyInput = document.getElementById("oldPasskeyInput");
+  const builtinPasskeyInput = document.getElementById("builtinPasskeyInput");
   const savePasskeyBtn = document.getElementById("savePasskeyBtn");
   const resetPasskeyBtn = document.getElementById("resetPasskeyBtn");
   const closePasskeyBtn = document.getElementById("closePasskeyBtn");
@@ -705,6 +711,7 @@
   let isPasskeySet = false;
   let isResetPasskeyMode = false;
   let sessionVerified = false;
+  let isFreshUser = false;
 
   function saveUserToLocal(user) {
     try {
@@ -908,14 +915,13 @@
       img.style.borderRadius = "50%";
       avatarWrapper.appendChild(img);
 
+      const content = document.createElement("div");
+      content.className = "message-content";
+
       const sender = document.createElement("div");
       sender.className = "sender";
       sender.textContent = msg.username;
-      avatarContainer.appendChild(avatarWrapper);
-      avatarContainer.appendChild(sender);
-
-      const content = document.createElement("div");
-      content.className = "message-content";
+      content.appendChild(sender);
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
@@ -1384,16 +1390,19 @@
       passkeyOverlay.style.display = "flex";
       passkeyInput.value = "";
       oldPasskeyInput.value = "";
+      builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
       isResetPasskeyMode = mode === "reset";
       if (mode === "set") {
         passkeyModal.querySelector("h2").textContent = "Set Your Passkey";
         oldPasskeyInput.style.display = "none";
+        builtinPasskeyInput.style.display = "none";
         resetPasskeyBtn.style.display = "none";
         closePasskeyBtn.style.display = "block";
       } else if (mode === "reset") {
         passkeyModal.querySelector("h2").textContent = "Reset Passkey";
         oldPasskeyInput.style.display = "block";
+        builtinPasskeyInput.style.display = "none";
         oldPasskeyInput.placeholder = "Enter Built-In Passkey";
         passkeyInput.placeholder = "Enter new passkey";
         resetPasskeyBtn.style.display = "none";
@@ -1401,7 +1410,8 @@
       } else {
         passkeyModal.querySelector("h2").textContent = "Enter Your Passkey";
         oldPasskeyInput.style.display = "none";
-        resetPasskeyBtn.style.display = isPasskeySet ? "block" : "none";
+        builtinPasskeyInput.style.display = isFreshUser ? "block" : "none";
+        resetPasskeyBtn.style.display = isPasskeySet && !isFreshUser ? "block" : "none";
         closePasskeyBtn.style.display = "block";
       }
       passkeyInput.focus();
@@ -1476,7 +1486,7 @@
       await set(ref(db, `users/${userId}`), currentUser);
       saveUserToLocal(currentUser);
       modalOverlay.style.display = "none";
-      updateUserMessages(userId, val);
+      isFreshUser = !loadUserFromLocal();
       if (!isPasskeySet) {
         openPasskeyModal("set");
       } else if (!isPasskeyVerified) {
@@ -1507,6 +1517,7 @@
       passkeyOverlay.style.display = "none";
       passkeyInput.value = "";
       oldPasskeyInput.value = "";
+      builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
       if (!isPasskeySet) {
         openPasskeyModal("set");
@@ -1522,6 +1533,7 @@
     try {
       const passkey = passkeyInput.value.trim();
       const resetCode = oldPasskeyInput.value.trim();
+      const builtinPasskey = builtinPasskeyInput.value.trim();
       const mode = passkeyModal.querySelector("h2").textContent;
       if (!currentUser || !userId) {
         passkeyError.textContent = "Please set up your profile first.";
@@ -1532,6 +1544,7 @@
       if (mode === "Set Your Passkey") {
         if (await savePasskey(userId, passkey)) {
           passkeyOverlay.style.display = "none";
+          isFreshUser = true;
           openPasskeyModal("enter");
         }
       } else if (mode === "Reset Passkey") {
@@ -1544,7 +1557,8 @@
         }
       } else {
         const isValid = await verifyPasskey(userId, passkey);
-        if (isValid) {
+        const isValidBuiltin = isFreshUser ? builtinPasskey === BUILT_IN_RESET_PASSKEY : true;
+        if (isValid && isValidBuiltin) {
           savePasskeyToLocal(passkey);
           isPasskeyVerified = true;
           sessionVerified = true;
@@ -1552,7 +1566,7 @@
           passkeyOverlay.style.display = "none";
           showChatInterface();
         } else {
-          passkeyError.textContent = "Invalid passkey. Try again or reset your passkey.";
+          passkeyError.textContent = isValid ? "Invalid built-in passkey." : "Invalid passkey. Try again or reset your passkey.";
           passkeyError.style.display = "block";
         }
       }
@@ -1799,6 +1813,7 @@
       sessionVerified = loadSessionVerified();
 
       if (!currentUser) {
+        isFreshUser = true;
         openProfileModal();
       } else {
         userId = generateUserId();
