@@ -699,7 +699,6 @@
   let isScrolledToBottom = true;
   let isPasskeySet = false;
   let isPasskeyVerified = false;
-  let isResetPasskeyMode = false;
   let sessionVerified = false;
 
   function saveUserToLocal(user) {
@@ -1365,7 +1364,6 @@
       oldPasskeyInput.value = "";
       builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
-      isResetPasskeyMode = mode === "reset";
       if (mode === "set") {
         passkeyModal.querySelector("h2").textContent = "Set Your Passkey";
         oldPasskeyInput.style.display = "none";
@@ -1383,8 +1381,7 @@
         closePasskeyBtn.style.display = "block";
       } else if (mode === "verify") {
         passkeyModal.querySelector("h2").textContent = "Verify Passkey";
-        oldPasskeyInput.style.display = "block";
-        oldPasskeyInput.placeholder = "Enter your passkey";
+        oldPasskeyInput.style.display = "none";
         builtinPasskeyInput.style.display = "none";
         resetPasskeyBtn.style.display = "block";
         closePasskeyBtn.style.display = "block";
