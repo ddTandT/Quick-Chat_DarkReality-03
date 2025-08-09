@@ -699,7 +699,6 @@
   let isScrolledToBottom = true;
   let isPasskeySet = false;
   let isPasskeyVerified = false;
-  let isBuiltinPasskeyVerified = false;
   let isResetPasskeyMode = false;
   let sessionVerified = false;
 
@@ -1142,7 +1141,7 @@
   async function sendMessage(text, fileUrl = null, fileName = null) {
     try {
       if (!text && !fileUrl) return;
-      if (!currentUser || !userId || !isPasskeyVerified || !isBuiltinPasskeyVerified) {
+      if (!currentUser || !userId || !isPasskeyVerified) {
         passkeyError.textContent = "Please complete the setup process.";
         passkeyError.style.display = "block";
         openPasskeyModal(isPasskeySet ? "verify" : "set");
@@ -1370,7 +1369,8 @@
       if (mode === "set") {
         passkeyModal.querySelector("h2").textContent = "Set Your Passkey";
         oldPasskeyInput.style.display = "none";
-        builtinPasskeyInput.style.display = "none";
+        builtinPasskeyInput.style.display = "block";
+        builtinPasskeyInput.placeholder = "Enter built-in passkey";
         resetPasskeyBtn.style.display = "none";
         closePasskeyBtn.style.display = "block";
       } else if (mode === "reset") {
@@ -1385,8 +1385,7 @@
         passkeyModal.querySelector("h2").textContent = "Verify Passkey";
         oldPasskeyInput.style.display = "block";
         oldPasskeyInput.placeholder = "Enter your passkey";
-        builtinPasskeyInput.style.display = "block";
-        builtinPasskeyInput.placeholder = "Enter built-in passkey";
+        builtinPasskeyInput.style.display = "none";
         resetPasskeyBtn.style.display = "block";
         closePasskeyBtn.style.display = "block";
       }
@@ -1430,6 +1429,11 @@
         passkeyError.style.display = "block";
         return false;
       }
+      if (!isReset && builtinPasskey !== BUILT_IN_RESET_PASSKEY) {
+        passkeyError.textContent = "Incorrect built-in passkey.";
+        passkeyError.style.display = "block";
+        return false;
+      }
       await update(ref(db, `users/${userId}`), { passkey });
       savePasskeyToLocal(passkey);
       isPasskeySet = true;
@@ -1442,13 +1446,8 @@
     }
   }
 
-  async function verifyBothPasskeys(userId, passkey, builtinPasskey) {
+  async function verifyUserPasskey(userId, passkey) {
     try {
-      if (builtinPasskey !== BUILT_IN_RESET_PASSKEY) {
-        passkeyError.textContent = "Incorrect built-in passkey.";
-        passkeyError.style.display = "block";
-        return false;
-      }
       const isValid = await verifyPasskey(userId, passkey);
       if (!isValid) {
         passkeyError.textContent = "Invalid passkey.";
@@ -1457,8 +1456,8 @@
       }
       return true;
     } catch (error) {
-      console.error("Error verifying passkeys:", error);
-      passkeyError.textContent = "Error verifying passkeys: " + error.message;
+      console.error("Error verifying user passkey:", error);
+      passkeyError.textContent = "Error verifying passkey: " + error.message;
       passkeyError.style.display = "block";
       return false;
     }
@@ -1541,7 +1540,7 @@
         return;
       }
       if (mode === "Set Your Passkey") {
-        if (await savePasskey(userId, passkey)) {
+        if (await savePasskey(userId, passkey, false, null, builtinPasskey)) {
           passkeyOverlay.style.display = "none";
           openPasskeyModal("verify");
         }
@@ -1549,16 +1548,14 @@
         if (await savePasskey(userId, passkey, true, oldPasskey, builtinPasskey)) {
           passkeyOverlay.style.display = "none";
           isPasskeyVerified = true;
-          isBuiltinPasskeyVerified = true;
           sessionVerified = true;
           saveSessionVerified();
           showChatInterface();
         }
       } else if (mode === "Verify Passkey") {
-        if (await verifyBothPasskeys(userId, passkey, builtinPasskey)) {
+        if (await verifyUserPasskey(userId, passkey)) {
           savePasskeyToLocal(passkey);
           isPasskeyVerified = true;
-          isBuiltinPasskeyVerified = true;
           sessionVerified = true;
           saveSessionVerified();
           passkeyOverlay.style.display = "none";
@@ -1857,7 +1854,6 @@
         usersMap.set(userId, { username: currentUser.username, avatar: selectedAvatarUrl });
         if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
           isPasskeyVerified = true;
-          isBuiltinPasskeyVerified = true;
           showChatInterface();
         } else {
           openPasskeyModal(isPasskeySet ? "verify" : "set");
