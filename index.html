@@ -700,8 +700,8 @@
   const usersMap = new Map();
   let isScrolledToBottom = true;
   let isPasskeySet = false;
-  let isPasskeyVerified = true; // Default to true to bypass passkey
-  let sessionVerified = true; // Default to true to bypass verification
+  let isPasskeyVerified = false;
+  let sessionVerified = false;
 
   function saveUserToLocal(user) {
     try {
@@ -792,10 +792,6 @@
       console.error("Error generating userId:", error);
       return 'user_' + Date.now();
     }
-  }
-
-  function generateDefaultUsername() {
-    return `Guest_${Math.random().toString(36).slice(2, 8)}`;
   }
 
   function escapeHTML(str) {
@@ -1146,8 +1142,10 @@
   async function sendMessage(text, fileUrl = null, fileName = null) {
     try {
       if (!text && !fileUrl) return;
-      if (!currentUser || !userId) {
-        console.error("User not initialized");
+      if (!currentUser || !userId || !isPasskeyVerified) {
+        passkeyError.textContent = "Please complete the setup process.";
+        passkeyError.style.display = "block";
+        openPasskeyModal(isPasskeySet ? "verify" : "set");
         return;
       }
       const msg = {
@@ -1482,8 +1480,9 @@
         usernameInput.focus();
         return;
       }
+      userId = userId || generateUserId();
       const oldUsername = currentUser ? currentUser.username : null;
-      currentUser = { username: val, avatar: currentUser?.avatar };
+      currentUser = { username: val, avatar: currentUser?.avatar, passkey: currentUser?.passkey };
       selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(val + userId) % maleAvatars.length];
       currentUser.avatar = selectedAvatarUrl;
       await set(ref(db, `users/${userId}`), currentUser);
@@ -1494,6 +1493,11 @@
       }
       modalOverlay.style.display = "none";
       usernameError.style.display = "none";
+      if (!isPasskeySet) {
+        openPasskeyModal("set");
+      } else {
+        openPasskeyModal("verify");
+      }
     } catch (error) {
       console.error("Error saving profile:", error);
       usernameError.textContent = "Failed to save profile: " + error.message;
@@ -1514,6 +1518,9 @@
       modalOverlay.style.display = "none";
       usernameInput.value = "";
       usernameError.style.display = "none";
+      if (!currentUser) {
+        openProfileModal();
+      }
     } catch (error) {
       console.error("Error closing profile modal:", error);
     }
@@ -1526,6 +1533,11 @@
       oldPasskeyInput.value = "";
       builtinPasskeyInput.value = "";
       passkeyError.style.display = "none";
+      if (!isPasskeySet) {
+        openPasskeyModal("set");
+      } else if (!currentUser) {
+        openProfileModal();
+      }
     } catch (error) {
       console.error("Error closing passkey modal:", error);
     }
@@ -1545,10 +1557,24 @@
       if (mode === "Set Your Passkey") {
         if (await savePasskey(userId, passkey, false, null, builtinPasskey)) {
           passkeyOverlay.style.display = "none";
+          openPasskeyModal("verify");
         }
       } else if (mode === "Reset Passkey") {
         if (await savePasskey(userId, passkey, true, oldPasskey, builtinPasskey)) {
           passkeyOverlay.style.display = "none";
+          isPasskeyVerified = true;
+          sessionVerified = true;
+          saveSessionVerified();
+          showChatInterface();
+        }
+      } else if (mode === "Verify Passkey") {
+        if (await verifyUserPasskey(userId, passkey)) {
+          savePasskeyToLocal(passkey);
+          isPasskeyVerified = true;
+          sessionVerified = true;
+          saveSessionVerified();
+          passkeyOverlay.style.display = "none";
+          showChatInterface();
         }
       }
     } catch (error) {
@@ -1828,25 +1854,26 @@
     try {
       if (loadNightMode()) document.body.classList.add("night");
       currentUser = loadUserFromLocal();
-      userId = generateUserId();
+      sessionVerified = loadSessionVerified();
 
       if (!currentUser) {
-        // Generate default user for first-time users
-        currentUser = { username: generateDefaultUsername() };
-        selectedAvatarUrl = maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
-        currentUser.avatar = selectedAvatarUrl;
-        await set(ref(db, `users/${userId}`), currentUser);
-        saveUserToLocal(currentUser);
+        openProfileModal();
       } else {
-        // Load existing user
+        userId = generateUserId();
         const userSnapshot = await get(ref(db, `users/${userId}`));
         const userData = userSnapshot.val();
         selectedAvatarUrl = userData?.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
         currentUser.avatar = selectedAvatarUrl;
+        currentUser.passkey = userData?.passkey;
+        isPasskeySet = !!userData?.passkey;
+        usersMap.set(userId, { username: currentUser.username, avatar: selectedAvatarUrl });
+        if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
+          isPasskeyVerified = true;
+          showChatInterface();
+        } else {
+          openPasskeyModal(isPasskeySet ? "verify" : "set");
+        }
       }
-
-      usersMap.set(userId, { username: currentUser.username, avatar: selectedAvatarUrl });
-      showChatInterface();
     } catch (error) {
       console.error("Initialization error:", error);
       passkeyError.textContent = "Failed to initialize app: " + error.message;
