@@ -1378,7 +1378,7 @@
         closePasskeyBtn.style.display = "block";
       } else if (mode === "reset") {
         passkeyModal.querySelector("h2").textContent = "Reset Passkey";
-        oldPasskeyInput.style.display = "none"; // Hide old passkey input for reset
+        oldPasskeyInput.style.display = "none";
         builtinPasskeyInput.style.display = "block";
         builtinPasskeyInput.placeholder = "Enter built-in passkey";
         resetPasskeyBtn.style.display = "none";
@@ -1425,7 +1425,7 @@
         passkeyError.style.display = "block";
         return false;
       }
-      if (builtinPasskey !== BUILT_IN_RESET_PASSKEY) {
+      if (isReset && builtinPasskey !== BUILT_IN_RESET_PASSKEY) {
         passkeyError.textContent = "Incorrect built-in passkey.";
         passkeyError.style.display = "block";
         return false;
@@ -1545,6 +1545,7 @@
       if (!currentUser || !userId) {
         passkeyError.textContent = "Please set up your profile first.";
         passkeyError.style.display = "block";
+        openProfileModal();
         return;
       }
       if (mode === "Set Your Passkey") {
@@ -1850,6 +1851,7 @@
       sessionVerified = loadSessionVerified();
 
       if (!currentUser) {
+        // New user: force username setup
         openProfileModal();
       } else {
         userId = generateUserId();
@@ -1864,7 +1866,7 @@
           isPasskeyVerified = true;
           showChatInterface();
         } else {
-          openPasskeyModal(isPasskeySet ? "verify" : "set");
+          openPasskeyModal("verify");
         }
       }
     } catch (error) {
