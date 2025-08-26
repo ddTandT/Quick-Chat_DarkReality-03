@@ -34,18 +34,18 @@
     font-weight: 500;
   }
   #changeUserBtn, #nightModeBtn, #avatarPickerBtn, #changePasskeyBtn {
-    background: white;
-    border: none;
+    background: #1877f2;
+    border: 1px solid #1c2526;
     border-radius: 6px;
     padding: 6px 12px;
     cursor: pointer;
     margin-left: 8px;
     font-weight: 500;
-    color: #1877f2;
+    color: white;
     font-size: 0.9em;
   }
   #changeUserBtn:hover, #nightModeBtn:hover, #avatarPickerBtn:hover, #changePasskeyBtn:hover {
-    background: #e7f3ff;
+    background: #1659b7;
   }
   #messages {
     flex: 1;
@@ -582,13 +582,13 @@
       <button id="avatarPickerBtn" title="Pick Avatar" aria-label="Pick Avatar">Pick Avatar</button>
       <button id="changeUserBtn" title="Change Username" aria-label="Change Username">Change User Name</button>
       <button id="changePasskeyBtn" title="Change Passkey" aria-label="Change Passkey">Change Passkey</button>
-      <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌙</button>
+      <button id="nightModeBtn" title="Toggle Night Mode" aria-label="Toggle Night Mode">🌔</button>
     </div>
   </header>
   <div id="messages" tabindex="0" aria-live="polite" aria-label="Chat messages"></div>
   <div id="typingIndicator" aria-live="polite" aria-atomic="true"></div>
   <footer>
-    <button id="fileBtn" title="Send File" aria-label="Send File">📎</button>
+    <button id="fileBtn" title="Send File" aria-label="Send File">🔗</button>
     <input type="file" id="fileInput" aria-label="File input" accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
     <button id="emojiBtn" title="Emoji Picker" aria-label="Emoji Picker">😊</button>
     <input type="text" id="text" placeholder="Type a message..." autocomplete="off" aria-label="Message input" />
@@ -1378,8 +1378,7 @@
         closePasskeyBtn.style.display = "block";
       } else if (mode === "reset") {
         passkeyModal.querySelector("h2").textContent = "Reset Passkey";
-        oldPasskeyInput.style.display = "block";
-        oldPasskeyInput.placeholder = "Enter old passkey";
+        oldPasskeyInput.style.display = "none";
         builtinPasskeyInput.style.display = "block";
         builtinPasskeyInput.placeholder = "Enter built-in passkey";
         resetPasskeyBtn.style.display = "none";
@@ -1419,19 +1418,14 @@
     }
   }
 
-  async function savePasskey(userId, passkey, isReset = false, oldPasskey = null, builtinPasskey = null) {
+  async function savePasskey(userId, passkey, isReset = false, builtinPasskey = null) {
     try {
       if (passkey.length < 4) {
         passkeyError.textContent = "Passkey must be at least 4 characters long.";
         passkeyError.style.display = "block";
         return false;
       }
-      if (isReset && (!(await verifyPasskey(userId, oldPasskey)) || builtinPasskey !== BUILT_IN_RESET_PASSKEY)) {
-        passkeyError.textContent = "Incorrect old passkey or built-in passkey.";
-        passkeyError.style.display = "block";
-        return false;
-      }
-      if (!isReset && builtinPasskey !== BUILT_IN_RESET_PASSKEY) {
+      if (isReset && builtinPasskey !== BUILT_IN_RESET_PASSKEY) {
         passkeyError.textContent = "Incorrect built-in passkey.";
         passkeyError.style.display = "block";
         return false;
@@ -1546,21 +1540,21 @@
   savePasskeyBtn.addEventListener("click", async () => {
     try {
       const passkey = passkeyInput.value.trim();
-      const oldPasskey = oldPasskeyInput.value.trim();
       const builtinPasskey = builtinPasskeyInput.value.trim();
       const mode = passkeyModal.querySelector("h2").textContent;
       if (!currentUser || !userId) {
         passkeyError.textContent = "Please set up your profile first.";
         passkeyError.style.display = "block";
+        openProfileModal();
         return;
       }
       if (mode === "Set Your Passkey") {
-        if (await savePasskey(userId, passkey, false, null, builtinPasskey)) {
+        if (await savePasskey(userId, passkey, false, builtinPasskey)) {
           passkeyOverlay.style.display = "none";
           openPasskeyModal("verify");
         }
       } else if (mode === "Reset Passkey") {
-        if (await savePasskey(userId, passkey, true, oldPasskey, builtinPasskey)) {
+        if (await savePasskey(userId, passkey, true, builtinPasskey)) {
           passkeyOverlay.style.display = "none";
           isPasskeyVerified = true;
           sessionVerified = true;
@@ -1857,6 +1851,7 @@
       sessionVerified = loadSessionVerified();
 
       if (!currentUser) {
+        // New user: force username setup
         openProfileModal();
       } else {
         userId = generateUserId();
@@ -1871,7 +1866,7 @@
           isPasskeyVerified = true;
           showChatInterface();
         } else {
-          openPasskeyModal(isPasskeySet ? "verify" : "set");
+          openPasskeyModal("verify");
         }
       }
     } catch (error) {
