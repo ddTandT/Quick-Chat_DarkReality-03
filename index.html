@@ -195,31 +195,20 @@
     connectedRef = ref(db, ".info/connected");
     usersRef = ref(db, "users");
   } catch (error) {
-    console.error("Firebase initialization failed:", error);
-    const errorDiv = document.createElement("div");
-    errorDiv.textContent = "Unable to connect to the server. Please check your internet connection.";
-    errorDiv.style.color = "red";
-    errorDiv.style.padding = "10px";
-    document.body.prepend(errorDiv);
+    const div = document.createElement("div");
+    div.textContent = "Unable to connect to the server. Please check your internet connection.";
+    div.style.color = "red";
+    div.style.padding = "20px";
+    document.body.prepend(div);
   }
 
-  // Automatically sign in anonymously
-  signInAnonymously(auth)
-    .then(() => console.log("Signed in anonymously"))
-    .catch((error) => {
-      console.error("Anonymous sign-in failed:", error);
-    });
+  signInAnonymously(auth).catch(() => {});
 
   let userId = null;
 
-  // Listen for auth state changes
   onAuthStateChanged(auth, (user) => {
     if (user) {
       userId = user.uid;
-      console.log("Authenticated UID:", userId);
-    } else {
-      userId = null;
-      console.warn("No user signed in");
     }
   });
 
@@ -256,7 +245,15 @@
 
   const BUILT_IN_RESET_PASSKEY = "DarkChat";
   const maleAvatars = Array.from({ length: 100 }, (_, i) => `https://randomuser.me/api/portraits/men/${i + 1}.jpg`);
-  const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴","😌","😔","😕","🙃","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤤","😴","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","😈","👿","👹","👺","💀","👻","👽","🤖","💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾","👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦿","🦶"];
+  const emojis = [
+    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
+    "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥳","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄",
+    "😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴","😌","😔","😕","🙃","😢","😭","😤","😠","😡","🤬",
+    "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤤","😴","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+    "🤑","🤠","😈","👿","👹","👺","💀","👻","👽","🤖","💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾",
+    "👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝","👍",
+    "👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍","💅","🤳","💪","🦾","🦵","🦿","🦶"
+  ];
   const reactionEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
 
   let currentUser = null;
@@ -271,14 +268,14 @@
   let isPasskeyVerified = false;
   let sessionVerified = false;
 
-  function saveUserToLocal(user) { try { localStorage.setItem("quickchat-user", JSON.stringify(user)); } catch (e) { console.error("Error saving user", e); } }
-  function loadUserFromLocal() { try { const s = localStorage.getItem("quickchat-user"); return s ? JSON.parse(s) : null; } catch (e) { console.error("Error loading user", e); return null; } }
-  function saveNightMode(enabled) { try { localStorage.setItem("quickchat-nightmode", enabled ? "1" : "0"); } catch (e) {} }
-  function loadNightMode() { try { return localStorage.getItem("quickchat-nightmode") === "1"; } catch (e) { return false; } }
-  function savePasskeyToLocal(passkey) { try { localStorage.setItem("quickchat-passkey", passkey); } catch (e) {} }
-  function loadPasskeyFromLocal() { try { return localStorage.getItem("quickchat-passkey"); } catch (e) { return null; } }
-  function saveSessionVerified() { try { sessionStorage.setItem("quickchat-session-verified", "true"); } catch (e) {} }
-  function loadSessionVerified() { try { return sessionStorage.getItem("quickchat-session-verified") === "true"; } catch (e) { return false; } }
+  function saveUserToLocal(user) { try { localStorage.setItem("quickchat-user", JSON.stringify(user)); } catch {} }
+  function loadUserFromLocal() { try { const s = localStorage.getItem("quickchat-user"); return s ? JSON.parse(s) : null; } catch { return null; } }
+  function saveNightMode(enabled) { try { localStorage.setItem("quickchat-nightmode", enabled ? "1" : "0"); } catch {} }
+  function loadNightMode() { try { return localStorage.getItem("quickchat-nightmode") === "1"; } catch { return false; } }
+  function savePasskeyToLocal(passkey) { try { localStorage.setItem("quickchat-passkey", passkey); } catch {} }
+  function loadPasskeyFromLocal() { try { return localStorage.getItem("quickchat-passkey"); } catch { return null; } }
+  function saveSessionVerified() { try { sessionStorage.setItem("quickchat-session-verified", "true"); } catch {} }
+  function loadSessionVerified() { try { return sessionStorage.getItem("quickchat-session-verified") === "true"; } catch { return false; } }
 
   function escapeHTML(str) {
     if (!str) return "";
@@ -290,70 +287,217 @@
     catch { return "??:??"; }
   }
 
-  function getAvatarForUser(user) {
-    if (user.avatar) return user.avatar;
-    const idx = hashCode((user.username || "") + (userId || "")) % maleAvatars.length;
-    return maleAvatars[Math.abs(idx)];
+  function hashCode(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i) | 0;
+    return h;
   }
 
-  function hashCode(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return hash;
+  function getAvatarForUser(user) {
+    if (user.avatar) return user.avatar;
+    return maleAvatars[Math.abs(hashCode((user.username || "") + (userId || ""))) % maleAvatars.length];
   }
 
   function styleEmojis(text) {
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
-    return text.replace(emojiRegex, '<span class="emoji">$&</span>');
+    return text.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '<span class="emoji">$&</span>');
   }
 
   function makeLinksClickable(text) {
-    const urlRegex = /(https?:\/\/[^\s<>"']+)/g;
-    return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">$1</a>');
+    return text.replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">$1</a>');
   }
 
   function cacheUserInfo(msg) {
-    if (msg?.userId && msg?.username) {
-      usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar });
-    }
+    if (msg?.userId && msg?.username) usersMap.set(msg.userId, { username: msg.username, avatar: msg.avatar || "" });
   }
 
-  // ──────────────────────────────────────────────
-  // renderMessage, showReactionUsers, updateUserMessages, updateUserAvatars, renderAllMessagesPresence, addMessage
-  // ──────────────────────────────────────────────
-  // (these functions remain unchanged – omitted here for brevity)
+  function renderMessage(msg) {
+    const div = document.createElement("div");
+    div.className = "message " + (msg.userId === userId ? "you" : "");
+    div.dataset.messageId = msg.id;
+    div.setAttribute("tabindex", "0");
+    div.setAttribute("role", "article");
+    div.setAttribute("aria-label", `${msg.username || "User"} said: ${msg.text || msg.fileName || "file"}`);
+
+    const avatarContainer = document.createElement("div");
+    avatarContainer.className = "avatar-container";
+
+    const avatarUsername = document.createElement("div");
+    avatarUsername.className = "avatar-username";
+    avatarUsername.textContent = msg.username || "User";
+    avatarContainer.appendChild(avatarUsername);
+
+    const avatarWrapper = document.createElement("div");
+    avatarWrapper.className = "avatar";
+    const presence = presenceMap.get(msg.userId) === "online" ? "presence-online" : "presence-offline";
+    avatarWrapper.classList.add(presence);
+
+    const img = document.createElement("img");
+    img.src = msg.avatar || getAvatarForUser(msg);
+    img.alt = `${msg.username || "User"} avatar`;
+    img.width = 36;
+    img.height = 36;
+    img.style.borderRadius = "50%";
+    avatarWrapper.appendChild(img);
+    avatarContainer.appendChild(avatarWrapper);
+
+    const content = document.createElement("div");
+    content.className = "message-content";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    if (msg.fileUrl) {
+      const ext = (msg.fileName || "").split('.').pop().toLowerCase();
+      let preview;
+      if (["jpg","jpeg","png","gif","webp","bmp"].includes(ext)) {
+        preview = document.createElement("img");
+        preview.src = msg.fileUrl;
+        preview.className = "file-preview";
+        preview.alt = msg.fileName || "image";
+      } else if (ext === "pdf") {
+        preview = document.createElement("iframe");
+        preview.src = msg.fileUrl + "#toolbar=0";
+        preview.className = "pdf-preview";
+      } else if (["doc","docx"].includes(ext)) {
+        preview = document.createElement("div");
+        preview.className = "doc-preview";
+      }
+      if (preview) {
+        const a = document.createElement("a");
+        a.href = msg.fileUrl;
+        a.download = msg.fileName || "file";
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.appendChild(preview);
+        bubble.appendChild(a);
+      }
+    } else {
+      bubble.innerHTML = styleEmojis(makeLinksClickable(escapeHTML(msg.text || ""))).replace(/\n/g, "<br>");
+    }
+
+    content.appendChild(bubble);
+
+    const info = document.createElement("div");
+    info.className = "info";
+    info.innerHTML = `<span>${formatTime(msg.timestamp)}</span>`;
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    if (msg.userId === userId) {
+      const del = document.createElement("button");
+      del.className = "delete-btn";
+      del.title = "Delete";
+      del.addEventListener("click", () => deleteMessage(msg.id));
+      actions.appendChild(del);
+
+      const edit = document.createElement("button");
+      edit.className = "edit-btn";
+      edit.title = "Edit";
+      edit.addEventListener("click", () => editMessage(msg));
+      actions.appendChild(edit);
+    }
+
+    const react = document.createElement("button");
+    react.className = "react-btn";
+    react.title = "React";
+    react.textContent = "👍";
+    react.addEventListener("click", e => toggleReactionPicker(msg.id, e.target));
+    actions.appendChild(react);
+
+    info.appendChild(actions);
+    content.appendChild(info);
+
+    const reactionsDiv = document.createElement("div");
+    reactionsDiv.className = "reactions";
+    if (msg.reactions) {
+      Object.entries(msg.reactions).forEach(([emoji, users]) => {
+        const span = document.createElement("span");
+        span.className = "reaction";
+        span.textContent = `${emoji} ${users.length}`;
+        span.addEventListener("click", e => showReactionUsers(emoji, users, e.target));
+        reactionsDiv.appendChild(span);
+      });
+    }
+    content.appendChild(reactionsDiv);
+
+    div.appendChild(avatarContainer);
+    div.appendChild(content);
+    return div;
+  }
+
+  function showReactionUsers(emoji, users, el) {
+    let list = document.querySelector(".reaction-users");
+    if (list) list.remove();
+
+    list = document.createElement("div");
+    list.className = "reaction-users";
+    list.innerHTML = `<div>${emoji} ${users.length}</div>`;
+    users.forEach(uid => {
+      const u = usersMap.get(uid);
+      if (u) list.innerHTML += `<div>${u.username}</div>`;
+    });
+    el.parentElement.appendChild(list);
+  }
+
+  function updateUserMessages(uid, name) {
+    messagesCache.forEach(m => {
+      if (m.userId === uid) {
+        m.username = name;
+        const el = messagesDiv.querySelector(`[data-message-id="${m.id}"]`);
+        if (el) el.replaceWith(renderMessage(m));
+      }
+    });
+    if (usersMap.has(uid)) usersMap.get(uid).username = name;
+  }
+
+  function updateUserAvatars(uid, url) {
+    messagesCache.forEach(m => {
+      if (m.userId === uid) {
+        m.avatar = url;
+        const el = messagesDiv.querySelector(`[data-message-id="${m.id}"]`);
+        if (el) el.replaceWith(renderMessage(m));
+      }
+    });
+    if (usersMap.has(uid)) usersMap.get(uid).avatar = url;
+  }
+
+  function renderAllMessagesPresence() {
+    messagesDiv.querySelectorAll(".avatar").forEach(av => {
+      const uid = [...usersMap.entries()].find(([_,u]) => av.parentElement.textContent.includes(u.username))?.[0];
+      if (uid) {
+        av.classList.remove("presence-online", "presence-offline");
+        av.classList.add(presenceMap.get(uid) === "online" ? "presence-online" : "presence-offline");
+      }
+    });
+  }
+
+  function addMessage(msg) {
+    cacheUserInfo(msg);
+    messagesCache.push(msg);
+    messagesDiv.appendChild(renderMessage(msg));
+    if (isScrolledToBottom) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
 
   async function cleanupOldMessages() {
-    try {
-      const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
-      const snap = await get(messagesRef);
-      const msgs = snap.val() || {};
-      for (const [id, msg] of Object.entries(msgs)) {
-        if (msg.timestamp < threeDaysAgo) {
-          await remove(ref(db, `messages/${id}`));
-        }
-      }
-    } catch (err) {
-      console.error("cleanupOldMessages failed", err);
+    const cutoff = Date.now() - 3 * 86400000;
+    const snap = await get(messagesRef);
+    const data = snap.val() || {};
+    for (const [k,v] of Object.entries(data)) {
+      if (v.timestamp < cutoff) await remove(ref(db, `messages/${k}`));
     }
   }
 
   async function sendMessage(text, fileUrl = null, fileName = null) {
-    if (!text && !fileUrl) return;
-    if (!userId) return; // ← security guard
-
+    if ((!text && !fileUrl) || !userId) return;
     if (!currentUser || !isPasskeyVerified) {
       passkeyError.textContent = "Please complete the setup process.";
       passkeyError.style.display = "block";
       openPasskeyModal(isPasskeySet ? "verify" : "set");
       return;
     }
-
     try {
-      const msg = {
+      await push(messagesRef, {
         text: text || "",
         fileUrl: fileUrl || null,
         fileName: fileName || null,
@@ -361,78 +505,56 @@
         userId,
         username: currentUser.username,
         avatar: selectedAvatarUrl
-      };
-      await push(messagesRef, msg);
+      });
       textInput.value = "";
       stopTyping();
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    } catch (error) {
-      console.error("sendMessage failed", error);
-      passkeyError.textContent = "Failed to send: " + error.message;
+    } catch (e) {
+      passkeyError.textContent = "Failed to send message";
       passkeyError.style.display = "block";
     }
   }
 
-  async function deleteMessage(messageId) {
-    if (!userId) return; // ← guard
-
-    const msg = messagesCache.find(m => m.id === messageId);
+  async function deleteMessage(id) {
+    if (!userId) return;
+    const msg = messagesCache.find(m => m.id === id);
     if (!msg || msg.userId !== userId) return;
     if (!confirm("Delete this message?")) return;
-
     try {
-      await remove(ref(db, `messages/${messageId}`));
-      messagesCache = messagesCache.filter(m => m.id !== messageId);
-    } catch (err) {
-      console.error("deleteMessage failed", err);
-      passkeyError.textContent = "Delete failed: " + err.message;
-      passkeyError.style.display = "block";
-    }
+      await remove(ref(db, `messages/${id}`));
+      messagesCache = messagesCache.filter(m => m.id !== id);
+    } catch {}
   }
 
   async function editMessage(msg) {
-    if (!userId) return; // ← guard
-    if (!msg.text) return;
-
-    const newText = prompt("Edit message:", msg.text);
-    if (!newText || newText.trim() === msg.text) return;
-
+    if (!userId || !msg.text) return;
+    const txt = prompt("Edit:", msg.text);
+    if (!txt || txt.trim() === msg.text) return;
     try {
-      await update(ref(db, `messages/${msg.id}`), { text: newText.trim() });
-    } catch (err) {
-      console.error("editMessage failed", err);
-      passkeyError.textContent = "Edit failed: " + err.message;
-      passkeyError.style.display = "block";
-    }
+      await update(ref(db, `messages/${msg.id}`), { text: txt.trim() });
+    } catch {}
   }
 
-  async function addReaction(messageId, emoji) {
-    if (!userId) return; // ← guard
-
+  async function addReaction(id, emoji) {
+    if (!userId) return;
     try {
-      const msgRef = ref(db, `messages/${messageId}/reactions`);
-      const snap = await get(msgRef);
-      let reactions = snap.val() || {};
-
-      const userReaction = Object.entries(reactions).find(([, users]) => users.includes(userId));
-      if (userReaction && userReaction[0] === emoji) {
-        reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
-        if (reactions[userReaction[0]].length === 0) delete reactions[userReaction[0]];
+      const r = ref(db, `messages/${id}/reactions`);
+      const s = await get(r);
+      let rx = s.val() || {};
+      const pair = Object.entries(rx).find(([,u]) => u.includes(userId));
+      if (pair && pair[0] === emoji) {
+        rx[pair[0]] = rx[pair[0]].filter(u => u !== userId);
+        if (!rx[pair[0]].length) delete rx[pair[0]];
       } else {
-        if (userReaction) {
-          reactions[userReaction[0]] = reactions[userReaction[0]].filter(uid => uid !== userId);
-          if (reactions[userReaction[0]].length === 0) delete reactions[userReaction[0]];
+        if (pair) {
+          rx[pair[0]] = rx[pair[0]].filter(u => u !== userId);
+          if (!rx[pair[0]].length) delete rx[pair[0]];
         }
-        if (!reactions[emoji]) reactions[emoji] = [];
-        if (!reactions[emoji].includes(userId)) reactions[emoji].push(userId);
+        if (!rx[emoji]) rx[emoji] = [];
+        if (!rx[emoji].includes(userId)) rx[emoji].push(userId);
       }
-
-      await set(msgRef, reactions);
-    } catch (err) {
-      console.error("addReaction failed", err);
-      passkeyError.textContent = "Reaction failed: " + err.message;
-      passkeyError.style.display = "block";
-    }
+      await set(r, rx);
+    } catch {}
   }
 
   function startTyping() {
@@ -447,65 +569,397 @@
     isTyping = false;
     remove(ref(db, `typing/${userId}`));
     if (typingTimeout) clearTimeout(typingTimeout);
-    typingTimeout = null;
     textInput.placeholder = "Type a message...";
   }
 
-  // ──────────────────────────────────────────────
-  // setupTypingListener, setupMessageListener, setupPresence, setupUserListener, openProfileModal,
-  // openPasskeyModal, checkUsernameUnique, verifyPasskey, savePasskey, verifyUserPasskey,
-  // event listeners, emoji picker, file handling, etc.
-  // ──────────────────────────────────────────────
-  // (all these functions remain unchanged – only write operations have guards)
-
-  async function init() {
-    try {
-      if (loadNightMode()) document.body.classList.add("night");
-      currentUser = loadUserFromLocal();
-      sessionVerified = loadSessionVerified();
-
-      if (!currentUser) {
-        openProfileModal();
+  function setupTypingListener() {
+    onValue(typingRef, snap => {
+      const typing = [];
+      snap.forEach(c => {
+        if (c.key !== userId && c.val() && presenceMap.get(c.key) === "online") typing.push(c.key);
+      });
+      if (!typing.length) {
+        typingIndicator.innerHTML = "";
         return;
       }
+      const names = typing.map(u => usersMap.get(u)?.username).filter(Boolean);
+      const dots = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+      typingIndicator.innerHTML = names.length === 1 ? `${names[0]} is typing ${dots}` :
+                                  names.length === 2 ? `${names[0]} and ${names[1]} are typing ${dots}` :
+                                  `${names[0]}, ${names[1]} and others are typing ${dots}`;
+    });
+  }
 
-      // Wait for Firebase Authentication to give us a real uid
-      if (!userId) {
-        await new Promise(resolve => {
-          const unsubscribe = onAuthStateChanged(auth, u => {
-            if (u) {
-              unsubscribe();
-              resolve();
-            }
-          });
-        });
+  function setupMessageListener() {
+    onChildAdded(messagesRef, snap => {
+      const m = snap.val();
+      m.id = snap.key;
+      addMessage(m);
+    });
+    onChildChanged(messagesRef, snap => {
+      const m = snap.val();
+      m.id = snap.key;
+      const i = messagesCache.findIndex(x => x.id === m.id);
+      if (i !== -1) {
+        messagesCache[i] = m;
+        const el = messagesDiv.querySelector(`[data-message-id="${m.id}"]`);
+        if (el) el.replaceWith(renderMessage(m));
       }
+    });
+    onChildRemoved(messagesRef, snap => {
+      const id = snap.key;
+      messagesCache = messagesCache.filter(m => m.id !== id);
+      const el = messagesDiv.querySelector(`[data-message-id="${id}"]`);
+      if (el) el.remove();
+    });
+  }
 
-      const userSnapshot = await get(ref(db, `users/${userId}`));
-      const userData = userSnapshot.val();
+  function setupPresence() {
+    if (!userId) return;
+    const pRef = ref(db, `presence/${userId}`);
+    const tRef = ref(db, `typing/${userId}`);
+    onValue(connectedRef, s => {
+      if (s.val()) {
+        set(pRef, { state: "online", lastChanged: Date.now() });
+        onDisconnect(pRef).set({ state: "offline", lastChanged: Date.now() });
+        onDisconnect(tRef).remove();
+      }
+    });
+    onValue(presenceRef, s => {
+      presenceMap.clear();
+      s.forEach(c => presenceMap.set(c.key, c.val()?.state));
+      renderAllMessagesPresence();
+    });
+  }
 
-      selectedAvatarUrl = userData?.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
+  function setupUserListener() {
+    onValue(usersRef, s => {
+      s.forEach(c => {
+        const u = c.val();
+        if (c.key !== userId) {
+          if (usersMap.get(c.key)?.username !== u.username) updateUserMessages(c.key, u.username);
+          if (usersMap.get(c.key)?.avatar !== u.avatar) updateUserAvatars(c.key, u.avatar);
+        }
+      });
+    });
+  }
+
+  function openProfileModal() {
+    modalOverlay.style.display = "flex";
+    usernameInput.value = currentUser?.username || "";
+    usernameError.style.display = "none";
+    usernameInput.focus();
+  }
+
+  function openPasskeyModal(mode = "set") {
+    passkeyOverlay.style.display = "flex";
+    passkeyInput.value = "";
+    oldPasskeyInput.value = "";
+    builtinPasskeyInput.value = "";
+    passkeyError.style.display = "none";
+
+    const h2 = passkeyModal.querySelector("h2");
+    if (mode === "set") {
+      h2.textContent = "Set Your Passkey";
+      oldPasskeyInput.style.display = "none";
+      builtinPasskeyInput.style.display = "block";
+      builtinPasskeyInput.placeholder = "Enter built-in passkey";
+      resetPasskeyBtn.style.display = "none";
+    } else if (mode === "reset") {
+      h2.textContent = "Reset Passkey";
+      oldPasskeyInput.style.display = "none";
+      builtinPasskeyInput.style.display = "block";
+      builtinPasskeyInput.placeholder = "Enter built-in passkey";
+      resetPasskeyBtn.style.display = "none";
+    } else {
+      h2.textContent = "Verify Passkey";
+      oldPasskeyInput.style.display = "none";
+      builtinPasskeyInput.style.display = "none";
+      resetPasskeyBtn.style.display = "block";
+    }
+    passkeyInput.focus();
+  }
+
+  async function checkUsernameUnique(name) {
+    const s = await get(usersRef);
+    const users = s.val() || {};
+    return !Object.values(users).some(u => u.username === name && u.userId !== userId);
+  }
+
+  async function verifyPasskey(uid, pk) {
+    const s = await get(ref(db, `users/${uid}`));
+    const d = s.val();
+    return d && d.passkey === pk;
+  }
+
+  async function savePasskey(uid, pk, reset = false, builtIn = null) {
+    if (pk.length < 4) {
+      passkeyError.textContent = "Passkey must be at least 4 characters.";
+      passkeyError.style.display = "block";
+      return false;
+    }
+    if (reset && builtIn !== BUILT_IN_RESET_PASSKEY) {
+      passkeyError.textContent = "Incorrect reset code.";
+      passkeyError.style.display = "block";
+      return false;
+    }
+    try {
+      await update(ref(db, `users/${uid}`), { passkey: pk });
+      savePasskeyToLocal(pk);
+      isPasskeySet = true;
+      return true;
+    } catch {
+      passkeyError.textContent = "Failed to save passkey.";
+      passkeyError.style.display = "block";
+      return false;
+    }
+  }
+
+  async function verifyUserPasskey(uid, pk) {
+    const valid = await verifyPasskey(uid, pk);
+    if (!valid) {
+      passkeyError.textContent = "Invalid passkey.";
+      passkeyError.style.display = "block";
+    }
+    return valid;
+  }
+
+  saveProfileBtn.addEventListener("click", async () => {
+    const val = usernameInput.value.trim();
+    if (val.length < 2) {
+      usernameError.textContent = "Username must be at least 2 characters.";
+      usernameError.style.display = "block";
+      usernameInput.focus();
+      return;
+    }
+    if (!(await checkUsernameUnique(val))) {
+      usernameError.textContent = "Username taken.";
+      usernameError.style.display = "block";
+      usernameInput.focus();
+      return;
+    }
+    try {
+      userId = userId || 'guest_' + Date.now().toString(36);
+      const old = currentUser?.username;
+      currentUser = { username: val, avatar: currentUser?.avatar, passkey: currentUser?.passkey };
+      selectedAvatarUrl = currentUser.avatar || maleAvatars[hashCode(val + userId) % maleAvatars.length];
       currentUser.avatar = selectedAvatarUrl;
-      currentUser.passkey = userData?.passkey;
-      isPasskeySet = !!userData?.passkey;
+      await set(ref(db, `users/${userId}`), currentUser);
+      saveUserToLocal(currentUser);
+      usersMap.set(userId, { username: val, avatar: selectedAvatarUrl });
+      if (old && old !== val) updateUserMessages(userId, val);
+      modalOverlay.style.display = "none";
+      if (!isPasskeySet) openPasskeyModal("set");
+      else openPasskeyModal("verify");
+    } catch (e) {
+      usernameError.textContent = "Failed to save profile.";
+      usernameError.style.display = "block";
+    }
+  });
 
-      usersMap.set(userId, { username: currentUser.username, avatar: selectedAvatarUrl });
-
-      if (sessionVerified && userData?.passkey && (await verifyPasskey(userId, loadPasskeyFromLocal()))) {
-        isPasskeyVerified = true;
-        showChatInterface();
-      } else {
+  usernameInput.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveProfileBtn.click(); } });
+  closeProfileBtn.addEventListener("click", () => { modalOverlay.style.display = "none"; if (!currentUser) openProfileModal(); });
+  closePasskeyBtn.addEventListener("click", () => { passkeyOverlay.style.display = "none"; });
+  savePasskeyBtn.addEventListener("click", async () => {
+    const pk = passkeyInput.value.trim();
+    const bi = builtinPasskeyInput.value.trim();
+    const mode = passkeyModal.querySelector("h2").textContent;
+    if (!currentUser || !userId) {
+      passkeyError.textContent = "Set up profile first.";
+      passkeyError.style.display = "block";
+      return;
+    }
+    if (mode === "Set Your Passkey") {
+      if (await savePasskey(userId, pk, false, bi)) {
+        passkeyOverlay.style.display = "none";
         openPasskeyModal("verify");
       }
-    } catch (error) {
-      console.error("Initialization failed:", error);
-      passkeyError.textContent = "Failed to start: " + error.message;
+    } else if (mode === "Reset Passkey") {
+      if (await savePasskey(userId, pk, true, bi)) {
+        passkeyOverlay.style.display = "none";
+        isPasskeyVerified = true;
+        sessionVerified = true;
+        saveSessionVerified();
+        showChatInterface();
+      }
+    } else if (mode === "Verify Passkey") {
+      if (await verifyUserPasskey(userId, pk)) {
+        savePasskeyToLocal(pk);
+        isPasskeyVerified = true;
+        sessionVerified = true;
+        saveSessionVerified();
+        passkeyOverlay.style.display = "none";
+        showChatInterface();
+      }
+    }
+  });
+  resetPasskeyBtn.addEventListener("click", () => openPasskeyModal("reset"));
+  changePasskeyBtn.addEventListener("click", () => openPasskeyModal("reset"));
+
+  function showChatInterface() {
+    welcomeMessage.style.display = "block";
+    setTimeout(() => {
+      welcomeMessage.style.display = "none";
+      chatContainer.style.display = "flex";
+      setupTypingListener();
+      setupMessageListener();
+      setupUserListener();
+      setupPresence();
+      setTimeout(() => messagesDiv.scrollTop = messagesDiv.scrollHeight, 0);
+      cleanupOldMessages();
+    }, 3000);
+  }
+
+  function openAvatarPicker() {
+    avatarPickerModal.innerHTML = `
+      <h2 id="avatarPickerTitle">Choose Avatar</h2>
+      <div id="avatarOptions"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button id="saveAvatarBtn">Save</button>
+        <button id="closeAvatarBtn">Close</button>
+      </div>
+    `;
+    const opts = avatarPickerModal.querySelector("#avatarOptions");
+    maleAvatars.forEach(u => {
+      const i = document.createElement("img");
+      i.src = u;
+      i.className = "avatar-option";
+      if (u === selectedAvatarUrl) i.classList.add("selected");
+      i.onclick = () => {
+        opts.querySelectorAll(".avatar-option").forEach(o => o.classList.remove("selected"));
+        i.classList.add("selected");
+        selectedAvatarUrl = u;
+      };
+      opts.appendChild(i);
+    });
+    avatarPickerOverlay.style.display = "flex";
+
+    document.getElementById("saveAvatarBtn").onclick = async () => {
+      if (selectedAvatarUrl && currentUser) {
+        currentUser.avatar = selectedAvatarUrl;
+        await set(ref(db, `users/${userId}`), currentUser);
+        saveUserToLocal(currentUser);
+        updateUserAvatars(userId, selectedAvatarUrl);
+        avatarPickerOverlay.style.display = "none";
+      }
+    };
+    document.getElementById("closeAvatarBtn").onclick = () => avatarPickerOverlay.style.display = "none";
+  }
+
+  function toggleReactionPicker(id, btn) {
+    let p = btn.parentElement.querySelector(".reaction-picker");
+    if (p) return p.remove();
+    p = document.createElement("div");
+    p.className = "reaction-picker";
+    reactionEmojis.forEach(e => {
+      const s = document.createElement("span");
+      s.textContent = e;
+      s.onclick = () => { addReaction(id, e); p.remove(); };
+      p.appendChild(s);
+    });
+    btn.parentElement.appendChild(p);
+  }
+
+  nightModeBtn.onclick = () => {
+    document.body.classList.toggle("night");
+    saveNightMode(document.body.classList.contains("night"));
+  };
+
+  changeUserBtn.onclick = openProfileModal;
+  avatarPickerBtn.onclick = openAvatarPicker;
+
+  sendBtn.onclick = () => sendMessage(textInput.value.trim());
+  textInput.onkeydown = e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage(textInput.value.trim());
+    } else startTyping();
+  };
+  textInput.oninput = () => textInput.value.trim() ? startTyping() : stopTyping();
+
+  fileBtn.onclick = () => fileInput.click();
+  fileInput.onchange = async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 5*1024*1024) {
+      passkeyError.textContent = "File too large (max 5MB)";
       passkeyError.style.display = "block";
+      return;
+    }
+    const types = ["image/jpeg","image/png","image/gif","image/webp","image/bmp","application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    if (!types.includes(f.type)) {
+      passkeyError.textContent = "Unsupported file type";
+      passkeyError.style.display = "block";
+      return;
+    }
+    const r = new FileReader();
+    r.onload = ev => sendMessage("", ev.target.result, f.name);
+    r.readAsDataURL(f);
+  };
+
+  function populateEmojiPicker() {
+    emojiPicker.innerHTML = "";
+    emojis.forEach(e => {
+      const s = document.createElement("span");
+      s.textContent = e;
+      s.onclick = () => { textInput.value += e; textInput.focus(); emojiPicker.style.display = "none"; };
+      emojiPicker.appendChild(s);
+    });
+  }
+  populateEmojiPicker();
+
+  emojiBtn.onclick = () => {
+    emojiPicker.style.display = emojiPicker.style.display === "none" ? "grid" : "none";
+  };
+
+  document.onclick = e => {
+    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.style.display = "none";
+  };
+
+  messagesDiv.onscroll = () => {
+    isScrolledToBottom = messagesDiv.scrollTop + messagesDiv.clientHeight >= messagesDiv.scrollHeight - 10;
+  };
+
+  window.onbeforeunload = () => { if (userId) remove(ref(db, `typing/${userId}`)); };
+
+  async function init() {
+    if (loadNightMode()) document.body.classList.add("night");
+    currentUser = loadUserFromLocal();
+    sessionVerified = loadSessionVerified();
+
+    if (!currentUser) {
+      openProfileModal();
+      return;
+    }
+
+    if (!userId) {
+      await new Promise(r => {
+        const u = onAuthStateChanged(auth, user => {
+          if (user) { u(); r(); }
+        });
+        setTimeout(r, 10000);
+      });
+    }
+
+    const snap = await get(ref(db, `users/${userId}`));
+    const data = snap.val();
+
+    selectedAvatarUrl = data?.avatar || maleAvatars[hashCode(currentUser.username + userId) % maleAvatars.length];
+    currentUser.avatar = selectedAvatarUrl;
+    currentUser.passkey = data?.passkey;
+    isPasskeySet = !!data?.passkey;
+
+    usersMap.set(userId, { username: currentUser.username, avatar: selectedAvatarUrl });
+
+    if (sessionVerified && data?.passkey && await verifyPasskey(userId, loadPasskeyFromLocal())) {
+      isPasskeyVerified = true;
+      showChatInterface();
+    } else {
+      openPasskeyModal("verify");
     }
   }
 
   init();
-
 </script>
 </body>
 </html>
